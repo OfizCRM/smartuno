@@ -33,6 +33,10 @@ class Updater
         @set_time_limit(0);
         @ignore_user_abort(true);
 
+        if (! $this->license->enabled()) {
+            return ['ok' => false, 'message' => 'Vendor updates are disabled.'];
+        }
+
         if (! class_exists(\ZipArchive::class)) {
             return ['ok' => false, 'message' => 'The PHP zip extension is required to apply updates.'];
         }

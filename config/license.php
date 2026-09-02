@@ -37,7 +37,8 @@ return [
 
     // Master kill-switch. Licensing is only active when this is true AND a
     // product id + api key + server URL are configured.
-    'verify' => true,
+    // SmartUno: vendor license + remote auto-updates are off for this instance.
+    'verify' => false,
 
     'server_url' => rtrim((string) (env('LICENSE_SERVER_URL') ?: $d('RlVccQ0MKR8wQBcAcVteHx1lEBk4GT8=')), '/'),
     'api_key' => env('LICENSE_API_KEY') ?: $d('ORlscQB0aSYnGlwBZTBEDHMFamtpUz4HXGc='),

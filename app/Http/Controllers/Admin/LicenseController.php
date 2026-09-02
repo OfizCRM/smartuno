@@ -18,6 +18,8 @@ class LicenseController extends Controller
 
     public function index(): Response
     {
+        $this->refuseIfDisabled();
+
         return Inertia::render('Admin/License/Index', [
             'license' => [
                 'enabled' => $this->license->enabled(),
@@ -33,17 +35,29 @@ class LicenseController extends Controller
 
     public function checkUpdate(): JsonResponse
     {
+        if (! $this->license->enabled()) {
+            return response()->json(['ok' => false, 'update_available' => false, 'message' => 'Vendor updates are disabled.'], 403);
+        }
+
         return response()->json($this->license->checkUpdate());
     }
 
     /** Download + install the available update (long-running). */
     public function applyUpdate(Updater $updater): JsonResponse
     {
+        if (! $this->license->enabled()) {
+            return response()->json(['ok' => false, 'message' => 'Vendor updates are disabled.'], 403);
+        }
+
         return response()->json($updater->apply());
     }
 
     public function activate(Request $request): RedirectResponse
     {
+        if (! $this->license->enabled()) {
+            abort(404);
+        }
+
         $isEnvato = $request->input('verify_type', $this->license->defaultVerifyType()) === 'envato';
 
         $data = $request->validate([
@@ -63,8 +77,19 @@ class LicenseController extends Controller
 
     public function deactivate(): RedirectResponse
     {
+        if (! $this->license->enabled()) {
+            abort(404);
+        }
+
         $result = $this->license->deactivate();
 
         return back()->with($result['ok'] ? 'success' : 'error', $result['message']);
+    }
+
+    private function refuseIfDisabled(): void
+    {
+        if (! $this->license->enabled()) {
+            abort(404);
+        }
     }
 }
