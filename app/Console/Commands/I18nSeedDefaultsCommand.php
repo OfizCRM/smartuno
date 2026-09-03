@@ -10,7 +10,7 @@ class I18nSeedDefaultsCommand extends Command
 {
     protected $signature = 'i18n:seed-defaults';
 
-    protected $description = 'Seed 4 default locales (en, bn, ar, hi) and sync translations from codebase';
+    protected $description = 'Seed default locales (en, ro) and sync translations from codebase';
 
     public function handle(): int
     {

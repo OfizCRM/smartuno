@@ -10,20 +10,7 @@ return [
     */
     'supported' => [
         'en' => 'English',
-        'bn' => 'বাংলা',
-        'ar' => 'العربية',
-        'hi' => 'हिन्दी',
-        'fr' => 'Français',
-        'es' => 'Español',
-        'pt' => 'Português',
-        'de' => 'Deutsch',
-        'zh' => '中文',
-        'ru' => 'Русский',
-        'ja' => '日本語',
-        'ko' => '한국어',
-        'it' => 'Italiano',
-        'tr' => 'Türkçe',
-        'id' => 'Bahasa Indonesia',
+        'ro' => 'Română',
     ],
 
     /*
