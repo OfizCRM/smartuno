@@ -74,7 +74,7 @@
             // Reject anything not on the whitelist — the slug is interpolated into a
             // stylesheet URL below, and the family name into a CSS declaration.
             $brandFont  = $branding['font_family'] ?? null;
-            $fontSlug   = ($brandFont && array_key_exists($brandFont, $fonts)) ? $brandFont : config('saas.branding.font_family', 'space-grotesk');
+            $fontSlug   = ($brandFont && array_key_exists($brandFont, $fonts)) ? $brandFont : config('saas.branding.font_family', 'plus-jakarta-sans');
             $fontFamily = $fonts[$fontSlug] ?? 'Space Grotesk';
         @endphp
 
@@ -229,11 +229,11 @@
              Must stay AFTER @vite: this and app.css both declare these custom
              properties on :root at equal specificity, so whichever comes last wins.
              Emitted above the stylesheet, it silently loses and nothing retints. --}}
-        @if($brandPrimary || $brandSecondary || $fontSlug !== 'space-grotesk')
+        @if($brandPrimary || $brandSecondary || $fontSlug !== 'plus-jakarta-sans')
         <style>
             :root {
-                @if($fontSlug !== 'space-grotesk') --font-sans: '{{ $fontFamily }}'; @endif
-                @if($brandPrimary) {!! \App\Support\BrandPalette::cssVars('brand', $brandPrimary) !!} {!! \App\Support\BrandPalette::surfaceVars($brandPrimary) !!} @endif
+                @if($fontSlug !== 'plus-jakarta-sans') --font-sans: '{{ $fontFamily }}'; @endif
+                @if($brandPrimary) {!! \App\Support\BrandPalette::cssVars('brand', $brandPrimary) !!} @endif
                 @if($brandSecondary) {!! \App\Support\BrandPalette::cssVars('secondary', $brandSecondary) !!} @endif
             }
         </style>

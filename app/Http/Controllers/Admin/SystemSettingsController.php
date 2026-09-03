@@ -61,9 +61,9 @@ class SystemSettingsController extends Controller
 
         // Fall back to the build defaults so the pickers open on the colours the UI
         // is actually rendering, rather than on an empty/black swatch.
-        $general['primary_color']   = $general['primary_color']   ?: config('saas.branding.primary_color', '#467235');
-        $general['secondary_color'] = $general['secondary_color'] ?: config('saas.branding.secondary_color', '#283f24');
-        $general['font_family']     = $general['font_family']     ?: config('saas.branding.font_family', 'space-grotesk');
+        $general['primary_color']   = $general['primary_color']   ?: config('saas.branding.primary_color', '#237A57');
+        $general['secondary_color'] = $general['secondary_color'] ?: config('saas.branding.secondary_color', '#113B2A');
+        $general['font_family']     = $general['font_family']     ?: config('saas.branding.font_family', 'plus-jakarta-sans');
 
         return Inertia::render('Admin/Settings/Index', [
             'general'         => $general,

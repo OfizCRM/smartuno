@@ -45,7 +45,7 @@ export default function InboxLayout({ children }) {
     };
 
     return (
-        <div className="h-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950 flex flex-col">
+        <div className="h-screen overflow-hidden bg-surface dark:bg-neutral-950 flex flex-col">
             {impersonation?.active && (
                 <div className="flex items-center justify-between gap-4 bg-amber-500/90 text-white px-4 py-2 text-sm font-medium shrink-0">
                     <span>{t('impersonation.impersonating', { name: impersonation.clientName })}</span>

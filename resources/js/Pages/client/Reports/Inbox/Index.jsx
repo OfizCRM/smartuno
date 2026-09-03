@@ -78,8 +78,8 @@ export default function InboxReportIndex({ conversationsOverTime, channelMix, ag
                 {/* SLA KPI cards */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="flex items-center gap-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                            <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <div className="h-10 w-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
+                            <Clock className="h-5 w-5 text-brand-500 dark:text-brand-400" />
                         </div>
                         <div>
                             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('reports.median_first_response')}</p>

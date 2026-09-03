@@ -4,7 +4,7 @@
     // Resolve branding with graceful fallback (mirrors HandleInertiaRequests::brandingShare()).
     try {
         $appName  = SystemSetting::get('app_name') ?: config('saas.app_name', config('app.name'));
-        $primary  = SystemSetting::get('primary_color') ?: config('saas.branding.primary_color', '#467235');
+        $primary  = SystemSetting::get('primary_color') ?: config('saas.branding.primary_color', '#237A57');
         $logoPath = SystemSetting::get('app_logo_path');
         $logoUrl  = $logoPath
             ? \Illuminate\Support\Facades\Storage::disk(SystemSetting::get('app_logo_disk', 'public'))->url($logoPath)
@@ -15,7 +15,7 @@
             : null;
     } catch (\Throwable) {
         $appName  = config('saas.app_name', config('app.name'));
-        $primary  = config('saas.branding.primary_color', '#467235');
+        $primary  = config('saas.branding.primary_color', '#237A57');
         $logoUrl  = null;
         $faviconUrl = null;
     }
@@ -27,7 +27,7 @@
     }
     [$r, $g, $b] = strlen($hex) === 6
         ? [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))]
-        : [70, 114, 53];
+        : [35, 122, 87];
     $luminance = (0.2126 * $r + 0.7152 * $g + 0.0722 * $b) / 255;
     $onPrimary = $luminance > 0.6 ? '#20321d' : '#ffffff';
 @endphp
@@ -46,17 +46,17 @@
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     @endif
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=space-grotesk:400,500,600,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700&display=swap" rel="stylesheet" />
     <style>
         :root {
             --primary: {{ $primary }};
             --on-primary: {{ $onPrimary }};
-            --ink: #20321d;       /* secondary-900 (dark green) */
-            --ink-soft: #566b50;  /* muted green */
-            --surface: #f7faec;   /* brand surface */
+            --ink: #1F231D;
+            --ink-soft: #7B8375;
+            --surface: #FAF9F5;
         }
         *, *::before, *::after { box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; }
+        html, body { height: 100%; margin: 0; font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
         body {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: var(--ink); padding: 2rem; position: relative; overflow: hidden;

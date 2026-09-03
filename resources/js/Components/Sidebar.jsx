@@ -42,7 +42,7 @@ function NavGroup({ label, items, onClose }) {
                                 className={[
                                     'group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
                                     isActive
-                                        ? 'bg-brand-600 text-white shadow-sm'
+                                        ? 'bg-white/15 text-white'
                                         : 'text-white/80 hover:bg-white/10 hover:text-white',
                                 ].join(' ')}
                                 style={!isActive ? undefined : undefined}
@@ -82,7 +82,7 @@ export default function Sidebar({
     const { appName, logoUrl } = useBranding();
 
     const content = (
-        <aside className="flex h-full w-64 flex-col bg-secondary-900 dark:bg-neutral-900">
+        <aside className="flex h-full w-64 flex-col bg-[rgb(var(--sidebar))] dark:bg-neutral-900">
             {/* Brand header */}
             <div className="flex h-14 shrink-0 items-center gap-2.5 px-4 border-b border-white/8">
                 {logoUrl ? (
@@ -98,7 +98,7 @@ export default function Sidebar({
                 <div className="shrink-0 p-3 pb-2 border-b border-white/8">
                     <button
                         type="button"
-                        className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 transition duration-150"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-[13px] font-semibold text-white bg-brand-500 hover:bg-brand-600 transition duration-150"
                     >
                         <Plus className="h-4 w-4" />
                         {t('common.create')}
@@ -138,7 +138,7 @@ export default function Sidebar({
                                 className={[
                                     'group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
                                     isActive
-                                        ? 'bg-brand-600 text-white'
+                                        ? 'bg-white/15 text-white'
                                         : 'text-white/80 hover:bg-white/10 hover:text-white',
                                 ].join(' ')}
                             >

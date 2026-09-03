@@ -64,13 +64,13 @@ function ThemePreview({ primary, secondary, fontSlug, fontName }) {
             <div className="flex flex-wrap items-center gap-3" style={fontName ? { fontFamily: `'${fontName}', sans-serif` } : undefined}>
                 <span
                     className="rounded-soft px-4 py-2 text-sm font-medium text-white"
-                    style={{ backgroundColor: valid(primary) ? primary : '#467235' }}
+                    style={{ backgroundColor: valid(primary) ? primary : '#237A57' }}
                 >
                     {t('settings.preview_primary_button')}
                 </span>
                 <span
                     className="rounded-soft px-4 py-2 text-sm font-medium text-white"
-                    style={{ backgroundColor: valid(secondary) ? secondary : '#283f24' }}
+                    style={{ backgroundColor: valid(secondary) ? secondary : '#113B2A' }}
                 >
                     {t('settings.preview_secondary_button')}
                 </span>
@@ -90,9 +90,9 @@ function GeneralTab({ general, fonts, flash }) {
         app_name:        general?.app_name        ?? '',
         app_tagline:     general?.app_tagline     ?? '',
         support_email:   general?.support_email   ?? '',
-        primary_color:   general?.primary_color   ?? '#467235',
-        secondary_color: general?.secondary_color ?? '#283f24',
-        font_family:     general?.font_family     ?? 'space-grotesk',
+        primary_color:   general?.primary_color   ?? '#237A57',
+        secondary_color: general?.secondary_color ?? '#113B2A',
+        font_family:     general?.font_family     ?? 'plus-jakarta-sans',
     });
 
     const fontEntries = Object.entries(fonts ?? {});
@@ -112,7 +112,7 @@ function GeneralTab({ general, fonts, flash }) {
     return (
         <div className="space-y-6">
             {flash?.success && (
-                <div className="rounded-soft-lg bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-4 py-2 text-sm">
+                <div className="alert-success">
                     {flash.success}
                 </div>
             )}
@@ -182,7 +182,7 @@ function GeneralTab({ general, fonts, flash }) {
                                 value={data.primary_color}
                                 onChange={(v) => setData('primary_color', v)}
                                 error={errors.primary_color}
-                                placeholder="#467235"
+                                placeholder="#237A57"
                             />
                             <ColorField
                                 label={t('settings.secondary_brand_color')}
@@ -190,7 +190,7 @@ function GeneralTab({ general, fonts, flash }) {
                                 value={data.secondary_color}
                                 onChange={(v) => setData('secondary_color', v)}
                                 error={errors.secondary_color}
-                                placeholder="#283f24"
+                                placeholder="#113B2A"
                             />
                         </div>
 
@@ -410,7 +410,7 @@ function AdvancedTab({ settingsByGroup, flash }) {
             className="space-y-6"
         >
             {flash?.success && (
-                <div className="rounded-soft-lg bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-4 py-2 text-sm">
+                <div className="alert-success">
                     {flash.success}
                 </div>
             )}
@@ -520,7 +520,7 @@ function FirebaseTab({ firebase, flash }) {
     return (
         <form onSubmit={submit} className="space-y-6">
             {flash?.success && (
-                <div className="rounded-soft-lg bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-4 py-2 text-sm">
+                <div className="alert-success">
                     {flash.success}
                 </div>
             )}

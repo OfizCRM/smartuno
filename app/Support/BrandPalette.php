@@ -5,44 +5,49 @@ namespace App\Support;
 /**
  * Generates a full 50–950 tint/shade ramp from a single hex colour, so the admin
  * can pick one brand colour and every `bg-brand-*` / `text-brand-*` utility in the
- * app follows. The ramp is emitted as space-separated RGB channels ("70 114 53")
+ * app follows. The ramp is emitted as space-separated RGB channels ("35 122 87")
  * because Tailwind's colour tokens are defined as
  * `rgb(var(--brand-500) / <alpha-value>)` — the bare-channel form is what keeps
  * opacity modifiers (`bg-brand-500/20`) working.
  *
- * Method: the picked colour is pinned to the 600 stop (the shade the UI uses for
- * primary buttons/links), and the other stops keep its hue and saturation while
- * moving lightness along a fixed curve. The curve's mix ratios were measured off
- * the hand-tuned default forest-green ramp, so a generated ramp keeps the same
- * light-to-dark rhythm as the original design.
+ * The picked colour is pinned to the 500 stop (primary buttons). The documented
+ * SmartUno emerald (#237A57) uses the hand-tuned ramp from the brand spec rather
+ * than a generated approximation. Surfaces are not derived from the brand hue —
+ * they stay on the warm canvas tokens in app.css.
  */
 class BrandPalette
 {
     /**
-     * Lightness mix ratios per stop, relative to the 600 anchor.
+     * Lightness mix ratios per stop, relative to the 500 anchor.
      * Positive = mix toward white, negative = mix toward black.
      */
     private const CURVE = [
-        '50' => 0.924,
-        '100' => 0.811,
-        '200' => 0.639,
-        '300' => 0.429,
-        '400' => 0.230,
-        '500' => 0.082,
-        '600' => 0.0,
-        '700' => -0.214,
-        '800' => -0.333,
-        '900' => -0.407,
-        '950' => -0.676,
+        '50' => 0.941,
+        '100' => 0.870,
+        '200' => 0.747,
+        '300' => 0.567,
+        '400' => 0.263,
+        '500' => 0.0,
+        '600' => -0.197,
+        '700' => -0.362,
+        '800' => -0.515,
+        '900' => -0.688,
+        '950' => -0.805,
     ];
 
-    /**
-     * The page/sidebar background tints. Lighter than the 50 stop — they read as
-     * off-white rather than as a colour, but still carry the brand hue.
-     */
-    private const SURFACE_CURVE = [
-        '' => 0.951,
-        '-subtle' => 0.866,
+    /** Hand-tuned SmartUno emerald ramp (document branding/paleta_culori_aplicatie.txt). */
+    private const SMARTUNO_RAMP = [
+        '50' => '242 247 244',
+        '100' => '225 239 231',
+        '200' => '196 225 209',
+        '300' => '154 203 177',
+        '400' => '82 168 126',
+        '500' => '35 122 87',
+        '600' => '27 99 70',
+        '700' => '22 78 55',
+        '800' => '17 59 42',
+        '900' => '11 38 27',
+        '950' => '7 24 16',
     ];
 
     /**
@@ -53,13 +58,17 @@ class BrandPalette
      */
     public static function ramp(string $hex, array $curve = self::CURVE): array
     {
+        if (strtolower($hex) === '#237a57' && $curve === self::CURVE) {
+            return self::SMARTUNO_RAMP;
+        }
+
         [$h, $s, $l] = self::hexToHsl($hex);
 
         $ramp = [];
         foreach ($curve as $stop => $ratio) {
             $stopL = $ratio >= 0
-                ? $l + $ratio * (1 - $l)   // toward white
-                : $l * (1 + $ratio);       // toward black
+                ? $l + $ratio * (1 - $l)
+                : $l * (1 + $ratio);
 
             $ramp[$stop] = self::hslToChannels($h, $s, $stopL);
         }
@@ -68,7 +77,7 @@ class BrandPalette
     }
 
     /**
-     * CSS custom-property declarations for a ramp, e.g. `--brand-50: 242 248 236;`.
+     * CSS custom-property declarations for a ramp, e.g. `--brand-50: 242 247 244;`.
      */
     public static function cssVars(string $prefix, string $hex): string
     {
@@ -80,15 +89,12 @@ class BrandPalette
         return implode(' ', $out);
     }
 
-    /** `--surface` / `--surface-subtle` declarations tinted by the brand hue. */
+    /**
+     * Surfaces stay on the warm canvas from app.css. Kept for call-site compatibility.
+     */
     public static function surfaceVars(string $hex): string
     {
-        $out = [];
-        foreach (self::ramp($hex, self::SURFACE_CURVE) as $stop => $channels) {
-            $out[] = "--surface{$stop}: {$channels};";
-        }
-
-        return implode(' ', $out);
+        return '';
     }
 
     /** A hex string is usable only if it is exactly `#rrggbb`. */

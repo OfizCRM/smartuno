@@ -1,0 +1,276 @@
+================================================================================
+
+PRINCIPII GENERALE DE DESIGN (UI/UX GUIDELINES)
+
+Direcție Vizuală: Interfață caldă, odihnitoare, cu nuanțe inspirate din natură (Verde Pădure / Smarald Cald).
+
+Evitarea Oboselii Vizuale: Fără culori neon, stridente sau alb pur pe fundal. Se folosesc nuanțe cremoase/subtile.
+
+Carduri & Containere: Rotunjire pronunțată R = 16px (Tailwind rounded-2xl).
+
+Iconografie Monocromă: Se elimină iconițele multicolore („curcubeu”). Iconițele folosesc nuanța primară de brand (#237A57) sau variante neutre.
+
+TIPOGRAFIE & FONTURI
+
+Font Familly: 'Plus Jakarta Sans', sans-serif (Alternativă secundară: 'Inter')
+
+Google Font Import:
+
+Ierarhie Dimensiuni:
+
+H1 (Headings Mari): 24px - 32px | Weight: 700 / Bold
+
+H2 (Titluri Secțiuni): 18px - 20px | Weight: 700 / Bold
+
+H3 (Titluri Carduri): 14px - 16px | Weight: 600 / SemiBold
+
+Body Text (Text Principal): 13px - 14px | Weight: 400 / Regular sau 500 / Medium
+
+Small Text / Subtitluri: 11px - 12px | Weight: 500 / Medium
+
+Micro Copy / Badges: 10px - 11px | Weight: 600 / SemiBold sau Bold
+
+PALETA DE CULORI (PALETTE HEX CODES)
+
+A. PALETA PRINCIPALĂ BRAND (VERDE CALD / WARM EMERALD)
+
+Brand 50  (Super Light BG / Tint):   #F2F7F4
+
+Brand 100 (Light Active Highlight): #E1EFE7
+
+Brand 200 (Soft Mint / Subtly Tinted):#C4E1D1
+
+Brand 300 (Sage Green Soft):        #9ACBB1
+
+Brand 400 (Medium Sage Accent):     #52A87E
+
+Brand 500 (PRINCIPAL / MAIN ACCENT):#237A57  <-- Culoarea de bază
+
+Brand 600 (Hover State Primary):    #1B6346
+
+Brand 700 (Deep Forest / Active):   #164E37
+
+Brand 800 (Dark Forest Neutral):    #113B2A
+
+Brand 900 (Obsidian Green Dark):    #0B261B
+
+B. SUPRAFEȚE NEUTRE & FUNDALURI (WARM NEUTRALS)
+
+Main App Background (Warm Canvas):  #FAF9F5  (Se folosește pe fundalul întregii aplicații)
+
+Card / Panel Surface (White):       #FFFFFF  (Suprafața containerelor)
+
+Warm Border Color:                  #E6E8E3  (Borduri discrete pentru carduri/tabele)
+
+Neutral Gray Light (Hover BG):      #F1F3EE
+
+Neutral Gray Medium:                #7B8375  (Iconițe secundare, sub-texte)
+
+Text Dark Principal:                #1F231D  (Culoarea principală pentru text)
+
+SCHEMA DE CULORI PENTRU MESAJE ÎN APLICAȚIE (ALERTS, TOASTS, NOTIFICATIONS)
+
+[1] SUCCES (SUCCESS ALERT / TOAST) - Verde Cald Natura
+
+Background (Fundal):    #F0F9F4
+
+Border (Bordură):        #BCE3CB
+
+Title Text (Titlu):      #144E36
+
+Body Text (Corp Text):   #206648
+
+Icon Accent (Iconiță):   #237A57
+
+[2] ATENȚIONARE (WARNING ALERT / TOAST) - Chihlimbar Cald
+
+Background (Fundal):    #FFFBEB
+
+Border (Bordură):        #FDE68A
+
+Title Text (Titlu):      #78350F
+
+Body Text (Corp Text):   #92400E
+
+Icon Accent (Iconiță):   #D97706
+
+[3] EROARE (ERROR ALERT / TOAST) - Teracotă / Vișiniu Soft
+
+Background (Fundal):    #FDF2F2
+
+Border (Bordură):        #F8C4C4
+
+Title Text (Titlu):      #7F1D1D
+
+Body Text (Corp Text):   #991B1B
+
+Icon Accent (Iconiță):   #C93B3B
+
+[4] INFORMAȚIE (INFO ALERT / TOAST) - Smarald Cyan Cald
+
+Background (Fundal):    #F0FDF9
+
+Border (Bordură):        #99F6E4
+
+Title Text (Titlu):      #115E59
+
+Body Text (Corp Text):   #134E4A
+
+Icon Accent (Iconiță):   #0D9488
+
+SPECIFICAȚII PENTRU COMPONENTE UI (COMPONENT STYLES)
+
+A. CARDURI & CONTAINERE
+
+Border Radius: 16px (rounded-2xl)
+
+Background: #FFFFFF
+
+Border: 1px solid #E6E8E3
+
+Shadow: Soft Elevation -> 0 1px 3px 0 rgba(31, 35, 29, 0.05)
+
+B. BUTOANE (BUTTONS)
+
+Primary Button:
+
+Background: #237A57 (Brand 500)
+
+Text Color: #FFFFFF
+
+Hover Background: #1B6346 (Brand 600)
+
+Border Radius: 12px (rounded-xl)
+
+Font: 13px SemiBold
+
+Secondary / Subtle Button:
+
+Background: #F1F3EE
+
+Text Color: #1F231D
+
+Hover Background: #E2E5DC
+
+Outline Button:
+
+Background: Transparent
+
+Border: 1px solid #E6E8E3
+
+Text Color: #1F231D
+
+Hover Background: #F8F9F7
+
+C. INPUT-URI & FORMLARE (FORM CONTROLS)
+
+Background: #FAF9F5 sau #FFFFFF
+
+Border: 1px solid #E6E8E3
+
+Focus State: Border #237A57 cu Inel de selecție ring-2 ring-[#237A57]/20
+
+Border Radius: 12px (rounded-xl)
+
+Text Color: #1F231D
+
+Placeholder Text: #7B8375
+
+D. BADGES & STATUS CHIPS
+
+Active / Success Chip: Background #E1EFE7, Text #164E37, Radius 9999px (full)
+
+Pending / Warning Chip: Background #FFFBEB, Text #92400E, Radius 9999px (full)
+
+Neutral Chip: Background #F1F3EE, Text #464C41, Radius 9999px (full)
+
+REGULI STILISTICE ICONOGRAFIE
+
+Librărie Recomandată: Lucide Icons sau Heroicons (Line Outline, Stroke: 1.75px - 2px).
+
+DO NOT USE: Iconițe 3D pline de culori diferite sau fundaluri curcubeu (mov pe un card, albastru pe altul, portocaliu pe al treilea).
+
+STANDARD: Iconița se încadrează într-un pătrat de 36px sau 40px cu rounded-xl, având fundal #F2F7F4 (Brand 50) și culoarea SVG-ului #237A57 (Brand 500).
+
+CONFIGURAȚIE TAILWIND CSS (EXTEND CONFIG FOR DEVS)
+
+Dacă proiectul folosește Tailwind CSS, programatorii pot adăuga următoarea configurație în tailwind.config.js:
+
+module.exports = {
+theme: {
+extend: {
+fontFamily: {
+sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+},
+colors: {
+'brand': {
+50: '#F2F7F4',
+100: '#E1EFE7',
+200: '#C4E1D1',
+300: '#9ACBB1',
+400: '#52A87E',
+500: '#237A57',
+600: '#1B6346',
+700: '#164E37',
+800: '#113B2A',
+900: '#0B261B',
+},
+'warm-bg': '#FAF9F5',
+'warm-card': '#FFFFFF',
+'warm-border': '#E6E8E3',
+'warm-gray': {
+50: '#F8F9F7',
+100: '#F1F3EE',
+200: '#E2E5DC',
+300: '#C9CEBF',
+500: '#7B8375',
+700: '#464C41',
+900: '#1F231D',
+}
+}
+}
+}
+}
+
+VARIABILE CSS NATIVE (CSS VARIABLES FOR NON-TAILWIND STACK)
+
+Dacă nu se folosește Tailwind, programatorii pot copia direct în :root:
+
+:root {
+--font-main: 'Plus Jakarta Sans', sans-serif;
+
+/* Brand Palette */
+--color-brand-50: #F2F7F4;
+--color-brand-100: #E1EFE7;
+--color-brand-500: #237A57;
+--color-brand-600: #1B6346;
+--color-brand-700: #164E37;
+
+/* Neutrals */
+--color-bg-app: #FAF9F5;
+--color-surface-card: #FFFFFF;
+--color-border-warm: #E6E8E3;
+--color-text-main: #1F231D;
+--color-text-muted: #7B8375;
+
+/* Alerts & Messages */
+--alert-success-bg: #F0F9F4;
+--alert-success-border: #BCE3CB;
+--alert-success-text: #144E36;
+
+--alert-warning-bg: #FFFBEB;
+--alert-warning-border: #FDE68A;
+--alert-warning-text: #78350F;
+
+--alert-error-bg: #FDF2F2;
+--alert-error-border: #F8C4C4;
+--alert-error-text: #7F1D1D;
+
+--alert-info-bg: #F0FDF9;
+--alert-info-border: #99F6E4;
+--alert-info-text: #115E59;
+
+/* Geometry & Radius */
+--radius-card: 16px;
+--radius-button: 12px;
+}

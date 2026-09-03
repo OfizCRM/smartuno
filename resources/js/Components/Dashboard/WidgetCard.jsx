@@ -5,7 +5,7 @@
 export default function WidgetCard({ title, subtitle, action, children, className = '', bodyClassName = '' }) {
     return (
         <div
-            className={`flex flex-col rounded-xl border border-neutral-200 bg-white p-4 shadow-soft dark:border-neutral-700/50 dark:bg-neutral-800/70 sm:p-5 ${className}`}
+            className={`flex flex-col rounded-2xl border border-warm-border bg-white p-4 shadow-card dark:border-neutral-700/50 dark:bg-neutral-800/70 sm:p-5 ${className}`}
         >
             {(title || action) && (
                 <div className="mb-3 flex items-start justify-between gap-3">

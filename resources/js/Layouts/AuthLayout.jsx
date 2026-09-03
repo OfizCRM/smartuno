@@ -45,7 +45,7 @@ function LeftPane({ variant }) {
     const { appName, logoUrl } = useBranding();
 
     return (
-        <div className="relative hidden lg:flex lg:w-[45%] flex-col justify-between overflow-hidden p-10 text-white bg-secondary-800">
+        <div className="relative hidden lg:flex lg:w-[45%] flex-col justify-between overflow-hidden p-10 text-white bg-brand-900">
             {/* Brand radial glow */}
             <div
                 aria-hidden
@@ -213,7 +213,7 @@ export default function AuthLayout({
             <LeftPane variant={variant} />
 
             {/* Right pane */}
-            <div className="flex flex-1 flex-col bg-neutral-50 dark:bg-neutral-950">
+            <div className="flex flex-1 flex-col bg-surface dark:bg-neutral-950">
                 {/* Top bar */}
                 <div className="flex items-center justify-between px-6 py-4">
                     {/* Mobile logo */}
@@ -257,18 +257,18 @@ export default function AuthLayout({
 
                         {/* Status / error banners */}
                         {status && (
-                            <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-800 dark:text-green-300">
+                            <div className="mb-4 alert-success">
                                 {status}
                             </div>
                         )}
                         {error && (
-                            <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-800 dark:text-red-300">
+                            <div className="mb-4 alert-error">
                                 {error}
                             </div>
                         )}
 
                         {/* Card */}
-                        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 sm:p-8 shadow-soft-lg">
+                        <div className="rounded-2xl border border-warm-border dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 sm:p-8 shadow-card">
                             {children}
                         </div>
                     </div>

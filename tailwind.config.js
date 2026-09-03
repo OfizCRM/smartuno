@@ -18,9 +18,9 @@ export default {
                 // the admin's font setting (see app.blade.php).
                 sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
             },
-            // WhatsMine palette — brand (forest-green #467235), accent (amber
-            // #FFBF00 / light-yellow #FFF78D), secondary (dark-green #283F24).
-            // Source of truth: ./.branding
+            // SmartUno palette — brand (warm emerald #237A57), warm canvas
+            // (#FAF9F5), secondary (dark forest #113B2A). Source of truth:
+            // document branding/paleta_culori_aplicatie.txt
             //
             // brand/secondary/surface resolve through CSS custom properties so the
             // admin's colour pickers can retint the whole UI at runtime without a
@@ -29,6 +29,18 @@ export default {
             // `rgb(var(--x) / <alpha-value>)` form is what keeps opacity modifiers
             // like `bg-brand-500/20` working.
             colors: {
+                'warm-bg': '#FAF9F5',
+                'warm-card': '#FFFFFF',
+                'warm-border': '#E6E8E3',
+                'warm-gray': {
+                    50: '#F8F9F7',
+                    100: '#F1F3EE',
+                    200: '#E2E5DC',
+                    300: '#C9CEBF',
+                    500: '#7B8375',
+                    700: '#464C41',
+                    900: '#1F231D',
+                },
                 surface: {
                     DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
                     subtle: 'rgb(var(--surface-subtle) / <alpha-value>)',
@@ -122,9 +134,9 @@ export default {
                 soft: '1px',
             },
             borderColor: {
-                DEFAULT: 'rgb(228 228 231 / 0.8)',
-                soft: 'rgb(228 228 231 / 0.6)',
-                muted: 'rgb(228 228 231 / 0.4)',
+                DEFAULT: '#E6E8E3',
+                soft: 'rgb(230 232 227 / 0.7)',
+                muted: 'rgb(230 232 227 / 0.45)',
             },
             borderRadius: {
                 soft: '0.5rem',
@@ -133,6 +145,7 @@ export default {
             },
             // Subtle shadows
             boxShadow: {
+                card: '0 1px 3px 0 rgb(31 35 29 / 0.05)',
                 soft: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)',
                 'soft-md': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
                 'soft-lg': '0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.06)',

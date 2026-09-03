@@ -129,7 +129,7 @@ export default function AdminLayout({ title = 'Admin', header, children }) {
     const logoUrl = branding?.logo_url;
 
     return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+        <div className="min-h-screen bg-surface dark:bg-neutral-950">
             <Sidebar
                 open={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}

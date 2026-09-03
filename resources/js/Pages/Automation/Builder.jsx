@@ -1494,7 +1494,7 @@ function AiGenerateModal({ prompt, setPrompt, loading, error, onClose, onGenerat
                 </div>
                 <div style={modalFooterStyle}>
                     <button onClick={onClose} disabled={loading} style={ghostBtnStyle}>{t('common.cancel')}</button>
-                    <button onClick={onGenerate} disabled={loading || !prompt.trim()} className="ai-glow" style={{ ...primaryBtnStyle, background: '#7c3aed', opacity: (loading || !prompt.trim()) ? 0.6 : 1 }}>
+                    <button onClick={onGenerate} disabled={loading || !prompt.trim()} className="ai-glow" style={{ ...primaryBtnStyle, background: '#237A57', opacity: (loading || !prompt.trim()) ? 0.6 : 1 }}>
                         {loading ? <><Loader2 size={13} className="animate-spin" /> {t('automation.ai_generating')}</> : <><Sparkles size={13} /> {t('automation.ai_generate')}</>}
                     </button>
                 </div>

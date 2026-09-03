@@ -2,17 +2,17 @@
  * Badge for status, count, or label. Variants: default, success, warning, danger, brand.
  */
 const variantClasses = {
-    default: 'bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700',
-    success: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700',
-    warning: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700',
-    danger: 'bg-coral-50 text-coral-800 border-coral-200 dark:bg-coral-950/40 dark:text-coral-300 dark:border-coral-800',
-    brand: 'bg-brand-50 text-brand-700 border-brand-200 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-700',
+    default: 'bg-warm-gray-100 text-warm-gray-700 border-transparent dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700',
+    success: 'bg-brand-100 text-brand-700 border-transparent dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-700',
+    warning: 'bg-[#FFFBEB] text-[#92400E] border-transparent dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700',
+    danger: 'bg-[#FDF2F2] text-[#991B1B] border-transparent dark:bg-coral-950/40 dark:text-coral-300 dark:border-coral-800',
+    brand: 'bg-brand-50 text-brand-700 border-transparent dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-700',
 };
 
 const sizeClasses = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-1 text-sm',
-    lg: 'px-3 py-1.5 text-sm',
+    sm: 'px-2 py-0.5 text-[10px]',
+    md: 'px-2.5 py-1 text-[11px]',
+    lg: 'px-3 py-1.5 text-xs',
 };
 
 export default function Badge({
@@ -25,7 +25,7 @@ export default function Badge({
     return (
         <span
             className={[
-                'inline-flex items-center font-medium rounded-soft border border-soft transition-colors duration-150',
+                'inline-flex items-center font-semibold rounded-full border transition-colors duration-150',
                 variantClasses[variant] ?? variantClasses.default,
                 sizeClasses[size] ?? sizeClasses.md,
                 className,

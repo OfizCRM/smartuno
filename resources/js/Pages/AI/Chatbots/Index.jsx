@@ -361,7 +361,7 @@ export default function AiChatbotsIndex({ chatbots, knowledgeBases }) {
                         {[
                             { label: t('ai.stat_total_bots'), value: chatbots.length, icon: Bot, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/20' },
                             { label: t('common.active'), value: chatbots.filter(c => c.enabled).length, icon: Zap, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20' },
-                            { label: t('ai.stat_with_kb'), value: chatbots.filter(c => c.ai_kb_id).length, icon: BookOpen, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+                            { label: t('ai.stat_with_kb'), value: chatbots.filter(c => c.ai_kb_id).length, icon: BookOpen, color: 'text-brand-500 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/20' },
                         ].map(stat => (
                             <div key={stat.label} className="rounded-xl border border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 flex items-center gap-3">
                                 <div className={`w-9 h-9 rounded-lg ${stat.bg} flex items-center justify-center shrink-0`}>

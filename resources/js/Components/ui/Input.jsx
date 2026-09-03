@@ -25,12 +25,12 @@ export default function Input({
                 id={inputId}
                 type={type}
                 className={[
-                    'w-full rounded-soft border bg-white dark:bg-neutral-800 px-3 py-2 text-neutral-900 dark:text-neutral-100 shadow-inner transition duration-150 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2',
+                    'w-full rounded-xl border bg-white dark:bg-neutral-800 px-3 py-2 text-[13px] text-warm-gray-900 dark:text-neutral-100 shadow-inner transition duration-150 placeholder:text-warm-gray-500 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2',
                     // border-soft's color utility outranks border-red-500 in the
                     // compiled CSS, so it must be omitted entirely on error.
                     error
                         ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-                        : 'border-soft border-neutral-300 dark:border-neutral-600 focus:border-brand-500 focus:ring-brand-500/20',
+                        : 'border-warm-border dark:border-neutral-600 focus:border-brand-500 focus:ring-brand-500/20',
                     className,
                 ].filter(Boolean).join(' ')}
                 {...props}

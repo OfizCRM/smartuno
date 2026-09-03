@@ -224,7 +224,7 @@ export default function EmailServerIndex({ config }) {
                 {/* SMTP Form */}
                 <div className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-6">
                     <div className="flex items-center gap-2 mb-5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-500 dark:text-brand-400 shrink-0">
                             <Mail className="h-4 w-4" />
                         </div>
                         <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
@@ -362,7 +362,7 @@ export default function EmailServerIndex({ config }) {
                 {/* Test Email */}
                 <div className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-6">
                     <div className="flex items-center gap-2 mb-4">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 shrink-0">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-500 dark:text-brand-400 shrink-0">
                             <Send className="h-4 w-4" />
                         </div>
                         <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">{t('email_server.send_test_title')}</h3>

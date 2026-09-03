@@ -20,8 +20,6 @@ import { Sun, Moon, Check } from 'lucide-react';
  *   children – the active step's content
  */
 
-const BRAND_BG = '#283f24';
-
 function ThemeToggle() {
     const { theme, setTheme } = useTheme();
     return (
@@ -38,17 +36,14 @@ function ThemeToggle() {
 
 function LeftPane({ steps, current, appName }) {
     return (
-        <div
-            className="relative hidden w-[42%] shrink-0 flex-col justify-between overflow-hidden p-10 text-white lg:flex"
-            style={{ background: BRAND_BG }}
-        >
+        <div className="relative hidden w-[42%] shrink-0 flex-col justify-between overflow-hidden bg-brand-900 p-10 text-white lg:flex">
             {/* Brand radial glow */}
             <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0"
                 style={{
                     background:
-                        'radial-gradient(ellipse 80% 65% at 65% 50%, rgba(118,168,78,0.30) 0%, rgba(118,168,78,0.10) 45%, transparent 70%)',
+                        'radial-gradient(ellipse 80% 65% at 65% 50%, rgb(var(--brand-400) / 0.30) 0%, rgb(var(--brand-400) / 0.10) 45%, transparent 70%)',
                 }}
             />
             {/* Subtle grid overlay */}
@@ -168,7 +163,7 @@ function MobileProgress({ steps, current }) {
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
                 <div
-                    className="h-full rounded-full bg-brand-600 transition-all duration-300"
+                    className="h-full rounded-full bg-brand-500 transition-all duration-300"
                     style={{ width: `${pct}%` }}
                 />
             </div>
@@ -189,7 +184,7 @@ export default function InstallLayout({ steps = [], current = 0, title, subtitle
             <LeftPane steps={steps} current={current} appName={appName} />
 
             {/* Right pane */}
-            <div className="flex flex-1 flex-col bg-neutral-50 dark:bg-neutral-950">
+            <div className="flex flex-1 flex-col bg-surface dark:bg-neutral-950">
                 {/* Top bar */}
                 <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-2 lg:invisible">
@@ -212,7 +207,7 @@ export default function InstallLayout({ steps = [], current = 0, title, subtitle
                         <div className="mb-6 text-center">
                             {Icon && (
                                 <div className="mb-4 flex justify-center">
-                                    <span className="flex h-12 w-12 items-center justify-center rounded-soft-lg bg-brand-50 text-brand-600 ring-1 ring-brand-500/15 dark:bg-brand-900/20 dark:text-brand-400">
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-500 ring-1 ring-brand-500/15 dark:bg-brand-900/20 dark:text-brand-400">
                                         <Icon className="h-6 w-6" />
                                     </span>
                                 </div>
@@ -226,7 +221,7 @@ export default function InstallLayout({ steps = [], current = 0, title, subtitle
                         </div>
 
                         {/* Card */}
-                        <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-soft-lg dark:border-neutral-800 dark:bg-neutral-900 sm:p-8">
+                        <div className="rounded-2xl border border-warm-border bg-white p-6 shadow-card dark:border-neutral-800 dark:bg-neutral-900 sm:p-8">
                             {children}
                         </div>
                     </div>

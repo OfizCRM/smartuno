@@ -89,7 +89,7 @@ export default function LandingLayout({ children }) {
     };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col">
+        <div className="min-h-screen bg-surface dark:bg-neutral-950 text-warm-gray-900 dark:text-neutral-100 flex flex-col">
             {/* ── Header ── */}
             <header className="sticky top-0 z-50 border-b border-white/10" style={{ background: 'rgb(var(--brand-950))' }}>
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">

@@ -41,13 +41,13 @@ export default function StatTile({
     const sparkColor = !hasDelta ? '#9ca3af' : good ? '#10b981' : '#ef4444';
 
     const body = (
-        <div className="relative flex h-full flex-col justify-between rounded-xl border border-neutral-200 bg-white p-4 shadow-soft transition hover:border-neutral-300 dark:border-neutral-700/50 dark:bg-neutral-800/70 dark:hover:border-neutral-600">
+        <div className="relative flex h-full flex-col justify-between rounded-2xl border border-warm-border bg-white p-4 shadow-card transition hover:border-warm-gray-300 dark:border-neutral-700/50 dark:bg-neutral-800/70 dark:hover:border-neutral-600">
             <div className="flex items-start justify-between gap-2">
                 <p className="truncate text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                     {label}
                 </p>
                 {Icon && (
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-soft-lg bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-900/30 dark:text-brand-400">
                         <Icon className="h-4 w-4" />
                     </span>
                 )}

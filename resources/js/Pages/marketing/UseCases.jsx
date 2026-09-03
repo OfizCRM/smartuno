@@ -24,9 +24,9 @@ const USE_CASES = [
         titleKey: 'use_cases.ecommerce_title',
         descKey: 'use_cases.ecommerce_desc',
         bulletKeys: ['use_cases.ecommerce_b1', 'use_cases.ecommerce_b2', 'use_cases.ecommerce_b3', 'use_cases.ecommerce_b4'],
-        color: 'from-violet-500/20 to-violet-500/5',
-        border: 'border-violet-200 dark:border-violet-800',
-        iconBg: 'bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400',
+        color: 'from-brand-500/15 to-brand-500/5',
+        border: 'border-warm-border dark:border-neutral-800',
+        iconBg: 'bg-brand-50 dark:bg-brand-900/40 text-brand-500 dark:text-brand-400',
     },
     {
         icon: (
@@ -38,9 +38,9 @@ const USE_CASES = [
         titleKey: 'use_cases.realestate_title',
         descKey: 'use_cases.realestate_desc',
         bulletKeys: ['use_cases.realestate_b1', 'use_cases.realestate_b2', 'use_cases.realestate_b3', 'use_cases.realestate_b4'],
-        color: 'from-blue-500/20 to-blue-500/5',
-        border: 'border-blue-200 dark:border-blue-800',
-        iconBg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400',
+        color: 'from-brand-500/15 to-brand-500/5',
+        border: 'border-warm-border dark:border-neutral-800',
+        iconBg: 'bg-brand-50 dark:bg-brand-900/40 text-brand-500 dark:text-brand-400',
     },
     {
         icon: (
@@ -52,9 +52,9 @@ const USE_CASES = [
         titleKey: 'use_cases.education_title',
         descKey: 'use_cases.education_desc',
         bulletKeys: ['use_cases.education_b1', 'use_cases.education_b2', 'use_cases.education_b3', 'use_cases.education_b4'],
-        color: 'from-amber-500/20 to-amber-500/5',
-        border: 'border-amber-200 dark:border-amber-800',
-        iconBg: 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400',
+        color: 'from-brand-500/15 to-brand-500/5',
+        border: 'border-warm-border dark:border-neutral-800',
+        iconBg: 'bg-brand-50 dark:bg-brand-900/40 text-brand-500 dark:text-brand-400',
     },
     {
         icon: (
@@ -66,9 +66,9 @@ const USE_CASES = [
         titleKey: 'use_cases.healthcare_title',
         descKey: 'use_cases.healthcare_desc',
         bulletKeys: ['use_cases.healthcare_b1', 'use_cases.healthcare_b2', 'use_cases.healthcare_b3', 'use_cases.healthcare_b4'],
-        color: 'from-rose-500/20 to-rose-500/5',
-        border: 'border-rose-200 dark:border-rose-800',
-        iconBg: 'bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400',
+        color: 'from-brand-500/15 to-brand-500/5',
+        border: 'border-warm-border dark:border-neutral-800',
+        iconBg: 'bg-brand-50 dark:bg-brand-900/40 text-brand-500 dark:text-brand-400',
     },
     {
         icon: (
@@ -80,9 +80,9 @@ const USE_CASES = [
         titleKey: 'use_cases.retail_title',
         descKey: 'use_cases.retail_desc',
         bulletKeys: ['use_cases.retail_b1', 'use_cases.retail_b2', 'use_cases.retail_b3', 'use_cases.retail_b4'],
-        color: 'from-emerald-500/20 to-emerald-500/5',
-        border: 'border-emerald-200 dark:border-emerald-800',
-        iconBg: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400',
+        color: 'from-brand-500/15 to-brand-500/5',
+        border: 'border-warm-border dark:border-neutral-800',
+        iconBg: 'bg-brand-50 dark:bg-brand-900/40 text-brand-500 dark:text-brand-400',
     },
     {
         icon: (
@@ -94,9 +94,9 @@ const USE_CASES = [
         titleKey: 'use_cases.finance_title',
         descKey: 'use_cases.finance_desc',
         bulletKeys: ['use_cases.finance_b1', 'use_cases.finance_b2', 'use_cases.finance_b3', 'use_cases.finance_b4'],
-        color: 'from-cyan-500/20 to-cyan-500/5',
-        border: 'border-cyan-200 dark:border-cyan-800',
-        iconBg: 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400',
+        color: 'from-brand-500/15 to-brand-500/5',
+        border: 'border-warm-border dark:border-neutral-800',
+        iconBg: 'bg-brand-50 dark:bg-brand-900/40 text-brand-500 dark:text-brand-400',
     },
 ];
 
