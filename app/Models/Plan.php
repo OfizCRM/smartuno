@@ -25,8 +25,6 @@ class Plan extends Model
         'trial_days',
         'stripe_monthly_id',
         'stripe_yearly_id',
-        'paddle_monthly_id',
-        'paddle_yearly_id',
         'features',
         'limits',
         'featured',

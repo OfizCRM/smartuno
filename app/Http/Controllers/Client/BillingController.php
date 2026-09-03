@@ -29,12 +29,6 @@ class BillingController extends Controller
         if ($sessionId) {
             $this->callFulfil('stripe', $sessionId, $userId);
         }
-
-        // MyFatoorah: ?paymentId=<id>
-        $paymentId = $request->query('paymentId');
-        if ($paymentId) {
-            $this->callFulfil('myfatoorah', $paymentId, $userId);
-        }
     }
 
     private function callFulfil(string $gatewayKey, string $sessionId, int $userId): void

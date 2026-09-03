@@ -253,7 +253,6 @@ export default function AdminSubscriptionsIndex({ subscriptions, filters = {}, p
                         <option value="">{t('admin.all_gateways')}</option>
                         <option value="stripe">Stripe</option>
                         <option value="paypal">PayPal</option>
-                        <option value="paddle">Paddle</option>
                         <option value="manual">{t('admin.subscriptions_gateway_manual')}</option>
                     </select>
                     <Button type="submit" variant="outline" size="sm">{t('common.filter')}</Button>

@@ -4,7 +4,6 @@ use App\Http\Controllers\CmsPageController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\I18nController;
-use App\Http\Controllers\IyzicoCheckoutController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ThemeController;
@@ -83,30 +82,7 @@ Route::get('/robots.txt', function () {
 Route::middleware('throttle:webhooks')->group(function () {
     Route::post('/webhooks/stripe', [WebhookController::class, 'stripe'])->name('webhooks.stripe');
     Route::post('/webhooks/paypal', [WebhookController::class, 'paypal'])->name('webhooks.paypal');
-    Route::post('/webhooks/paddle', [WebhookController::class, 'paddle'])->name('webhooks.paddle');
-    Route::post('/webhooks/razorpay', [WebhookController::class, 'razorpay'])->name('webhooks.razorpay');
-    Route::post('/webhooks/cashfree', [WebhookController::class, 'cashfree'])->name('webhooks.cashfree');
-    Route::post('/webhooks/tap', [WebhookController::class, 'tap'])->name('webhooks.tap');
-    Route::post('/webhooks/paystack', [WebhookController::class, 'paystack'])->name('webhooks.paystack');
-    Route::post('/webhooks/xendit', [WebhookController::class, 'xendit'])->name('webhooks.xendit');
-    Route::post('/webhooks/paymob', [WebhookController::class, 'paymob'])->name('webhooks.paymob');
-    Route::post('/webhooks/myfatoorah', [WebhookController::class, 'myfatoorah'])->name('webhooks.myfatoorah');
-    Route::post('/webhooks/mollie', [WebhookController::class, 'mollie'])->name('webhooks.mollie');
-    Route::post('/webhooks/square', [WebhookController::class, 'square'])->name('webhooks.square');
-    Route::post('/webhooks/iyzico', [WebhookController::class, 'iyzico'])->name('webhooks.iyzico');
-    Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadopago'])->name('webhooks.mercadopago');
 });
-
-// iyzico checkout. Its subscription API returns embedded form HTML rather than a hosted
-// page, so we host the form ourselves; iyzico then posts the result token back to the
-// callback. The callback is a cross-site POST, so it carries no session cookie and is
-// authenticated by the unguessable token alone.
-Route::get('/billing/iyzico/form/{token}', [IyzicoCheckoutController::class, 'form'])
-    ->middleware(['auth', 'throttle:60,1'])
-    ->name('checkout.iyzico.form');
-Route::post('/billing/iyzico/callback', [IyzicoCheckoutController::class, 'callback'])
-    ->middleware('throttle:webhooks')
-    ->name('checkout.iyzico.callback');
 
 // ─── Health / readiness probes ───────────────────────────────────────────────
 // Protected by a shared secret token (HEALTHZ_TOKEN env var). Set to a random

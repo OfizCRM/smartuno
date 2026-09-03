@@ -9,7 +9,7 @@ class PaymentGatewayConfigSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (['stripe', 'paypal', 'paddle'] as $gateway) {
+        foreach (['stripe', 'paypal'] as $gateway) {
             PaymentGatewayConfig::firstOrCreate(
                 ['gateway' => $gateway],
                 [

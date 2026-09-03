@@ -29,7 +29,7 @@ class SecureHeaders
             $response->headers->set('Expires', '0');
         }
 
-        $csp = $this->buildCsp($request);
+        $csp = $this->buildCsp();
         if ($csp !== null) {
             $response->headers->set('Content-Security-Policy', $csp);
         }
@@ -37,19 +37,14 @@ class SecureHeaders
         return $response;
     }
 
-    private function buildCsp(Request $request): ?string
+    private function buildCsp(): ?string
     {
-        // iyzico's subscription checkout is embedded markup that pulls its own scripts and
-        // 3-D Secure frames from iyzipay.com. Widen the policy only on the page that renders
-        // that form rather than for the whole app.
-        $iyzico = $request->routeIs('checkout.iyzico.form') ? ' https://iyzipay.com https://*.iyzipay.com' : '';
-
         $unsafeEval = config('app.env') !== 'production' ? " 'unsafe-eval'" : '';
-        $scriptSrc = "'self' 'unsafe-inline'".$unsafeEval.$this->viteDevSources().$this->thirdPartyScriptSources().$iyzico;
-        $styleSrc = "'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com".$this->viteDevSources().$this->thirdPartyStyleSources().$iyzico;
-        $fontSrc = "'self' data: https://fonts.bunny.net https://fonts.gstatic.com https://fonts.googleapis.com".$iyzico;
+        $scriptSrc = "'self' 'unsafe-inline'".$unsafeEval.$this->viteDevSources().$this->thirdPartyScriptSources();
+        $styleSrc = "'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com".$this->viteDevSources().$this->thirdPartyStyleSources();
+        $fontSrc = "'self' data: https://fonts.bunny.net https://fonts.gstatic.com https://fonts.googleapis.com";
 
-        $frameSrc = "'self'".$this->metaFrameSources().$iyzico;
+        $frameSrc = "'self'".$this->metaFrameSources();
 
         $directives = array_filter([
             "default-src 'self'",
@@ -59,7 +54,7 @@ class SecureHeaders
             'style-src-elem '.$styleSrc,
             "img-src 'self' data: https: blob:",
             'font-src '.$fontSrc,
-            "connect-src 'self' ".$this->connectSources().$iyzico,
+            "connect-src 'self' ".$this->connectSources(),
             'frame-src '.$frameSrc,
             "frame-ancestors 'self'",
         ]);

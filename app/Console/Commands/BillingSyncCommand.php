@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class BillingSyncCommand extends Command
 {
-    protected $signature   = 'billing:sync {--gateway= : Only sync a specific gateway (stripe|paypal|paddle|razorpay|cashfree)} {--dry-run : Preview changes without saving}';
+    protected $signature   = 'billing:sync {--gateway= : Only sync a specific gateway (stripe|paypal)} {--dry-run : Preview changes without saving}';
     protected $description = 'Sync active subscriptions with payment gateways to reconcile status.';
 
     public function handle(BillingGatewayRegistry $registry): int

@@ -77,27 +77,6 @@ Schedule::command('billing:expire-trials')
     ->withoutOverlapping()
     ->onOneServer();
 
-// Bill Tap subscriptions due for renewal (Tap has no hosted auto-renew; merchant-initiated)
-Schedule::command('billing:charge-recurring')
-    ->hourly()
-    ->name('billing-charge-recurring-tap')
-    ->withoutOverlapping()
-    ->onOneServer();
-
-// Bill Paymob subscriptions due for renewal (MIT save-card pattern)
-Schedule::command('billing:charge-recurring-paymob')
-    ->hourly()
-    ->name('billing-charge-recurring-paymob')
-    ->withoutOverlapping()
-    ->onOneServer();
-
-// Bill MyFatoorah subscriptions due for renewal (MIT save-token pattern)
-Schedule::command('billing:charge-recurring-myfatoorah')
-    ->hourly()
-    ->name('billing-charge-recurring-myfatoorah')
-    ->withoutOverlapping()
-    ->onOneServer();
-
 // Notify users whose trial ends in 3 days (daily at 09:00)
 Schedule::command('notifications:trial-ending --days=3')
     ->dailyAt('09:00')

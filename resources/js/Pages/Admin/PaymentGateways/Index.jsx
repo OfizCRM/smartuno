@@ -11,22 +11,9 @@ import { useTranslation } from 'react-i18next';
 const GATEWAY_LOGOS = {
     stripe: '/images/gateways/stripe.svg',
     paypal: '/images/gateways/paypal.svg',
-    paddle: '/images/gateways/paddle.svg',
-    razorpay: '/images/gateways/razorpay.svg',
-    xendit: '/images/gateways/xendit.svg',
-    square: '/images/gateways/square.svg',
-    mercadopago: '/images/gateways/mercadopago.svg',
 };
 
-const GATEWAY_FALLBACK_COLORS = {
-    cashfree: '#6930CA',
-    tap: '#0EA5C6',
-    paystack: '#09A5DB',
-    paymob: '#0F4C81',
-    myfatoorah: '#3266AC',
-    mollie: '#111111',
-    iyzico: '#1E64FF',
-};
+const GATEWAY_FALLBACK_COLORS = {};
 
 function GatewayLogo({ gateway, name }) {
     const src = GATEWAY_LOGOS[gateway];
@@ -186,58 +173,11 @@ function EditGatewayModal({ show, gatewayKey, initialData, loading, error, valid
         });
     };
 
-    // Gateway-specific guidance. The stored credential keys are always publishable_key /
-    // secret_key / webhook_secret; these hints explain what each holds per gateway.
-    const GATEWAY_HINTS = {
-        razorpay: {
-            publishable: 'Razorpay Key ID (rzp_test_… / rzp_live_…).',
-            secret: 'Razorpay Key Secret.',
-            webhook: 'Webhook secret set in Razorpay Dashboard → Webhooks. Endpoint: /webhooks/razorpay',
-            note: 'Razorpay uses native Subscriptions (auto-renewing). Map: Publishable Key = Key ID, Secret Key = Key Secret.',
-        },
-        cashfree: {
-            publishable: 'Cashfree App ID (x-client-id).',
-            secret: 'Cashfree Secret Key (x-client-secret). Also used to verify webhook signatures.',
-            webhook: 'Not required — Cashfree webhooks are verified with the Secret Key. Endpoint: /webhooks/cashfree',
-            note: 'Cashfree uses native Subscriptions (auto-renewing) via its JS SDK. Map: Publishable Key = App ID, Secret Key = Secret Key. Leave Webhook Secret blank.',
-        },
-        tap: {
-            publishable: 'Not required for Tap — leave blank.',
-            secret: 'Tap Secret API Key (sk_test_… / sk_live_…). Also verifies the webhook hashstring.',
-            webhook: 'Not required — Tap webhooks are verified with the Secret Key. Endpoint: /webhooks/tap',
-            note: 'Tap has no hosted auto-renew; renewals are merchant-initiated against the saved card by the billing:charge-recurring scheduler. Only the Secret Key is needed.',
-        },
-        mollie: {
-            publishable: 'Not required for Mollie — leave blank.',
-            secret: 'Mollie API Key (test_… / live_…). The prefix selects test or live mode.',
-            webhook: 'Not required — Mollie webhooks are verified by re-fetching the payment from the API. Endpoint: /webhooks/mollie',
-            note: 'Mollie uses native Customers + Subscriptions (auto-renewing). Only the API Key is needed; its test_/live_ prefix decides the environment.',
-        },
-        square: {
-            publishable: 'Square Location ID (from Dashboard → Locations).',
-            secret: 'Square Access Token (sandbox or production).',
-            webhook: 'Square Webhook Signature Key (Dashboard → Webhooks). Endpoint: /webhooks/square',
-            note: 'Square uses native Catalog + Subscriptions billed via emailed invoices (auto-renewing). Map: Publishable Key = Location ID, Secret Key = Access Token. Toggle Test Mode for the sandbox. Refunds are issued from the Square Dashboard.',
-        },
-        iyzico: {
-            publishable: 'iyzico API Key (from Settings → Merchant Settings).',
-            secret: 'iyzico Secret Key. Signs every API call and verifies webhooks.',
-            webhook: 'Your iyzico Merchant ID — not a secret key. It is required to verify the X-IYZ-SIGNATURE-V3 header. Endpoint: /webhooks/iyzico',
-            note: 'iyzico uses native Subscriptions (auto-renewing) and supports TRY, USD and EUR only. Map: Publishable Key = API Key, Secret Key = Secret Key, Webhook Secret = Merchant ID. Toggle Test Mode for the sandbox. Subscription management is billed by iyzico after a 3-month free period. Note: iyzico requires a Turkish phone number and national ID (TCKN) per customer, which this app does not collect — set IYZICO_DEFAULT_GSM and IYZICO_DEFAULT_IDENTITY before going live.',
-        },
-        mercadopago: {
-            publishable: 'Not required for Mercado Pago — leave blank.',
-            secret: 'Mercado Pago Access Token (TEST-… / APP_USR-…).',
-            webhook: 'Optional signing secret from Dashboard → Webhooks (verifies the x-signature header). Endpoint: /webhooks/mercadopago',
-            note: 'Mercado Pago uses native Preapproval subscriptions (auto-renewing). Only the Access Token is required; add the signing secret to verify webhook signatures.',
-        },
-    };
     const isStripe = gatewayKey === 'stripe';
-    const custom = GATEWAY_HINTS[gatewayKey];
-    const publishableHint = custom?.publishable ?? (isStripe ? t('admin.stripe_pk_hint') : t('admin.publishable_key_hint'));
-    const secretHint = custom?.secret ?? (isStripe ? t('admin.stripe_sk_hint') : t('admin.secret_key_hint'));
-    const webhookHint = custom?.webhook ?? (isStripe ? t('admin.stripe_webhook_hint') : t('admin.webhook_hint'));
-    const gatewayNote = custom?.note ?? t('admin.gateway_credentials_note');
+    const publishableHint = isStripe ? t('admin.stripe_pk_hint') : t('admin.publishable_key_hint');
+    const secretHint = isStripe ? t('admin.stripe_sk_hint') : t('admin.secret_key_hint');
+    const webhookHint = isStripe ? t('admin.stripe_webhook_hint') : t('admin.webhook_hint');
+    const gatewayNote = t('admin.gateway_credentials_note');
 
     return (
         <Modal show={show} onClose={onClose} maxWidth="2xl">

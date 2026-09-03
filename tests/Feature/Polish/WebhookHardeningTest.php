@@ -26,10 +26,4 @@ class WebhookHardeningTest extends TestCase
         $this->assertNotEquals(404, $response->getStatusCode());
     }
 
-    public function test_paddle_webhook_endpoint_exists(): void
-    {
-        $response = $this->postJson('/webhooks/paddle', []);
-
-        $this->assertNotEquals(404, $response->getStatusCode());
-    }
 }

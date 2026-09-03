@@ -23,7 +23,7 @@ class SubscriptionPaymentSeeder extends Seeder
             return;
         }
 
-        $gateways = ['stripe', 'paypal', 'paddle'];
+        $gateways = ['stripe', 'paypal'];
         $statuses = ['active', 'trialing', 'canceled', 'past_due'];
 
         foreach ($plans->take(2) as $index => $plan) {
