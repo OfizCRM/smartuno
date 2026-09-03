@@ -14,7 +14,7 @@ function NavGroup({ label, items, onClose }) {
                 onClick={() => setOpen((o) => !o)}
                 aria-expanded={open}
                 aria-controls={`nav-group-${label.replace(/\s+/g, '-').toLowerCase()}`}
-                className="flex w-full items-center justify-between px-3 py-1.5 mt-3 text-[10px] font-bold uppercase tracking-widest text-white/70 hover:text-white transition-colors duration-150 select-none"
+                className="flex w-full items-center justify-between px-3 py-1.5 mt-3 text-[10px] font-bold uppercase tracking-widest text-warm-gray-500 hover:text-warm-gray-700 dark:text-white/60 dark:hover:text-white transition-colors duration-150 select-none"
             >
                 <span>{label}</span>
                 <ChevronDown
@@ -40,24 +40,25 @@ function NavGroup({ label, items, onClose }) {
                                 href={item.href ?? (item.route ? route(item.route) : '#')}
                                 onClick={onClose}
                                 className={[
-                                    'group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
+                                    'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150',
                                     isActive
-                                        ? 'bg-white/15 text-white'
-                                        : 'text-white/80 hover:bg-white/10 hover:text-white',
+                                        ? 'bg-white text-brand-800 shadow-card dark:bg-white/10 dark:text-white dark:shadow-none'
+                                        : 'text-warm-gray-900 hover:bg-white/70 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white',
                                 ].join(' ')}
-                                style={!isActive ? undefined : undefined}
                             >
                                 {item.icon && (
                                     <span className={[
                                         'shrink-0 transition-colors duration-150',
-                                        isActive ? 'text-white' : 'text-white/65 group-hover:text-white',
+                                        isActive
+                                            ? 'text-brand-700 dark:text-white'
+                                            : 'text-warm-gray-500 group-hover:text-brand-700 dark:text-white/65 dark:group-hover:text-white',
                                     ].join(' ')}>
                                         {item.icon}
                                     </span>
                                 )}
                                 <span className="truncate">{item.label}</span>
                                 {isActive && (
-                                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white/70 shrink-0" />
+                                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-500 dark:bg-white/70 shrink-0" />
                                 )}
                             </Link>
                         );
@@ -82,20 +83,20 @@ export default function Sidebar({
     const { appName, logoUrl } = useBranding();
 
     const content = (
-        <aside className="flex h-full w-64 flex-col bg-[rgb(var(--sidebar))] dark:bg-neutral-900">
+        <aside className="flex h-full w-64 flex-col bg-[rgb(var(--sidebar))] dark:bg-neutral-900 border-r border-warm-border dark:border-white/8">
             {/* Brand header */}
-            <div className="flex h-14 shrink-0 items-center gap-2.5 px-4 border-b border-white/8">
+            <div className="flex h-14 shrink-0 items-center gap-2.5 px-4 border-b border-warm-border dark:border-white/8">
                 {logoUrl ? (
                     <img src={logoUrl} alt={appName} className="h-7 max-w-[140px] object-contain" />
                 ) : logo ? (
                     logo
                 ) : (
-                    <span className="text-lg font-semibold text-white truncate max-w-[200px]">{appName}</span>
+                    <span className="text-lg font-semibold text-warm-gray-900 dark:text-white truncate max-w-[200px]">{appName}</span>
                 )}
             </div>
 
             {showCreateButton && (
-                <div className="shrink-0 p-3 pb-2 border-b border-white/8">
+                <div className="shrink-0 p-3 pb-2 border-b border-warm-border dark:border-white/8">
                     <button
                         type="button"
                         className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-[13px] font-semibold text-white bg-brand-500 hover:bg-brand-600 transition duration-150"
@@ -106,7 +107,7 @@ export default function Sidebar({
                 </div>
             )}
 
-            <nav className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+            <nav className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-track-transparent">
                 {navGroups.length > 0 &&
                     navGroups.map((group, gi) => (
                         <NavGroup
@@ -124,7 +125,7 @@ export default function Sidebar({
                 {navGroups.length === 0 &&
                     navItems.map((item, i) => {
                         if (item.type === 'divider') {
-                            return <hr key={`div-${i}`} className="my-2 border-white/10" />;
+                            return <hr key={`div-${i}`} className="my-2 border-warm-border dark:border-white/10" />;
                         }
                         const isActive =
                             typeof item.active === 'function'
@@ -136,14 +137,18 @@ export default function Sidebar({
                                 href={item.href ?? (item.route ? route(item.route) : '#')}
                                 onClick={onClose}
                                 className={[
-                                    'group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
+                                    'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150',
                                     isActive
-                                        ? 'bg-white/15 text-white'
-                                        : 'text-white/80 hover:bg-white/10 hover:text-white',
+                                        ? 'bg-white text-brand-800 shadow-card dark:bg-white/10 dark:text-white dark:shadow-none'
+                                        : 'text-warm-gray-900 hover:bg-white/70 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white',
                                 ].join(' ')}
                             >
                                 {item.icon && (
-                                    <span className={isActive ? 'text-white' : 'text-white/65 group-hover:text-white'}>
+                                    <span className={
+                                        isActive
+                                            ? 'text-brand-700 dark:text-white'
+                                            : 'text-warm-gray-500 group-hover:text-brand-700 dark:text-white/65 dark:group-hover:text-white'
+                                    }>
                                         {item.icon}
                                     </span>
                                 )}
@@ -154,10 +159,8 @@ export default function Sidebar({
             </nav>
 
             {footer && (
-                <div className="shrink-0 border-t border-white/8 p-3">
-                    <div className="text-white/55">
-                        {footer}
-                    </div>
+                <div className="shrink-0 border-t border-warm-border dark:border-white/8 p-3">
+                    {footer}
                 </div>
             )}
         </aside>
@@ -178,7 +181,7 @@ export default function Sidebar({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="absolute top-3 right-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition"
+                            className="absolute top-3 right-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-warm-gray-100 text-warm-gray-700 hover:bg-warm-gray-200 dark:bg-white/10 dark:text-white/70 dark:hover:bg-white/20 transition"
                             aria-label={t('ui.close_menu')}
                         >
                             <X className="h-4 w-4" />

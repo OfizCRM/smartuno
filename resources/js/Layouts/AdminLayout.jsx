@@ -87,7 +87,7 @@ function AdminLayoutFooter() {
         return 'A';
     })();
     return (
-        <div className="border-t border-neutral-200 dark:border-neutral-800 pt-3 space-y-1">
+        <div className="space-y-1">
             {adminUser && (
                 <div className="flex items-center gap-3 px-3 py-2 rounded-soft">
                     <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-xs font-semibold text-primary-700 dark:text-primary-300">
