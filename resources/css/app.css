@@ -44,8 +44,8 @@
     --text-main: 31 35 29;
     --text-muted: 123 131 117;
 
-    /* Sidebar preview: lifted, desaturated forest (not in the palette doc yet). */
-    --sidebar: 58 86 75;
+    /* Light sidebar: Brand 200 — still light, a step darker than 100. */
+    --sidebar: 196 225 209;
 }
 
 /* Smooth theme transition */
