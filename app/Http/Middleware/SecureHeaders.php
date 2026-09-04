@@ -122,6 +122,10 @@ class SecureHeaders
             $sources[] = 'https://graph.facebook.com';
             $sources[] = 'https://www.facebook.com';
             $sources[] = 'https://web.facebook.com';
+            $sources[] = 'https://business.facebook.com';
+            // FB JS SDK fetches /app_config/json/{appId}/ from here during init. Without it the
+            // Embedded Signup dialog config never loads and Meta never posts WA_EMBEDDED_SIGNUP.
+            $sources[] = 'https://connect.facebook.net';
         }
 
         return implode(' ', array_unique($sources));
@@ -134,7 +138,7 @@ class SecureHeaders
             return '';
         }
 
-        return ' https://www.facebook.com https://web.facebook.com https://connect.facebook.net';
+        return ' https://www.facebook.com https://web.facebook.com https://business.facebook.com https://connect.facebook.net';
     }
 
     private function metaSdkEnabled(): bool

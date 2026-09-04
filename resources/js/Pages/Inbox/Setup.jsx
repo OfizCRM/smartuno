@@ -819,13 +819,23 @@ function waitForWabaSessionInfo(timeout = 120000) {
         }, timeout);
 
         function handler(event) {
-            if (event.origin !== 'https://www.facebook.com') return;
+            // Meta posts from www./web./business.facebook.com depending on the account,
+            // so match any facebook.com host rather than a single hardcoded origin.
+            if (!/^https:\/\/([a-z0-9-]+\.)*facebook\.com$/.test(event.origin)) return;
             try {
                 const parsed = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
                 if (parsed?.type === 'WA_EMBEDDED_SIGNUP') {
                     clearTimeout(timer);
                     window.removeEventListener('message', handler);
-                    resolve(parsed.data ?? {});
+                    const data = parsed.data ?? {};
+                    if (data.event === 'CANCEL' || data.event === 'ERROR') {
+                        reject(Object.assign(new Error('Embedded signup was not completed'), {
+                            wasCancelled: true,
+                            step: data.current_step ?? null,
+                        }));
+                        return;
+                    }
+                    resolve(data);
                 }
             } catch (_) {}
         }
@@ -977,7 +987,16 @@ function EmbeddedSignupButton({ configId, appId, channel, label, color, onCode, 
                                 setLoading(false);
                                 onCode(code, info?.waba_id ?? null, info?.phone_number_id ?? null);
                             })
-                            .catch(() => { setLoading(false); onCode(code, null, null); });
+                            .catch((e) => {
+                                setLoading(false);
+                                // A cancelled/aborted flow is not the same failure as a missing
+                                // session_info payload — report it as a cancellation instead.
+                                if (e?.wasCancelled) {
+                                    setError(t('inbox.authorization_cancelled'));
+                                    return;
+                                }
+                                onCode(code, null, null);
+                            });
                     } else {
                         setLoading(false);
                         onCode(code);

@@ -44,4 +44,35 @@ class Automation extends Model
     {
         return $this->status === 'active';
     }
+
+    /**
+     * Canonicalise a node list posted by the builder so storage and runtime agree:
+     * the trigger is always type 'trigger', and each step's type is its real node
+     * type (the builder keeps that in data.nodeType and uses type for React Flow).
+     *
+     * @param  array<int, mixed>  $nodes
+     * @return array<int, mixed>
+     */
+    public static function normalizeNodes(array $nodes): array
+    {
+        return array_values(array_map(function ($node) {
+            if (! is_array($node)) {
+                return $node;
+            }
+
+            $data = is_array($node['data'] ?? null) ? $node['data'] : [];
+
+            if (in_array($node['type'] ?? '', ['trigger', 'triggerNode'], true) || array_key_exists('triggerType', $data)) {
+                $node['type'] = 'trigger';
+
+                return $node;
+            }
+
+            if (is_string($data['nodeType'] ?? null) && $data['nodeType'] !== '') {
+                $node['type'] = $data['nodeType'];
+            }
+
+            return $node;
+        }, $nodes));
+    }
 }

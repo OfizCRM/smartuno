@@ -2,7 +2,7 @@ import { Head, useForm, router, usePage, Link } from '@inertiajs/react';
 import ClientLayout from '@/Layouts/ClientLayout';
 import EmptyState from '@/Components/EmptyState';
 import { Search, MapPin, UserPlus, Trash2, Star, KanbanSquare } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ScoreBadge from './Partials/ScoreBadge';
 
@@ -28,6 +28,18 @@ export default function LeadsIndex({ leads, scrapeJobs }) {
     const flash = props.flash ?? {};
     const [selected, setSelected] = useState([]);
     const [showScraper, setShowScraper] = useState(false);
+
+    // A search runs on the queue. Poll while one is queued/running so the row
+    // flips to done/failed (and the leads table fills) without a manual refresh.
+    const hasActiveJob = scrapeJobs.some(j => j.status === 'pending' || j.status === 'running');
+    useEffect(() => {
+        if (!hasActiveJob) return undefined;
+        const id = setInterval(() => router.reload({ only: ['scrapeJobs', 'leads'], preserveScroll: true }), 5000);
+        return () => clearInterval(id);
+    }, [hasActiveJob]);
+
+    // Queued for more than two minutes almost always means no worker is consuming the `leads` queue.
+    const isStuckInQueue = (job) => job.status === 'pending' && job.created_at && (Date.now() - new Date(job.created_at).getTime()) > 2 * 60 * 1000;
 
     const { data, setData, post, processing, reset } = useForm({
         keyword: '',
@@ -85,10 +97,18 @@ export default function LeadsIndex({ leads, scrapeJobs }) {
                         <p className="text-xs font-semibold text-neutral-500 uppercase mb-2">{t('leads.recent_searches')}</p>
                         <div className="space-y-1.5">
                             {scrapeJobs.map(job => (
-                                <div key={job.id} className="flex items-center gap-3 text-sm">
-                                    <span className="font-medium text-neutral-800 dark:text-neutral-200">{t('leads.keyword_in_location', { keyword: job.keyword, location: job.location })}</span>
-                                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${JOB_STATUS[job.status] ?? ''}`}>{t(`leads.job_status_${job.status}`, job.status)}</span>
-                                    {job.leads_found > 0 && <span className="text-neutral-400 text-xs">{t('leads.found_count', { count: job.leads_found })}</span>}
+                                <div key={job.id} className="text-sm">
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-medium text-neutral-800 dark:text-neutral-200">{t('leads.keyword_in_location', { keyword: job.keyword, location: job.location })}</span>
+                                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${JOB_STATUS[job.status] ?? ''}`}>{t(`leads.job_status_${job.status}`, job.status)}</span>
+                                        {job.leads_found > 0 && <span className="text-neutral-400 text-xs">{t('leads.found_count', { count: job.leads_found })}</span>}
+                                    </div>
+                                    {job.status === 'failed' && job.error && (
+                                        <p className="mt-0.5 text-xs text-red-600 dark:text-red-400 break-words">{job.error}</p>
+                                    )}
+                                    {isStuckInQueue(job) && (
+                                        <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">{t('leads.job_pending_hint', 'Still queued. Make sure a queue worker is running for the "leads" queue.')}</p>
+                                    )}
                                 </div>
                             ))}
                         </div>
