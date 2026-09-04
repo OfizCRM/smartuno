@@ -10,10 +10,10 @@ namespace App\Support;
  * `rgb(var(--brand-500) / <alpha-value>)` — the bare-channel form is what keeps
  * opacity modifiers (`bg-brand-500/20`) working.
  *
- * The picked colour is pinned to the 500 stop (primary buttons). The documented
- * SmartUno emerald (#237A57) uses the hand-tuned ramp from the brand spec rather
- * than a generated approximation. Surfaces are not derived from the brand hue —
- * they stay on the warm canvas tokens in app.css.
+ * The picked colour is pinned to the 500 stop (primary buttons). Anchors we ship
+ * with (see HAND_TUNED) use a hand-tuned ramp rather than a generated
+ * approximation. Surfaces are not derived from the brand hue — they stay on the
+ * warm canvas tokens in app.css.
  */
 class BrandPalette
 {
@@ -35,19 +35,48 @@ class BrandPalette
         '950' => -0.805,
     ];
 
-    /** Hand-tuned SmartUno emerald ramp (document branding/paleta_culori_aplicatie.txt). */
-    private const SMARTUNO_RAMP = [
-        '50' => '242 247 244',
-        '100' => '225 239 231',
-        '200' => '196 225 209',
-        '300' => '154 203 177',
-        '400' => '82 168 126',
-        '500' => '35 122 87',
-        '600' => '27 99 70',
-        '700' => '22 78 55',
-        '800' => '17 59 42',
-        '900' => '11 38 27',
-        '950' => '7 24 16',
+    /**
+     * Hand-tuned ramps, keyed by lowercase hex.
+     *
+     * The generated curve preserves saturation as it raises lightness, which is
+     * fine for a muted anchor but turns a saturated one neon at the light end:
+     * #047857 generates brand-300 = #5dfacd, which the brand guide rules out
+     * ("fara culori neon"). Anchors we ship with are therefore tuned by hand and
+     * kept in sync with the :root defaults in resources/css/app.css.
+     *
+     * @var array<string, array<string, string>>
+     */
+    private const HAND_TUNED = [
+        // "Velvet Sage" — the current brand. 500 is #047857; 300 is #7ce3b1, the
+        // mint used for the selected nav icon.
+        '#047857' => [
+            '50' => '240 250 246',
+            '100' => '219 243 233',
+            '200' => '179 230 208',
+            '300' => '124 227 177',
+            '400' => '52 168 122',
+            '500' => '4 120 87',
+            '600' => '3 96 70',
+            '700' => '3 77 56',
+            '800' => '2 58 42',
+            '900' => '1 37 27',
+            '950' => '1 23 17',
+        ],
+        // Previous brand. Retained so an install that already stored this colour
+        // keeps its tuned ramp instead of falling back to a generated one.
+        '#237a57' => [
+            '50' => '242 247 244',
+            '100' => '225 239 231',
+            '200' => '196 225 209',
+            '300' => '154 203 177',
+            '400' => '82 168 126',
+            '500' => '35 122 87',
+            '600' => '27 99 70',
+            '700' => '22 78 55',
+            '800' => '17 59 42',
+            '900' => '11 38 27',
+            '950' => '7 24 16',
+        ],
     ];
 
     /**
@@ -58,8 +87,8 @@ class BrandPalette
      */
     public static function ramp(string $hex, array $curve = self::CURVE): array
     {
-        if (strtolower($hex) === '#237a57' && $curve === self::CURVE) {
-            return self::SMARTUNO_RAMP;
+        if ($curve === self::CURVE && isset(self::HAND_TUNED[strtolower($hex)])) {
+            return self::HAND_TUNED[strtolower($hex)];
         }
 
         [$h, $s, $l] = self::hexToHsl($hex);

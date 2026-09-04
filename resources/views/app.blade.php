@@ -74,19 +74,14 @@
             // Reject anything not on the whitelist — the slug is interpolated into a
             // stylesheet URL below, and the family name into a CSS declaration.
             $brandFont  = $branding['font_family'] ?? null;
-            $fontSlug   = ($brandFont && array_key_exists($brandFont, $fonts)) ? $brandFont : config('saas.branding.font_family', 'plus-jakarta-sans');
-            $fontFamily = $fonts[$fontSlug] ?? 'Space Grotesk';
+            $fontSlug   = ($brandFont && array_key_exists($brandFont, $fonts)) ? $brandFont : config('saas.branding.font_family', 'inter');
+            $fontFamily = $fonts[$fontSlug] ?? 'Inter';
         @endphp
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family={{ urlencode($fontSlug) }}:400,500,600,700&display=swap" rel="stylesheet" />
-        {{-- Anek Bangla for Bengali script. The Bengali glyph files are lazy-loaded
-             by unicode-range, so they're only fetched when bn text actually renders
-             (i.e. html[lang="bn"]); keeping the link unconditional means a client-side
-             locale switch picks it up without a full page reload. --}}
-        <link href="https://fonts.bunny.net/css?family=anek-bangla:400,500,600,700&display=swap" rel="stylesheet" />
-
+        
         @if(config('services.onesignal.app_id'))
         <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
         <script>
@@ -229,10 +224,10 @@
              Must stay AFTER @vite: this and app.css both declare these custom
              properties on :root at equal specificity, so whichever comes last wins.
              Emitted above the stylesheet, it silently loses and nothing retints. --}}
-        @if($brandPrimary || $brandSecondary || $fontSlug !== 'plus-jakarta-sans')
+        @if($brandPrimary || $brandSecondary || $fontSlug !== 'inter')
         <style>
             :root {
-                @if($fontSlug !== 'plus-jakarta-sans') --font-sans: '{{ $fontFamily }}'; @endif
+                @if($fontSlug !== 'inter') --font-sans: '{{ $fontFamily }}'; @endif
                 @if($brandPrimary) {!! \App\Support\BrandPalette::cssVars('brand', $brandPrimary) !!} @endif
                 @if($brandSecondary) {!! \App\Support\BrandPalette::cssVars('secondary', $brandSecondary) !!} @endif
             }

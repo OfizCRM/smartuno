@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { ResponsiveContainer, LineChart, Line } from 'recharts';
+import { useChartColors, CHART_INK } from './palette';
 
 export default function KpiCard({ label, value, unit = '', delta, sparkline = [], sparkKey = 'v', trend = 'up' }) {
     const deltaPositive = delta >= 0;
@@ -8,9 +9,10 @@ export default function KpiCard({ label, value, unit = '', delta, sparkline = []
 
     const color = delta === undefined || delta === null
         ? 'text-gray-500 dark:text-gray-400'
-        : isGood ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
+        : isGood ? 'text-brand-600 dark:text-brand-400' : 'text-coral-600 dark:text-coral-400';
 
-    const sparkColor = delta === undefined || delta === null ? '#6b7280' : isGood ? '#10b981' : '#ef4444';
+    const chartColors = useChartColors();
+    const sparkColor = delta === undefined || delta === null ? CHART_INK.tick : isGood ? chartColors[0] : '#f04e2e';
 
     const formatted = useMemo(() => {
         if (value === null || value === undefined) return '—';

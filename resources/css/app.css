@@ -13,39 +13,58 @@
    because Tailwind composes them as `rgb(var(--brand-500) / <alpha-value>)` to
    keep opacity modifiers working. */
 :root {
-    --font-sans: 'Plus Jakarta Sans';
+    --font-sans: 'Inter';
 
-    --brand-50: 242 247 244;
-    --brand-100: 225 239 231;
-    --brand-200: 196 225 209;
-    --brand-300: 154 203 177;
-    --brand-400: 82 168 126;
-    --brand-500: 35 122 87;
-    --brand-600: 27 99 70;
-    --brand-700: 22 78 55;
-    --brand-800: 17 59 42;
-    --brand-900: 11 38 27;
-    --brand-950: 7 24 16;
+    /* Brand — "Velvet Sage" emerald, anchored on #047857 (500) and #7ce3b1 (300).
+       Hand-tuned rather than generated: BrandPalette's HSL curve preserves
+       saturation as it raises lightness, so a generated ramp from #047857 gives
+       brand-300 = #5dfacd — a neon mint the brand guide explicitly rules out
+       ("fara culori neon"). The matching hand-tuned ramp lives in
+       App\Support\BrandPalette so an admin picking #047857 gets these values too. */
+    --brand-50: 240 250 246;
+    --brand-100: 219 243 233;
+    --brand-200: 179 230 208;
+    --brand-300: 124 227 177;
+    --brand-400: 52 168 122;
+    --brand-500: 4 120 87;
+    --brand-600: 3 96 70;
+    --brand-700: 3 77 56;
+    --brand-800: 2 58 42;
+    --brand-900: 1 37 27;
+    --brand-950: 1 23 17;
 
-    --secondary-50: 242 247 244;
-    --secondary-100: 225 239 231;
-    --secondary-200: 196 225 209;
-    --secondary-300: 154 203 177;
-    --secondary-400: 82 168 126;
-    --secondary-500: 35 122 87;
-    --secondary-600: 27 99 70;
-    --secondary-700: 22 78 55;
-    --secondary-800: 17 59 42;
-    --secondary-900: 11 38 27;
-    --secondary-950: 7 24 16;
+    /* Secondary — sage, generated from #2d5a44 (the selected-nav ground). */
+    --secondary-50: 240 248 244;
+    --secondary-100: 223 239 231;
+    --secondary-200: 192 223 208;
+    --secondary-300: 147 201 174;
+    --secondary-400: 78 156 118;
+    --secondary-500: 45 90 68;
+    --secondary-600: 36 72 55;
+    --secondary-700: 29 57 43;
+    --secondary-800: 22 44 33;
+    --secondary-900: 14 28 21;
+    --secondary-950: 9 18 13;
 
     --surface: 250 249 245;
     --surface-subtle: 241 243 238;
     --text-main: 31 35 29;
     --text-muted: 123 131 117;
+    /* Neutral grey for subtitles and profile detail (#6b7280) — distinct from
+       --text-muted, which is the warm green-tinted body muted tone. */
+    --ink-muted: 107 114 128;
 
-    /* Light sidebar: Brand 200 — still light, a step darker than 100. */
-    --sidebar: 196 225 209;
+    /* Sidebar — tokens rather than literals in Sidebar.jsx, so the admin colour
+       pickers can retint the nav the way they retint everything else. Values are
+       the .theme-velvet-sage block of the approved design, not approximations. */
+    --sidebar: 235 243 239;
+    --sidebar-border: 213 229 220;
+    --sidebar-heading: 89 126 107;
+    --sidebar-item: 44 66 56;
+    --sidebar-hover: 219 235 226;
+    --sidebar-active: 45 90 68;
+    --sidebar-active-fg: 255 255 255;
+    --sidebar-active-icon: 124 227 177;
 }
 
 /* Smooth theme transition */
@@ -56,17 +75,6 @@ html.dark {
     color-scheme: dark;
 }
 
-/* When the Bangla locale is active, render the whole UI in Anek Bangla.
-   Space Grotesk has no Bengali glyphs, so without this Bangla text falls back
-   to an arbitrary system font. lang="bn" is set on <html> by both the Blade
-   layout (initial load) and applyLocaleToDocument() (client-side switch).
-   The .font-sans override is needed because Tailwind's utility sets
-   font-family directly on elements (e.g. <body>), which would otherwise win
-   over inheritance from <html>. */
-html[lang="bn"],
-html[lang="bn"] .font-sans {
-    font-family: 'Anek Bangla', var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
-}
 body {
     @apply bg-surface dark:bg-neutral-900 text-warm-gray-900 dark:text-neutral-100;
 }

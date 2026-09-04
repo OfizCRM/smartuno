@@ -18,8 +18,8 @@ export default {
                 // the admin's font setting (see app.blade.php).
                 sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
             },
-            // SmartUno palette — brand (warm emerald #237A57), warm canvas
-            // (#FAF9F5), secondary (dark forest #113B2A). Source of truth:
+            // SmartUno palette — brand ("Velvet Sage" emerald #047857), warm canvas
+            // (#FAF9F5), secondary (sage #2D5A44). Source of truth:
             // document branding/paleta_culori_aplicatie.txt
             //
             // brand/secondary/surface resolve through CSS custom properties so the
@@ -44,6 +44,23 @@ export default {
                 surface: {
                     DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
                     subtle: 'rgb(var(--surface-subtle) / <alpha-value>)',
+                },
+                // Sidebar nav tones. Resolved through custom properties like
+                // brand/secondary so the admin colour pickers retint the nav too,
+                // rather than these living as literals inside Sidebar.jsx.
+                sidebar: {
+                    DEFAULT: 'rgb(var(--sidebar) / <alpha-value>)',
+                    border: 'rgb(var(--sidebar-border) / <alpha-value>)',
+                    heading: 'rgb(var(--sidebar-heading) / <alpha-value>)',
+                    hover: 'rgb(var(--sidebar-hover) / <alpha-value>)',
+                    item: 'rgb(var(--sidebar-item) / <alpha-value>)',
+                    active: 'rgb(var(--sidebar-active) / <alpha-value>)',
+                    'active-fg': 'rgb(var(--sidebar-active-fg) / <alpha-value>)',
+                    'active-icon': 'rgb(var(--sidebar-active-icon) / <alpha-value>)',
+                },
+                // Neutral grey for subtitles and profile detail (#6b7280).
+                ink: {
+                    muted: 'rgb(var(--ink-muted) / <alpha-value>)',
                 },
                 secondary: {
                     50: 'rgb(var(--secondary-50) / <alpha-value>)',
