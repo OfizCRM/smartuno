@@ -3980,6 +3980,7 @@
         "job_status_running": "în rulare",
         "job_status_done": "gata",
         "job_status_failed": "eșuat",
+        "job_pending_hint": "Încă în așteptare. Verifică dacă rulează un worker pentru coada „leads”.",
         "found_count": "{{count}} găsite",
         "selected_count": "{{count}} selectate",
         "push_to_contacts": "Trimite în contacte",

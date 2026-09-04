@@ -81,6 +81,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewAdmin', fn ($user) => $user?->isAdmin());
         Gate::define('manageAdminSensitive', fn ($user) => $user?->isAdmin());
 
+        // Listener auto-discovery is disabled in bootstrap/app.php, so this block is
+        // the only place listeners are registered. Each one must appear exactly once;
+        // tests/Feature/Automation/AutomationProductionReadinessTest guards that.
         Event::listen(Login::class, LogSuccessfulLogin::class);
         Event::listen(Registered::class, SendWelcomeNotification::class);
 

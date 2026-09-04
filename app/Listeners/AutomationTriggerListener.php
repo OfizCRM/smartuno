@@ -13,6 +13,7 @@ use App\Modules\Automation\Jobs\ExecuteAutomationRunJob;
 use App\Modules\Automation\Models\Automation;
 use App\Modules\Automation\Models\AutomationRun;
 use App\Modules\Automation\Services\AutomationEngine;
+use Illuminate\Support\Facades\Cache;
 
 class AutomationTriggerListener
 {
@@ -20,22 +21,37 @@ class AutomationTriggerListener
 
     public function handleMessageReceived(MessageReceived $event): void
     {
-        $contactId = $event->message->conversation?->contact_id;
-        $workspaceId = $event->message->conversation?->workspace_id;
+        $message = $event->message;
+
+        // Only a contact's own message can drive a flow; never an outbound echo.
+        if (($message->direction ?? 'in') !== 'in') {
+            return;
+        }
+
+        $contactId = $message->conversation?->contact_id;
+        $workspaceId = $message->conversation?->workspace_id;
         if (! $contactId || ! $workspaceId) {
             return;
         }
 
-        $messageBody = $event->message->body ?? '';
+        // Evaluate each inbound message exactly once, however many times the event
+        // reaches us (a retried webhook, parallel workers, a double registration).
+        if ($message->id && ! Cache::add("automation_trigger_lock:{$message->id}", 1, 60)) {
+            return;
+        }
 
-        // Resume any runs parked on an "Ask question" node awaiting this contact's reply.
-        $this->engine->resumeAwaitingReplies($workspaceId, $contactId, $messageBody);
+        $messageBody = $message->body ?? '';
+
+        // A reply to an "Ask question" node resumes the parked run. That same message
+        // must not also restart the automation from its trigger, otherwise every
+        // answer re-asks the question and runs pile up in "waiting".
+        $resumed = $this->engine->resumeAwaitingReplies($workspaceId, $contactId, $messageBody);
 
         $this->fireWithConfig('message.received', $workspaceId, $contactId, [
-            'message_id' => $event->message->id,
-            'message_channel' => $event->message->channel,
+            'message_id' => $message->id,
+            'message_channel' => $message->channel,
             'message_body' => $messageBody,
-        ], $messageBody);
+        ], $messageBody, $resumed);
     }
 
     public function handleContactCreated(ContactCreated $event): void
@@ -131,11 +147,12 @@ class AutomationTriggerListener
      * Like fire(), but respects trigger_config.keywords for message.received automations.
      * If keywords are set, the message body must contain at least one keyword (case-insensitive).
      */
-    private function fireWithConfig(string $triggerType, int $workspaceId, int $contactId, array $context, string $messageBody = ''): void
+    private function fireWithConfig(string $triggerType, int $workspaceId, int $contactId, array $context, string $messageBody = '', array $excludeAutomationIds = []): void
     {
         $automations = Automation::where('workspace_id', $workspaceId)
             ->where('status', 'active')
             ->where('trigger_type', $triggerType)
+            ->when($excludeAutomationIds !== [], fn ($q) => $q->whereNotIn('id', $excludeAutomationIds))
             ->get();
 
         $bodyLower = mb_strtolower($messageBody);

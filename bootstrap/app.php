@@ -104,6 +104,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/admin.php'));
         }
     )
+    // Every listener is registered explicitly in AppServiceProvider. Laravel's
+    // auto-discovery of app/Listeners registered each of them a second time, so
+    // one inbound message produced duplicate automation runs, outbound webhooks
+    // and notifications. Keep discovery off; add new listeners to the provider.
+    ->withEvents(discover: false)
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
             // Runs before the DB-querying middleware below so a fresh deploy is
