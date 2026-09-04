@@ -36,7 +36,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn () => redirect()->route('admin.dashboard'));
 Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
-// Global admin search (Cmd+K)
+// Global admin search
 Route::get('/search', [AdminSearchController::class, 'search'])->name('search');
 
 // Client Management (clients table: organizations with multiple users)
