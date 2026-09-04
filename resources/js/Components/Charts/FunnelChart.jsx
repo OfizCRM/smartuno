@@ -5,11 +5,11 @@ import {
     LabelList,
     Tooltip,
 } from 'recharts';
+import { CHART_RAMP_BRAND, CHART_INK } from './palette';
 
-const COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe'];
 
 export default function FunnelChart({ data = [], nameKey = 'name', valueKey = 'value', height = 300 }) {
-    const colored = data.map((d, i) => ({ ...d, fill: COLORS[i % COLORS.length] }));
+    const colored = data.map((d, i) => ({ ...d, fill: CHART_RAMP_BRAND[i % CHART_RAMP_BRAND.length] }));
 
     return (
         <ResponsiveContainer width="100%" height={height}>
@@ -17,7 +17,7 @@ export default function FunnelChart({ data = [], nameKey = 'name', valueKey = 'v
                 <Tooltip
                     contentStyle={{
                         background: 'var(--tooltip-bg, #fff)',
-                        border: '1px solid #e5e7eb',
+                        border: `1px solid ${CHART_INK.grid}`,
                         borderRadius: 8,
                         fontSize: 12,
                     }}

@@ -6,8 +6,8 @@ import {
     Tooltip,
     Legend,
 } from 'recharts';
+import { useChartColors, CHART_INK } from './palette';
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
     if (percent < 0.04) return null;
@@ -23,6 +23,7 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
 };
 
 export default function DonutChart({ data = [], nameKey = 'name', valueKey = 'value', height = 260, innerRadius = 60, outerRadius = 100 }) {
+    const COLORS = useChartColors();
     return (
         <ResponsiveContainer width="100%" height={height}>
             <PieChart>
@@ -44,7 +45,7 @@ export default function DonutChart({ data = [], nameKey = 'name', valueKey = 'va
                 <Tooltip
                     contentStyle={{
                         background: 'var(--tooltip-bg, #fff)',
-                        border: '1px solid #e5e7eb',
+                        border: `1px solid ${CHART_INK.grid}`,
                         borderRadius: 8,
                         fontSize: 12,
                     }}

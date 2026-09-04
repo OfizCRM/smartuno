@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ResponsiveContainer, LineChart, Line } from 'recharts';
+import { useChartColors, CHART_INK } from '@/Components/Charts/palette';
 import { ArrowUpRight } from 'lucide-react';
 
 function formatValue(v) {
@@ -36,9 +37,10 @@ export default function StatTile({
     const deltaColor = !hasDelta
         ? 'text-neutral-400'
         : good
-            ? 'text-emerald-600 dark:text-emerald-400'
+            ? 'text-brand-600 dark:text-brand-400'
             : 'text-red-600 dark:text-red-400';
-    const sparkColor = !hasDelta ? '#9ca3af' : good ? '#10b981' : '#ef4444';
+    const chartColors = useChartColors();
+    const sparkColor = !hasDelta ? CHART_INK.tick : good ? chartColors[0] : '#f04e2e';
 
     const body = (
         <div className="relative flex h-full flex-col justify-between rounded-2xl border border-warm-border bg-white p-4 shadow-card transition hover:border-warm-gray-300 dark:border-neutral-700/50 dark:bg-neutral-800/70 dark:hover:border-neutral-600">

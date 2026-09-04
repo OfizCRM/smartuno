@@ -14,7 +14,7 @@ function NavGroup({ label, items, onClose }) {
                 onClick={() => setOpen((o) => !o)}
                 aria-expanded={open}
                 aria-controls={`nav-group-${label.replace(/\s+/g, '-').toLowerCase()}`}
-                className="flex w-full items-center justify-between px-3 py-1.5 mt-3 text-[10px] font-bold uppercase tracking-widest text-warm-gray-500 hover:text-warm-gray-700 dark:text-white/60 dark:hover:text-white transition-colors duration-150 select-none"
+                className="flex w-full items-center justify-between px-3 py-1.5 mt-3 text-[10px] font-bold uppercase tracking-widest text-sidebar-heading hover:text-sidebar-item dark:text-white/60 dark:hover:text-white transition-colors duration-150 select-none"
             >
                 <span>{label}</span>
                 <ChevronDown
@@ -42,23 +42,23 @@ function NavGroup({ label, items, onClose }) {
                                 className={[
                                     'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150',
                                     isActive
-                                        ? 'bg-white text-brand-800 shadow-card dark:bg-white/10 dark:text-white dark:shadow-none'
-                                        : 'text-warm-gray-900 hover:bg-white/70 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white',
+                                        ? 'bg-sidebar-active text-sidebar-active-fg shadow-card dark:bg-white/10 dark:text-white dark:shadow-none'
+                                        : 'text-sidebar-item hover:bg-sidebar-hover dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white',
                                 ].join(' ')}
                             >
                                 {item.icon && (
                                     <span className={[
                                         'shrink-0 transition-colors duration-150',
                                         isActive
-                                            ? 'text-brand-700 dark:text-white'
-                                            : 'text-warm-gray-500 group-hover:text-brand-700 dark:text-white/65 dark:group-hover:text-white',
+                                            ? 'text-sidebar-active-icon dark:text-white'
+                                            : 'text-sidebar-heading group-hover:text-sidebar-active dark:text-white/65 dark:group-hover:text-white',
                                     ].join(' ')}>
                                         {item.icon}
                                     </span>
                                 )}
                                 <span className="truncate">{item.label}</span>
                                 {isActive && (
-                                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-500 dark:bg-white/70 shrink-0" />
+                                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-active-icon dark:bg-white/70 shrink-0" />
                                 )}
                             </Link>
                         );
@@ -83,7 +83,7 @@ export default function Sidebar({
     const { appName, logoUrl } = useBranding();
 
     const content = (
-        <aside className="flex h-full w-64 flex-col bg-[rgb(var(--sidebar))] dark:bg-neutral-900 border-r border-warm-border dark:border-white/8">
+        <aside className="flex h-full w-64 flex-col bg-sidebar dark:bg-neutral-900 border-r border-sidebar-border dark:border-white/8">
             {/* Brand header */}
             <div className="flex h-14 shrink-0 items-center gap-2.5 px-4 border-b border-warm-border dark:border-white/8">
                 {logoUrl ? (
@@ -91,7 +91,7 @@ export default function Sidebar({
                 ) : logo ? (
                     logo
                 ) : (
-                    <span className="text-lg font-semibold text-warm-gray-900 dark:text-white truncate max-w-[200px]">{appName}</span>
+                    <span className="text-lg font-semibold text-sidebar-item dark:text-white truncate max-w-[200px]">{appName}</span>
                 )}
             </div>
 
@@ -139,15 +139,15 @@ export default function Sidebar({
                                 className={[
                                     'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150',
                                     isActive
-                                        ? 'bg-white text-brand-800 shadow-card dark:bg-white/10 dark:text-white dark:shadow-none'
-                                        : 'text-warm-gray-900 hover:bg-white/70 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white',
+                                        ? 'bg-sidebar-active text-sidebar-active-fg shadow-card dark:bg-white/10 dark:text-white dark:shadow-none'
+                                        : 'text-sidebar-item hover:bg-sidebar-hover dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white',
                                 ].join(' ')}
                             >
                                 {item.icon && (
                                     <span className={
                                         isActive
-                                            ? 'text-brand-700 dark:text-white'
-                                            : 'text-warm-gray-500 group-hover:text-brand-700 dark:text-white/65 dark:group-hover:text-white'
+                                            ? 'text-sidebar-active-icon dark:text-white'
+                                            : 'text-sidebar-heading group-hover:text-sidebar-active dark:text-white/65 dark:group-hover:text-white'
                                     }>
                                         {item.icon}
                                     </span>

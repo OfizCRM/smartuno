@@ -45,7 +45,7 @@ return [
         // Key must match the family slug used by fonts.bunny.net; the value is the
         // CSS family name. Anything not in this list is rejected on save, so a
         // stored value can be interpolated into the stylesheet URL as-is.
-        'font_family' => env('SAAS_FONT_FAMILY', 'plus-jakarta-sans'),
+        'font_family' => env('SAAS_FONT_FAMILY', 'inter'),
         'fonts' => [
             'space-grotesk' => 'Space Grotesk',
             'inter' => 'Inter',
