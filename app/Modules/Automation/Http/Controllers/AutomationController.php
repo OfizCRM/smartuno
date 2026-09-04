@@ -112,6 +112,11 @@ class AutomationController extends Controller
             'nodes' => ['nullable', 'array'],
             'edges' => ['nullable', 'array'],
         ]);
+
+        if (is_array($validated['nodes'] ?? null)) {
+            $validated['nodes'] = Automation::normalizeNodes($validated['nodes']);
+        }
+
         $automation->update($validated);
 
         return back()->with('success', 'Automation saved.');

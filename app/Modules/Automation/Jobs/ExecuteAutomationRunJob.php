@@ -21,14 +21,19 @@ class ExecuteAutomationRunJob implements ShouldQueue
     public function handle(AutomationEngine $engine): void
     {
         $run = AutomationRun::with('automation')->find($this->runId);
-        if (! $run || in_array($run->status, ['cancelled', 'failed'], true)) {
+        // A finished run must never execute again — e.g. a delayed wake-up job for a
+        // run that was completed or cancelled while it sat in the queue.
+        if (! $run || in_array($run->status, ['cancelled', 'failed', 'completed'], true)) {
             return;
         }
 
         try {
             $engine->executeRun($run);
         } catch (\Throwable $e) {
-            $run->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
+            // The column is `error` (shown on the Runs page). Writing to a
+            // non-existent `error_message` key was silently dropped, which left
+            // every crashed run as "failed" with no reason.
+            $run->update(['status' => 'failed', 'error' => $e->getMessage(), 'completed_at' => now()]);
             AutomationFailed::dispatch($run, $e->getMessage());
             throw $e;
         }

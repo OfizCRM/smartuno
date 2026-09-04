@@ -3948,6 +3948,7 @@
         "job_status_running": "running",
         "job_status_done": "done",
         "job_status_failed": "failed",
+        "job_pending_hint": "Still queued. Make sure a queue worker is running for the \"leads\" queue.",
         "found_count": "{{count}} found",
         "selected_count": "{{count}} selected",
         "push_to_contacts": "Push to Contacts",

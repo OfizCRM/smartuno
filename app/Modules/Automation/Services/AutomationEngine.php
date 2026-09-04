@@ -25,6 +25,7 @@ use App\Modules\Shared\Models\Conversation;
 use App\Modules\Shared\Models\Message;
 use App\Modules\Shared\Services\ChannelManager;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -56,21 +57,58 @@ class AutomationEngine
         private readonly LlmGateway $llmGateway,
     ) {}
 
-    public function triggerForContact(Automation $automation, int $contactId, array $context = []): void
+    /** Run statuses that mean "this contact is currently inside the flow". */
+    public const ACTIVE_STATUSES = ['pending', 'running', 'waiting'];
+
+    /**
+     * Start a run for a contact.
+     *
+     * Returns null (and starts nothing) when the automation is not active or when
+     * the contact already has a run in flight for it. One contact, one automation,
+     * one run at a time: three quick messages must not deliver three copies of the
+     * same flow, and a reply to an "Ask question" node resumes the parked run
+     * instead of starting the flow over from the trigger.
+     */
+    public function triggerForContact(Automation $automation, int $contactId, array $context = []): ?AutomationRun
     {
         if (! $automation->isActive()) {
-            return;
+            return null;
         }
 
-        $run = AutomationRun::create([
-            'automation_id' => $automation->id,
-            'contact_id' => $contactId,
-            'status' => 'pending',
-            'context' => $context,
-            'started_at' => now(),
-        ]);
+        // Atomic per contact+automation so two webhooks arriving together (parallel
+        // workers, a retried delivery) cannot both pass the active-run check.
+        $lock = Cache::lock("automation_trigger:{$automation->id}:{$contactId}", 10);
+        if (! $lock->get()) {
+            return null;
+        }
+
+        try {
+            if ($this->hasActiveRun($automation->id, $contactId)) {
+                return null;
+            }
+
+            $run = AutomationRun::create([
+                'automation_id' => $automation->id,
+                'contact_id' => $contactId,
+                'status' => 'pending',
+                'context' => $context,
+                'started_at' => now(),
+            ]);
+        } finally {
+            $lock->release();
+        }
 
         dispatch(new ExecuteAutomationRunJob($run->id))->onQueue('automation');
+
+        return $run;
+    }
+
+    public function hasActiveRun(int $automationId, int $contactId): bool
+    {
+        return AutomationRun::where('automation_id', $automationId)
+            ->where('contact_id', $contactId)
+            ->whereIn('status', self::ACTIVE_STATUSES)
+            ->exists();
     }
 
     /**
@@ -78,12 +116,17 @@ class AutomationEngine
      * contact's next inbound message. The reply body is stored in the configured
      * context variable and the run continues from the node after the question.
      */
-    public function resumeAwaitingReplies(int $workspaceId, int $contactId, string $messageBody): void
+    /**
+     * @return int[] ids of the automations whose run was resumed by this message
+     */
+    public function resumeAwaitingReplies(int $workspaceId, int $contactId, string $messageBody): array
     {
         $runs = AutomationRun::where('contact_id', $contactId)
             ->where('status', 'waiting')
             ->whereHas('automation', fn ($q) => $q->where('workspace_id', $workspaceId))
             ->get();
+
+        $resumed = [];
 
         foreach ($runs as $run) {
             $context = $run->context ?? [];
@@ -94,16 +137,58 @@ class AutomationEngine
             $var = $context['_reply_var'] ?? 'answer';
             $context[$var] = $messageBody;
             unset($context['_awaiting_reply'], $context['_reply_var']);
-            $run->update(['context' => $context]);
 
+            // Atomic claim: only the first message flips the run out of 'waiting'.
+            // A second delivery racing us sees zero affected rows and must not
+            // queue a second execution of the same run.
+            $claimed = AutomationRun::whereKey($run->id)
+                ->where('status', 'waiting')
+                ->update(['status' => 'pending', 'context' => json_encode($context)]);
+
+            if ($claimed === 0) {
+                continue;
+            }
+
+            $resumed[] = (int) $run->automation_id;
             dispatch(new ExecuteAutomationRunJob($run->id))->onQueue('automation');
         }
+
+        return $resumed;
+    }
+
+    /**
+     * The builder saves the trigger as type 'triggerNode' (with data.triggerType);
+     * backend seeds, tests and the AI generator use type 'trigger'. Accept every shape.
+     */
+    public static function isTriggerNode(array $node): bool
+    {
+        $data = is_array($node['data'] ?? null) ? $node['data'] : [];
+
+        return in_array($node['type'] ?? '', ['trigger', 'triggerNode'], true)
+            || array_key_exists('triggerType', $data);
+    }
+
+    /**
+     * Builder nodes carry the real step type in data.nodeType (type is the React Flow
+     * renderer name); older/seeded nodes carry it in type.
+     */
+    public static function nodeType(array $node): string
+    {
+        $type = $node['data']['nodeType'] ?? $node['type'] ?? null;
+
+        return is_string($type) && $type !== '' ? $type : 'unknown';
     }
 
     public function executeRun(AutomationRun $run): void
     {
         $run->update(['status' => 'running']);
         $automation = $run->automation;
+
+        if (! $automation) {
+            $run->update(['status' => 'failed', 'error' => 'Automation no longer exists.', 'completed_at' => now()]);
+
+            return;
+        }
 
         $nodes = collect($automation->nodes ?? []);
         $edges = collect($automation->edges ?? []);
@@ -115,7 +200,7 @@ class AutomationEngine
             $run->update(['resume_node_id' => null]);
         } else {
             // Find trigger node and start from the first node after it
-            $triggerNode = $nodes->first(fn ($n) => ($n['type'] ?? '') === 'trigger');
+            $triggerNode = $nodes->first(fn ($n) => self::isTriggerNode($n));
             if (! $triggerNode) {
                 $run->update(['status' => 'failed', 'error' => 'No trigger node.', 'completed_at' => now()]);
 
@@ -134,7 +219,7 @@ class AutomationEngine
             }
             $visited[] = $currentId;
 
-            $node = $nodes->first(fn ($n) => $n['id'] === $currentId);
+            $node = $nodes->first(fn ($n) => ($n['id'] ?? null) === $currentId);
             if (! $node) {
                 break;
             }
@@ -150,7 +235,7 @@ class AutomationEngine
             AutomationRunLog::create([
                 'run_id' => $run->id,
                 'node_id' => $currentId,
-                'node_type' => $node['type'] ?? 'unknown',
+                'node_type' => self::nodeType($node),
                 'result' => match ($result['status'] ?? 'ok') {
                     'error' => 'error',
                     'skipped' => 'skipped',
@@ -205,8 +290,7 @@ class AutomationEngine
         $contact = $this->sampleContact((int) $automation->workspace_id);
         $context = array_merge($this->defaultTestContext(), $context);
 
-        $isTrigger = fn ($n) => in_array($n['type'] ?? '', ['trigger', 'triggerNode'], true) || isset($n['data']['triggerType']);
-        $trigger = $nodesC->first($isTrigger);
+        $trigger = $nodesC->first(fn ($n) => self::isTriggerNode($n));
 
         if (! $trigger) {
             return ['ok' => false, 'error' => 'Add a trigger to start the automation.', 'steps' => []];
@@ -237,7 +321,7 @@ class AutomationEngine
             if (! $node) {
                 break;
             }
-            $type = $node['data']['nodeType'] ?? $node['type'] ?? 'unknown';
+            $type = self::nodeType($node);
             $data = is_array($node['data'] ?? null) ? $node['data'] : [];
 
             $branch = null;
@@ -381,8 +465,8 @@ class AutomationEngine
 
     private function executeNode(array $node, AutomationRun $run, array $context): array
     {
-        $type = $node['type'] ?? 'unknown';
-        $data = $node['data'] ?? [];
+        $type = self::nodeType($node);
+        $data = is_array($node['data'] ?? null) ? $node['data'] : [];
 
         try {
             return match ($type) {

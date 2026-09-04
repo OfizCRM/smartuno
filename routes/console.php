@@ -58,6 +58,14 @@ Schedule::call(function () {
     UsageMeter::where('period', '<', (int) now()->subMonths(2)->format('Ym'))->delete();
 })->monthlyOn(1, '00:05')->name('reset-usage-meters');
 
+// Cancel automation runs parked on an "Ask question" node whose contact never
+// replied, so abandoned conversations do not accumulate as "waiting" forever.
+Schedule::command('automation:prune-stale-runs')
+    ->daily()
+    ->name('automation-prune-stale-runs')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Prune inbound webhook idempotency records older than 30 days
 Schedule::call(function () {
     app(WebhookIdempotencyService::class)->prune(30);
