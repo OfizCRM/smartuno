@@ -4,6 +4,7 @@ import ClientLayout from '@/Layouts/ClientLayout';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, CheckCircle, Trash2, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 const SETUP_GUIDES = {
     twilio: {
@@ -404,6 +405,7 @@ export default function SmsProvidersIndex({ providers }) {
     return (
         <ClientLayout title={t('sms.title')}>
             <Head title={t('sms.title')} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-5">
                 <div>
                     <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{t('sms.title')}</h2>

@@ -21,6 +21,7 @@ import {
     Workflow,
     Sparkles,
     AlertCircle,
+    BarChart3,
 } from 'lucide-react';
 import { LineChart, BarChart, DonutChart } from '@/Components/Charts';
 import { RangeFilter, StatTile, WidgetCard, EmptyState } from '@/Components/Dashboard';
@@ -452,6 +453,10 @@ export default function Dashboard({
                             <p className="truncate text-2xl font-bold text-neutral-900 dark:text-white">{currentPlan?.name ?? 'Free'}</p>
                             <Package className="h-5 w-5 text-brand-500" />
                         </div>
+                        <Link href={route('client.reports.inbox.index')} className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-200 dark:hover:bg-neutral-700/50 dark:hover:text-white">
+                            <BarChart3 className="h-5 w-5 text-brand-600 dark:text-brand-400" />
+                            <span>{t('nav.reports')}</span>
+                        </Link>
                         <Link href={route('client.pricing')} className="mt-3 inline-flex items-center gap-1 text-sm text-brand-600 hover:underline dark:text-brand-400">
                             {t('client.view_plans') || 'View plans'} <ArrowRightCircle className="h-4 w-4" />
                         </Link>

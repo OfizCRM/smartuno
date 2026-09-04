@@ -8,6 +8,7 @@ use App\Services\WebhookDispatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,6 +40,7 @@ class WebhookEndpointController extends Controller
 
         return Inertia::render('client/Webhooks/Index', [
             'endpoints' => $endpoints,
+            'availableEvents' => WebhookEndpoint::EVENTS,
         ]);
     }
 
@@ -48,7 +50,7 @@ class WebhookEndpointController extends Controller
             'url' => ['required', 'url', 'max:500'],
             'description' => ['nullable', 'string', 'max:255'],
             'events' => ['nullable', 'array'],
-            'events.*' => ['string', 'max:100'],
+            'events.*' => ['string', Rule::in(WebhookEndpoint::EVENTS)],
         ]);
 
         $request->user()->webhookEndpoints()->create([
@@ -69,7 +71,7 @@ class WebhookEndpointController extends Controller
             'url' => ['required', 'url', 'max:500'],
             'description' => ['nullable', 'string', 'max:255'],
             'events' => ['nullable', 'array'],
-            'events.*' => ['string', 'max:100'],
+            'events.*' => ['string', Rule::in(WebhookEndpoint::EVENTS)],
             'enabled' => ['boolean'],
         ]);
 

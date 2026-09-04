@@ -4,6 +4,8 @@ import Pagination from '@/Components/ui/Pagination';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, ShoppingBag, DollarSign, PackageCheck, Clock } from 'lucide-react';
+import SettingsBackLink from '@/Components/SettingsBackLink';
+import RelatedLink from '@/Components/RelatedLink';
 
 function StatCard({ label, value, Icon, tone = 'neutral' }) {
     const tones = {
@@ -45,10 +47,12 @@ export default function OrdersIndex({ orders, filters = {}, stores = [], stats =
     return (
         <ClientLayout title={t('ecommerce.orders') || 'Orders'}>
             <Head title={t('ecommerce.orders') || 'Orders'} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-5">
                 <div>
                     <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{t('ecommerce.orders') || 'Orders'}</h2>
                     <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{t('ecommerce.orders_sub') || 'Orders synced from your connected stores.'}</p>
+                    <RelatedLink className="mt-1.5" routeName="client.ecommerce.products.index" label={t('nav.products')} />
                 </div>
 
                 {flash.success && <div className="rounded-lg bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-4 py-2 text-sm">{flash.success}</div>}

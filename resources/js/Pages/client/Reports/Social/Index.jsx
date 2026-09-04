@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { formatInTz } from '@/Utils/datetime';
 import { useTranslation } from 'react-i18next';
+import ReportNav from '@/Components/ReportNav';
 
 const STATUS_COLORS = {
     scheduled: 'bg-blue-100 text-blue-700',
@@ -28,6 +29,7 @@ export default function SocialReportIndex({ postsByNetwork, postsByStatus, recen
         <ClientLayout title={t('reports.social_title')}>
             <Head title={t('reports.social_title')} />
 
+            <ReportNav className="mb-4" />
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-wrap items-end justify-between gap-4">

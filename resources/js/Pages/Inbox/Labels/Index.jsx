@@ -3,6 +3,7 @@ import ClientLayout from '@/Layouts/ClientLayout';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2, X, Check } from 'lucide-react';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 const PRESET_COLORS = [
     '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
@@ -59,6 +60,7 @@ export default function LabelsIndex({ labels }) {
     return (
         <ClientLayout title={t('inbox.labels')}>
             <Head title={t('inbox.labels')} />
+            <SettingsBackLink className="mb-3" />
             <div className="max-w-3xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
                     <div>

@@ -28,6 +28,22 @@ class WebhookEndpoint extends Model
 
     protected $hidden = ['secret'];
 
+    /**
+     * The only events ever fanned out to endpoints. Each one is dispatched by
+     * App\Listeners\DispatchOutboundWebhookListener, registered in
+     * AppServiceProvider::boot(). Nothing outside this list is ever delivered,
+     * so nothing outside it may be offered as a subscribable event.
+     *
+     * 'test.ping' is deliberately absent: the "Send test" button delivers it
+     * straight to one endpoint via WebhookDispatchService::dispatchToEndpoint(),
+     * bypassing listensTo(), so it is not something an endpoint subscribes to.
+     */
+    public const EVENTS = [
+        'contact.created',
+        'message.received',
+        'campaign.completed',
+    ];
+
     public static function generateSecret(): string
     {
         return 'whsec_' . Str::random(48);

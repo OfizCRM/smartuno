@@ -4,6 +4,7 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import { Package, ArrowRightCircle, CreditCard, ChevronDown, FileText, RefreshCw } from 'lucide-react';
 import { formatDateTz } from '@/Utils/datetime';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 function formatCurrency(cents, currency = 'USD') {
     return new Intl.NumberFormat(undefined, { style: 'currency', currency: (currency ?? 'USD').toUpperCase() }).format(cents / 100);
@@ -120,6 +121,7 @@ export default function SubscriptionShow({ subscription, canCancel, canUpgrade, 
     return (
         <ClientLayout title={t('subscription.page_title') || 'Subscription'}>
             <Head title={t('subscription.page_title') || 'Subscription'} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">

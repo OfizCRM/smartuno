@@ -55,6 +55,8 @@ Route::middleware(['verified'])->group(function () {
     // Settings
     Route::get('/settings', [ClientSettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings', [ClientSettingsController::class, 'update'])->name('settings.update');
+    Route::get('/settings/preferences', [ClientSettingsController::class, 'preferences'])->name('settings.preferences');
+    Route::get('/settings/company', [ClientSettingsController::class, 'company'])->name('settings.company');
     Route::get('/settings/notifications', [ClientSettingsController::class, 'notifications'])->name('settings.notifications');
     Route::get('/settings/data-export', [DataExportController::class, 'index'])->name('settings.data-export');
     Route::post('/settings/data-export', [DataExportController::class, 'store'])->name('settings.data-export.store');

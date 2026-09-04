@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 /* brand logos (accurate official paths) */
 
@@ -1468,6 +1469,7 @@ export default function ChannelSetup({
         <ClientLayout title={t('inbox.channel_setup')}>
             <Head title={t('inbox.channel_setup')} />
 
+            <SettingsBackLink className="mb-3" />
             {/* Page header */}
             <div className="mb-6">
                 <div className="flex items-center justify-between gap-4 flex-wrap">

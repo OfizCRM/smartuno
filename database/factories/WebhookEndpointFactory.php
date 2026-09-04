@@ -16,7 +16,7 @@ class WebhookEndpointFactory extends Factory
             'user_id' => User::factory(),
             'url'     => $this->faker->url(),
             'secret'  => 'whsec_'.bin2hex(random_bytes(16)),
-            'events'   => ['subscription.created', 'subscription.cancelled'],
+            'events'   => ['contact.created', 'message.received'],
             'enabled'  => true,
         ];
     }

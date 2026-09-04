@@ -1,41 +1,12 @@
 import { Link, usePage, router } from '@inertiajs/react';
 import { useOneSignal, isOnInboxOrDashboard, showBrowserNotification } from '@/hooks/useOneSignal';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Toaster, toast } from 'sonner';
 import Topbar from '@/Components/Topbar';
 import Sidebar from '@/Components/Sidebar';
 import UpgradeModal from '@/Components/UpgradeModal';
 import useClientNav from '@/Layouts/useClientNav';
-import { ChannelBrandIcon } from '@/Components/BrandIcons';
-import {
-    LayoutDashboard,
-    CreditCard,
-    Package,
-    FileText,
-    Users,
-    Settings,
-    Layers,
-    Webhook,
-    Key,
-    BookOpen,
-    Image,
-    Radio,
-    Inbox,
-    Bot,
-    Database,
-    Zap,
-    Share2,
-    MapPin,
-    Tag,
-    LifeBuoy,
-    ExternalLink,
-    Mail,
-    MessageSquare,
-} from 'lucide-react';
-
-const iconClass = 'h-4 w-4';
-const whatsappNavIcon = <ChannelBrandIcon channel="whatsapp" className={iconClass} />;
 
 function safeRoute(name, ...args) {
     try { return route(name, ...args); } catch { return '#'; }
@@ -172,14 +143,7 @@ export default function ClientLayout({ header, children, title }) {
                 open={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
                 showCreateButton={false}
-                navGroups={clientNavGroups.map(group => ({
-                    ...group,
-                    items: group.items.map(item => ({
-                        ...item,
-                        key: item.activePattern || item.label,
-                        active: () => item.activePattern ? route().current(item.activePattern) : false,
-                    }))
-                }))}
+                navGroups={clientNavGroups}
 footer={<ClientLayoutFooter />}
             />
 

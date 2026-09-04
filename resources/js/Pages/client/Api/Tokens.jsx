@@ -5,6 +5,8 @@ import { Key, Plus, Trash2, Copy, Check } from 'lucide-react';
 import { DatePicker } from '@/Components/ui';
 import { formatDateTz } from '@/Utils/datetime';
 import { useTranslation } from 'react-i18next';
+import SettingsBackLink from '@/Components/SettingsBackLink';
+import RelatedLink from '@/Components/RelatedLink';
 
 const ALL_SCOPES = [
     { scope: 'contacts:read',       labelKey: 'api.scope_contacts_read' },
@@ -202,6 +204,7 @@ export default function ApiTokens({ tokens: initialTokens }) {
     return (
         <ClientLayout title={t('api.tokens_title')}>
             <Head title={t('api.tokens_title')} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-6 max-w-4xl">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -209,6 +212,10 @@ export default function ApiTokens({ tokens: initialTokens }) {
                         <div>
                             <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">{t('api.tokens_title')}</h1>
                             <p className="text-sm text-neutral-500 dark:text-neutral-400">{t('api.tokens_subtitle')}</p>
+                            <div className="mt-1.5 flex flex-wrap gap-4">
+                                <RelatedLink routeName="client.webhooks.index" label={t('nav.webhooks')} />
+                                <RelatedLink routeName="client.api-docs" label={t('nav.api_docs')} />
+                            </div>
                         </div>
                     </div>
                     <button

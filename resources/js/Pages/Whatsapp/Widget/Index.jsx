@@ -5,6 +5,7 @@ import { Plus, Trash2, Code, ExternalLink, Pencil, Check, Clock, Globe } from 'l
 import { ChannelBrandIcon } from '@/Components/BrandIcons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 export default function WhatsappWidgetIndex({ widgets }) {
     const { t } = useTranslation();
@@ -38,6 +39,7 @@ export default function WhatsappWidgetIndex({ widgets }) {
     return (
         <ClientLayout title={t('whatsapp.widget_title')}>
             <Head title={t('whatsapp.widget_head_title')} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between gap-3">

@@ -62,14 +62,7 @@ export default function InboxLayout({ children }) {
                     title={t('client.panel') || 'Client Panel'}
                     logo={logoUrl ? <img src={logoUrl} alt="Logo" className="h-8 max-w-[160px] object-contain" /> : null}
                     showCreateButton={false}
-                    navGroups={clientNavGroups.map(group => ({
-                        ...group,
-                        items: group.items.map(item => ({
-                            ...item,
-                            key: item.activePattern || item.label,
-                            active: () => item.activePattern ? route().current(item.activePattern) : false,
-                        }))
-                    }))}
+                    navGroups={clientNavGroups}
                 />
 
                 <div className="lg:pl-64 rtl:lg:pl-0 rtl:lg:pr-64 flex-1 overflow-hidden flex flex-col">

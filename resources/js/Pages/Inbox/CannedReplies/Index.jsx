@@ -3,6 +3,7 @@ import ClientLayout from '@/Layouts/ClientLayout';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2, X, Check } from 'lucide-react';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 export default function CannedRepliesIndex({ cannedReplies }) {
     const { t } = useTranslation();
@@ -55,6 +56,7 @@ export default function CannedRepliesIndex({ cannedReplies }) {
     return (
         <ClientLayout title={t('inbox.canned_replies')}>
             <Head title={t('inbox.canned_replies')} />
+            <SettingsBackLink className="mb-3" />
             <div className="max-w-3xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
                     <div>

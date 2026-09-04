@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileText } from 'lucide-react';
 import { formatInTz } from '@/Utils/datetime';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 export default function ClientAuditLogIndex({ logs, filters = {} }) {
     const { t } = useTranslation();
@@ -22,6 +23,7 @@ export default function ClientAuditLogIndex({ logs, filters = {} }) {
     return (
         <ClientLayout title={t('client.audit_log') || 'Audit log'}>
             <Head title={t('client.audit_log') || 'Audit log'} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">

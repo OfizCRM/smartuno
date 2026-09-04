@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { browserTz, formatInTz } from '@/Utils/datetime';
 import AiPlannerModal from './AiPlannerModal';
+import RelatedLink from '@/Components/RelatedLink';
 
 const STATUS_META = {
     draft:      { labelKey: 'social.status_draft',      cls: 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300', icon: <Pencil className="h-3 w-3" /> },
@@ -302,6 +303,10 @@ export default function PostsIndex({ posts, accounts, filters }) {
                     <div>
                         <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{t('social.posts_title')}</h2>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{t('social.posts_subtitle')}</p>
+                        <div className="mt-1.5 flex flex-wrap gap-4">
+                            <RelatedLink routeName="client.social.calendar" label={t('nav.calendar')} />
+                            <RelatedLink routeName="client.social.accounts.index" label={t('nav.social_accounts')} />
+                        </div>
                     </div>
                     {(
                         <div className="flex items-center gap-2">

@@ -3,12 +3,14 @@ import { Head } from '@inertiajs/react';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 export default function Edit({ mustVerifyEmail, status }) {
     return (
         <ClientLayout title="Profile">
             <Head title="Profile" />
 
+            <SettingsBackLink className="mb-3" />
             <div className="max-w-2xl space-y-6">
                 <div className="rounded-xl border border-neutral-200 dark:border-neutral-700/50 bg-white dark:bg-neutral-800/70 p-5 shadow-soft">
                     <UpdateProfileInformationForm

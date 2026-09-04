@@ -2,6 +2,7 @@ import ClientLayout from '@/Layouts/ClientLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { Download, FileArchive, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 export default function DataExport({ status = null }) {
     const { t } = useTranslation();
@@ -16,6 +17,7 @@ export default function DataExport({ status = null }) {
         <ClientLayout title={t('data_export.title')}>
             <Head title={t('data_export.title')} />
 
+            <SettingsBackLink className="mb-3" />
             <div className="max-w-2xl space-y-6">
                 <div>
                     <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{t('data_export.export_your_data')}</h1>
@@ -24,9 +26,9 @@ export default function DataExport({ status = null }) {
                     </p>
                 </div>
 
-                {status && (
+                {status === 'requested' && (
                     <div className="rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-800 dark:text-green-200">
-                        {status}
+                        {t('data_export.status_requested')}
                     </div>
                 )}
 

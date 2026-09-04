@@ -6,6 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\ClientSetting;
 use App\Models\Currency;
 use App\Models\Locale;
+use App\Models\User;
+use App\Models\Workspace;
+use App\Modules\Broadcasting\Models\SmsProviderConfig;
+use App\Modules\Broadcasting\Models\WorkspaceSmtpConfig;
+use App\Modules\Ecommerce\Models\EcommerceStore;
+use App\Modules\Shared\Models\ChannelAccount;
+use App\Modules\Social\Models\SocialAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,7 +21,36 @@ use Inertia\Response;
 
 class SettingsController extends Controller
 {
+    /**
+     * The settings hub: a list of rows, each linking to a page at its own route.
+     *
+     * Everything a firm configures once lives behind here rather than in the
+     * sidebar. The counts below drive the status chips on each row, which is what
+     * lets someone answer "have I set this up?" without opening the page — the
+     * main thing a hub loses against a flat menu, bought back cheaply.
+     */
     public function index(Request $request): Response
+    {
+        $user = $request->user();
+        $workspaceId = (int) $user->workspace_id;
+        $isAdmin = $user->client_id && $user->isClientAdministrator();
+
+        return Inertia::render('client/Settings/Hub', [
+            'isAdmin' => (bool) $isAdmin,
+            'status' => [
+                'team' => $isAdmin ? User::where('client_id', $user->client_id)->count() : 0,
+                'workspaces' => $user->client_id ? Workspace::where('client_id', $user->client_id)->count() : 0,
+                'channels' => ChannelAccount::where('workspace_id', $workspaceId)->count(),
+                'social' => SocialAccount::where('workspace_id', $workspaceId)->where('active', true)->count(),
+                'stores' => EcommerceStore::where('workspace_id', $workspaceId)->count(),
+                'sms' => SmsProviderConfig::where('workspace_id', $workspaceId)->exists(),
+                'email' => WorkspaceSmtpConfig::where('workspace_id', $workspaceId)->where('is_active', true)->exists(),
+            ],
+        ]);
+    }
+
+    /** Personal preferences: language, currency, theme, timezone. */
+    public function preferences(Request $request): Response
     {
         $user = $request->user();
         $supportedLocales = Locale::enabled()->orderByRaw('is_default DESC')->orderBy('sort_order')->get(['code', 'name']);
@@ -23,33 +59,35 @@ class SettingsController extends Controller
         }
         $supportedCurrencies = Currency::where('enabled', true)->orderBy('code')->get(['code', 'symbol']);
 
-        $client = null;
-        if ($user->client_id && $user->isClientAdministrator()) {
-            $c = $user->client;
-            if ($c) {
-                $client = [
-                    'id' => $c->id,
-                    'name' => $c->name,
-                    'email' => $c->email,
-                    'phone' => $c->phone,
-                    'address' => $c->address,
-                ];
-            }
-        }
-
-        return Inertia::render('client/Settings/Index', [
+        return Inertia::render('client/Settings/Preferences', [
             'preferences' => [
                 'locale' => $user->locale ?? config('app.locale', 'en'),
-                'display_currency' => $user->display_currency ?? 'USD',
+                'display_currency' => $user->display_currency ?? 'RON',
                 'theme' => $user->theme ?? 'light',
-                'timezone' => $user->timezone ?? 'Asia/Dhaka',
+                'timezone' => $user->timezone ?? 'Europe/Bucharest',
             ],
             'supportedLocales' => $supportedLocales->map(fn ($l) => ['code' => $l->code, 'name' => $l->name]),
             'supportedCurrencies' => $supportedCurrencies->map(fn ($c) => ['code' => $c->code, 'name' => $c->code, 'symbol' => $c->symbol ?? $c->code]),
-            'client' => $client,
-            'digestEnabled' => $user->client_id
-                ? ClientSetting::get($user->client_id, 'weekly_digest_enabled', '1') !== '0'
-                : true,
+        ]);
+    }
+
+    /** The organisation's own details. Administrators only, like TeamController. */
+    public function company(Request $request): Response
+    {
+        $user = $request->user();
+        abort_unless($user->client_id && $user->isClientAdministrator(), 403);
+
+        $c = $user->client;
+        abort_unless((bool) $c, 404);
+
+        return Inertia::render('client/Settings/Company', [
+            'client' => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'email' => $c->email,
+                'phone' => $c->phone,
+                'address' => $c->address,
+            ],
         ]);
     }
 
@@ -63,6 +101,12 @@ class SettingsController extends Controller
 
         return Inertia::render('client/Settings/Notifications', [
             'preferences' => $preferences,
+            // The weekly digest lives here rather than on the preferences form:
+            // every email switch in one place is what a user expects, and it lets
+            // the digest email itself deep-link to the switch that turns it off.
+            'digestEnabled' => $user->client_id
+                ? ClientSetting::get($user->client_id, 'weekly_digest_enabled', '1') !== '0'
+                : true,
         ]);
     }
 
@@ -115,11 +159,13 @@ class SettingsController extends Controller
             $client->save();
         }
 
-        // Digest preference
         if ($user->client_id && array_key_exists('weekly_digest_enabled', $validated)) {
             ClientSetting::set($user->client_id, 'weekly_digest_enabled', $validated['weekly_digest_enabled'] ? '1' : '0');
         }
 
-        return redirect()->route('client.settings.index')->with('success', __('Settings saved.'));
+        // back(), not a fixed route: this action now serves three separate pages
+        // (preferences, company, notifications) and a save should return you to
+        // the one you were on rather than bouncing you to the hub.
+        return back()->with('success', __('Settings saved.'));
     }
 }

@@ -4,6 +4,7 @@ import { BarChart, DonutChart } from '@/Components/Charts';
 import { DatePicker } from '@/Components/ui';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import ReportNav from '@/Components/ReportNav';
 
 export default function AutomationReportIndex({ runsByStatus, runsPerAutomation, topErrors, dateRange }) {
     const { t } = useTranslation();
@@ -34,6 +35,7 @@ export default function AutomationReportIndex({ runsByStatus, runsPerAutomation,
         <ClientLayout title={t('reports.automation_title')}>
             <Head title={t('reports.automation_title')} />
 
+            <ReportNav className="mb-4" />
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-wrap items-end justify-between gap-4">

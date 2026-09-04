@@ -22,6 +22,7 @@ import { ChannelBrandIcon } from '@/Components/BrandIcons';
 import EmailEditor from '@/Components/EmailEditor';
 import TimezonePicker from '@/Components/TimezonePicker';
 import { DatePicker } from '@/Components/ui';
+import RelatedLink from '@/Components/RelatedLink';
 
 const STEPS = [
     { key: 'channel', labelKey: 'campaign.step_channel' },
@@ -1027,6 +1028,10 @@ function ContentStep({
                                 {t('campaign.no_templates_synced')}
                             </p>
                         )}
+                        {/* Without an approved template CampaignController refuses to
+                            launch, so the form has to say where templates come from —
+                            they are no longer a row in the sidebar. */}
+                        <RelatedLink className="mt-1.5" routeName="client.whatsapp.templates.index" label={t('nav.templates')} />
                         <FieldError message={errors['template_ref.name']} />
                     </div>
 

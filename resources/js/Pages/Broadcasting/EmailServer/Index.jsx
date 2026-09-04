@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Eye, EyeOff, Mail, Send, Trash2, CheckCircle, AlertCircle, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 const SMTP_GUIDES = [
     {
@@ -190,6 +191,7 @@ export default function EmailServerIndex({ config }) {
     return (
         <ClientLayout title={t('email_server.title')}>
             <Head title={t('email_server.title')} />
+            <SettingsBackLink className="mb-3" />
             <div className="max-w-2xl space-y-6">
                 {/* Header */}
                 <div>

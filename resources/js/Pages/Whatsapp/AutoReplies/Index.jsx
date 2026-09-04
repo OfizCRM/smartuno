@@ -4,6 +4,7 @@ import EmptyState from '@/Components/EmptyState';
 import { Plus, Trash2, ToggleLeft, ToggleRight, Zap, Pencil, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 const TRIGGER_TYPES  = ['keyword', 'welcome', 'away', 'out_of_hours'];
 const MATCH_MODES    = ['exact', 'contains', 'regex'];
@@ -274,6 +275,7 @@ export default function WhatsappAutoRepliesIndex({ rules }) {
     return (
         <ClientLayout title={t('whatsapp.auto_replies_title')}>
             <Head title={t('whatsapp.auto_replies_head_title')} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-5">
                 <div className="flex items-center justify-between gap-3">
                     <div>

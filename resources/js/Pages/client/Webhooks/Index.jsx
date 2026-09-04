@@ -5,19 +5,23 @@ import { Webhook, Plus, Pencil, Trash2, RefreshCw, Play, Eye, ChevronRight, Chec
 import { formatInTz } from '@/Utils/datetime';
 import { useTranslation } from 'react-i18next';
 
-const EVENTS = [
-    'subscription.created', 'subscription.cancelled', 'subscription.renewed',
-    'payment.succeeded', 'payment.failed',
-    'team.invite_accepted',
-    'test.ping',
-];
+// Plain-language label for each event the server actually sends.
+// The list itself comes from the server (WebhookEndpoint::EVENTS) so the
+// checkboxes can never drift from what is really dispatched.
+const EVENT_LABEL_KEYS = {
+    'contact.created': 'webhook.event_contact_created',
+    'message.received': 'webhook.event_message_received',
+    'campaign.completed': 'webhook.event_campaign_completed',
+};
 
-function EndpointForm({ endpoint = null, onClose }) {
+function EndpointForm({ endpoint = null, availableEvents, onClose }) {
     const { t } = useTranslation();
     const { data, setData, post, put, processing, errors } = useForm({
         url: endpoint?.url ?? '',
         description: endpoint?.description ?? '',
-        events: endpoint?.events ?? [],
+        // New endpoints start with every event ticked; an existing one keeps its
+        // selection minus anything the server no longer sends.
+        events: (endpoint?.events ?? availableEvents).filter(e => availableEvents.includes(e)),
         enabled: endpoint?.enabled ?? true,
     });
 
@@ -30,11 +34,10 @@ function EndpointForm({ endpoint = null, onClose }) {
 
     const submit = (ev) => {
         ev.preventDefault();
-        const payload = { ...data, events: data.events.length ? data.events : null };
         if (endpoint) {
-            put(route('client.webhooks.update', endpoint.id), { data: payload, onSuccess: onClose });
+            put(route('client.webhooks.update', endpoint.id), { onSuccess: onClose });
         } else {
-            post(route('client.webhooks.store'), { data: payload, onSuccess: onClose });
+            post(route('client.webhooks.store'), { onSuccess: onClose });
         }
     };
 
@@ -63,20 +66,27 @@ function EndpointForm({ endpoint = null, onClose }) {
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">{t('webhook.events_label')}</label>
-                <div className="grid grid-cols-2 gap-2">
-                    {EVENTS.map(ev => (
-                        <label key={ev} className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">{t('webhook.events_label')}</label>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">{t('webhook.events_help')}</p>
+                <div className="space-y-2">
+                    {availableEvents.map(ev => (
+                        <label key={ev} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
                             <input
                                 type="checkbox"
                                 checked={data.events.includes(ev)}
                                 onChange={() => toggleEvent(ev)}
-                                className="rounded"
+                                className="rounded mt-0.5"
                             />
-                            <code className="text-xs">{ev}</code>
+                            <span>
+                                {t(EVENT_LABEL_KEYS[ev] ?? ev)}
+                                <code className="block text-xs text-neutral-400 dark:text-neutral-500">{ev}</code>
+                            </span>
                         </label>
                     ))}
                 </div>
+                {data.events.length === 0 && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">{t('webhook.events_none_warning')}</p>
+                )}
             </div>
             <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
                 <input type="checkbox" checked={data.enabled} onChange={e => setData('enabled', e.target.checked)} className="rounded" />
@@ -92,7 +102,7 @@ function EndpointForm({ endpoint = null, onClose }) {
     );
 }
 
-export default function WebhooksIndex({ endpoints }) {
+export default function WebhooksIndex({ endpoints, availableEvents = [] }) {
     const { t } = useTranslation();
     const { flash, timezone } = usePage().props;
     const userTz = timezone || 'Asia/Dhaka';
@@ -150,7 +160,7 @@ export default function WebhooksIndex({ endpoints }) {
                 {showCreate && (
                     <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
                         <h2 className="text-base font-semibold mb-4 text-neutral-900 dark:text-white">{t('webhook.new_endpoint')}</h2>
-                        <EndpointForm onClose={() => setShowCreate(false)} />
+                        <EndpointForm availableEvents={availableEvents} onClose={() => setShowCreate(false)} />
                     </div>
                 )}
 
@@ -160,7 +170,7 @@ export default function WebhooksIndex({ endpoints }) {
                             <div className="p-4">
                                 {editing?.id === ep.id ? (
                                     <>
-                                        <EndpointForm endpoint={ep} onClose={() => setEditing(null)} />
+                                        <EndpointForm endpoint={ep} availableEvents={availableEvents} onClose={() => setEditing(null)} />
                                     </>
                                 ) : (
                                     <div className="flex items-start justify-between gap-4">
@@ -173,7 +183,9 @@ export default function WebhooksIndex({ endpoints }) {
                                             {ep.events?.length > 0 && (
                                                 <div className="flex flex-wrap gap-1 mt-2">
                                                     {ep.events.map(e => (
-                                                        <code key={e} className="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-700 text-xs rounded">{e}</code>
+                                                        <span key={e} title={e} className="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-700 text-xs rounded">
+                                                            {EVENT_LABEL_KEYS[e] ? t(EVENT_LABEL_KEYS[e]) : e}
+                                                        </span>
                                                     ))}
                                                 </div>
                                             )}

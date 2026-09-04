@@ -4,6 +4,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Users, Pencil, Trash2, UserPlus, Mail, X } from 'lucide-react';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 const STATUS_ACTIVE    = 'active';
 const CLIENT_ROLE_ADMIN = 'administrator';
@@ -102,6 +103,7 @@ export default function TeamIndex({ users = [], client = {}, invitations = [] })
     return (
         <ClientLayout title={t('team.page_title') || 'Team'}>
             <Head title={t('team.page_title') || 'Team'} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>

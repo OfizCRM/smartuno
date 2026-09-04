@@ -4,6 +4,7 @@ import ClientLayout from '@/Layouts/ClientLayout';
 import { Share2, Plus, Trash2, AlertCircle, RefreshCw, KeyRound, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SocialBrandIcon } from '@/Components/BrandIcons';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 const NETWORKS = [
     { id: 'facebook',  label: 'Facebook',  descriptionKey: 'social.network_desc_facebook' },
@@ -138,6 +139,7 @@ export default function SocialAccountsIndex({ accounts }) {
     return (
         <ClientLayout title={t('social.accounts_title')}>
             <Head title={t('social.accounts_title')} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>

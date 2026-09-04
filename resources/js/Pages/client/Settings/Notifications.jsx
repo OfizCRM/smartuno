@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import ClientLayout from '@/Layouts/ClientLayout';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 import { Bell, Mail, Smartphone, CheckCircle } from 'lucide-react';
+import { Toggle } from '@/Components/ui';
 import { subscribeToPush, unsubscribeFromPush } from '@/push';
 import { useTranslation } from 'react-i18next';
 
@@ -24,9 +26,16 @@ const CHANNELS = [
     { key: 'web_push', labelKey: 'settings.channel_web_push', icon: Smartphone },
 ];
 
-export default function NotificationSettings({ preferences = {} }) {
+export default function NotificationSettings({ preferences = {}, digestEnabled = true }) {
     const { t } = useTranslation();
     const { data, setData, post, processing, transform } = useForm({ preferences: [] });
+    const digest = useForm({ weekly_digest_enabled: digestEnabled });
+
+    const saveDigest = (next) => {
+        digest.setData('weekly_digest_enabled', next);
+        digest.transform(() => ({ weekly_digest_enabled: next }))
+            .put(route('client.settings.update'), { preserveScroll: true });
+    };
     const [pushError, setPushError] = useState('');
 
     // Build the preference grid from props
@@ -89,6 +98,7 @@ export default function NotificationSettings({ preferences = {} }) {
 
             <div className="max-w-2xl mx-auto space-y-6">
                 <div>
+                    <SettingsBackLink className="mb-2" />
                     <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                         <Bell className="h-5 w-5" />
                         {t('settings.notif_preferences')}
@@ -96,6 +106,16 @@ export default function NotificationSettings({ preferences = {} }) {
                     <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
                         {t('settings.notif_subtitle')}
                     </p>
+                </div>
+
+                <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 px-6 py-4">
+                    <Toggle
+                        checked={!!digest.data.weekly_digest_enabled}
+                        onChange={saveDigest}
+                        disabled={digest.processing}
+                        label={t('settings.weekly_digest_label')}
+                    />
+                    <p className="mt-1 text-xs text-ink-muted dark:text-neutral-400">{t('settings_hub.digest_desc')}</p>
                 </div>
 
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">

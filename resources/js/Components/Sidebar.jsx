@@ -4,8 +4,85 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, Plus, X } from 'lucide-react';
 import { useBranding } from '@/hooks/useBranding';
 
-function NavGroup({ label, items, onClose }) {
+/**
+ * One navigation row. Extracted because the grouped list and the flat list each
+ * carried their own copy of this markup and had already drifted apart.
+ *
+ * An item marked `external` renders a real anchor: routing an off-site URL
+ * through an Inertia <Link> asks the SPA to fetch it as a page and fails.
+ */
+function NavRow({ item, onClose, showActiveDot = false }) {
+    const isActive =
+        typeof item.active === 'function'
+            ? item.active()
+            : item.active ?? (item.route ? route().current(item.route) : false);
+
+    const className = [
+        'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150',
+        isActive
+            ? 'bg-sidebar-active text-sidebar-active-fg shadow-card dark:bg-white/10 dark:text-white dark:shadow-none'
+            : 'text-sidebar-item hover:bg-sidebar-hover dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white',
+    ].join(' ');
+
+    const inner = (
+        <>
+            {item.icon && (
+                <span className={[
+                    'shrink-0 transition-colors duration-150',
+                    isActive
+                        ? 'text-sidebar-active-icon dark:text-white'
+                        : 'text-sidebar-heading group-hover:text-sidebar-active dark:text-white/65 dark:group-hover:text-white',
+                ].join(' ')}>
+                    {item.icon}
+                </span>
+            )}
+            <span className="truncate">{item.label}</span>
+            {showActiveDot && isActive && (
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-active-icon dark:bg-white/70 shrink-0" />
+            )}
+        </>
+    );
+
+    const href = item.href ?? (item.route ? route(item.route) : '#');
+
+    if (item.external) {
+        return (
+            <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClose} className={className}>
+                {inner}
+            </a>
+        );
+    }
+
+    return (
+        <Link href={href} onClick={onClose} className={className}>
+            {inner}
+        </Link>
+    );
+}
+
+/**
+ * A group of rows. With no `label` the rows render pinned, with no heading and no
+ * collapse — a heading costs roughly the height of the row it introduces, which
+ * is not worth paying for the two or three screens a user opens every day.
+ *
+ * `groupKey` and not the label drives the DOM id: labels are translated and were
+ * not unique (two groups were both called "Account"), so deriving the id from the
+ * label produced duplicate ids and left the second group's `aria-controls`
+ * pointing at the first group's panel.
+ */
+function NavGroup({ groupKey, label, items, onClose }) {
     const [open, setOpen] = useState(true);
+    const panelId = `nav-group-${groupKey}`;
+
+    if (!label) {
+        return (
+            <div className="mb-0.5 space-y-0.5">
+                {items.map((item, i) => (
+                    <NavRow key={item.key ?? item.href ?? i} item={item} onClose={onClose} showActiveDot />
+                ))}
+            </div>
+        );
+    }
 
     return (
         <div className="mb-0.5">
@@ -13,7 +90,7 @@ function NavGroup({ label, items, onClose }) {
                 type="button"
                 onClick={() => setOpen((o) => !o)}
                 aria-expanded={open}
-                aria-controls={`nav-group-${label.replace(/\s+/g, '-').toLowerCase()}`}
+                aria-controls={panelId}
                 className="flex w-full items-center justify-between px-3 py-1.5 mt-3 text-[10px] font-bold uppercase tracking-widest text-sidebar-heading hover:text-sidebar-item dark:text-white/60 dark:hover:text-white transition-colors duration-150 select-none"
             >
                 <span>{label}</span>
@@ -26,43 +103,10 @@ function NavGroup({ label, items, onClose }) {
             </button>
 
             {open && (
-                <div id={`nav-group-${label.replace(/\s+/g, '-').toLowerCase()}`} className="mt-0.5 space-y-0.5">
-                    {items.map((item, i) => {
-                        const isActive =
-                            typeof item.active === 'function'
-                                ? item.active()
-                                : item.route
-                                    ? route().current(item.route)
-                                    : false;
-                        return (
-                            <Link
-                                key={item.key ?? item.route ?? item.href ?? i}
-                                href={item.href ?? (item.route ? route(item.route) : '#')}
-                                onClick={onClose}
-                                className={[
-                                    'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150',
-                                    isActive
-                                        ? 'bg-sidebar-active text-sidebar-active-fg shadow-card dark:bg-white/10 dark:text-white dark:shadow-none'
-                                        : 'text-sidebar-item hover:bg-sidebar-hover dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white',
-                                ].join(' ')}
-                            >
-                                {item.icon && (
-                                    <span className={[
-                                        'shrink-0 transition-colors duration-150',
-                                        isActive
-                                            ? 'text-sidebar-active-icon dark:text-white'
-                                            : 'text-sidebar-heading group-hover:text-sidebar-active dark:text-white/65 dark:group-hover:text-white',
-                                    ].join(' ')}>
-                                        {item.icon}
-                                    </span>
-                                )}
-                                <span className="truncate">{item.label}</span>
-                                {isActive && (
-                                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-active-icon dark:bg-white/70 shrink-0" />
-                                )}
-                            </Link>
-                        );
-                    })}
+                <div id={panelId} className="mt-0.5 space-y-0.5">
+                    {items.map((item, i) => (
+                        <NavRow key={item.key ?? item.href ?? i} item={item} onClose={onClose} showActiveDot />
+                    ))}
                 </div>
             )}
         </div>
@@ -116,6 +160,7 @@ export default function Sidebar({
                             // makes React omit/duplicate siblings, corrupting the
                             // sidebar across SPA navigations.
                             key={`${gi}-${group.key ?? group.label ?? ''}`}
+                            groupKey={group.key ?? String(gi)}
                             label={group.label}
                             items={group.items ?? []}
                             onClose={onClose}
@@ -123,39 +168,11 @@ export default function Sidebar({
                     ))}
 
                 {navGroups.length === 0 &&
-                    navItems.map((item, i) => {
-                        if (item.type === 'divider') {
-                            return <hr key={`div-${i}`} className="my-2 border-warm-border dark:border-white/10" />;
-                        }
-                        const isActive =
-                            typeof item.active === 'function'
-                                ? item.active()
-                                : item.active ?? (item.route && route().current(item.route));
-                        return (
-                            <Link
-                                key={item.key ?? item.route ?? item.href ?? i}
-                                href={item.href ?? (item.route ? route(item.route) : '#')}
-                                onClick={onClose}
-                                className={[
-                                    'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150',
-                                    isActive
-                                        ? 'bg-sidebar-active text-sidebar-active-fg shadow-card dark:bg-white/10 dark:text-white dark:shadow-none'
-                                        : 'text-sidebar-item hover:bg-sidebar-hover dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white',
-                                ].join(' ')}
-                            >
-                                {item.icon && (
-                                    <span className={
-                                        isActive
-                                            ? 'text-sidebar-active-icon dark:text-white'
-                                            : 'text-sidebar-heading group-hover:text-sidebar-active dark:text-white/65 dark:group-hover:text-white'
-                                    }>
-                                        {item.icon}
-                                    </span>
-                                )}
-                                <span className="truncate">{item.label}</span>
-                            </Link>
-                        );
-                    })}
+                    navItems.map((item, i) => (
+                        item.type === 'divider'
+                            ? <hr key={`div-${i}`} className="my-2 border-warm-border dark:border-white/10" />
+                            : <NavRow key={item.key ?? item.route ?? item.href ?? i} item={item} onClose={onClose} />
+                    ))}
             </nav>
 
             {footer && (

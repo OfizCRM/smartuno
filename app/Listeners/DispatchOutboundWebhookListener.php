@@ -5,7 +5,6 @@ namespace App\Listeners;
 use App\Events\CampaignCompleted;
 use App\Events\ContactCreated;
 use App\Events\MessageReceived;
-use App\Models\User;
 use App\Services\WebhookDispatchService;
 
 /**
@@ -18,12 +17,8 @@ class DispatchOutboundWebhookListener
     public function handleContactCreated(ContactCreated $event): void
     {
         $contact = $event->contact;
-        $user = User::where('workspace_id', $contact->workspace_id)->first();
-        if (! $user) {
-            return;
-        }
 
-        $this->webhookService->dispatch($user, 'contact.created', [
+        $this->webhookService->dispatchForWorkspace($contact->workspace_id, 'contact.created', [
             'event' => 'contact.created',
             'contact' => [
                 'id' => $contact->id,
@@ -43,12 +38,7 @@ class DispatchOutboundWebhookListener
             return;
         }
 
-        $user = User::where('workspace_id', $conversation->workspace_id)->first();
-        if (! $user) {
-            return;
-        }
-
-        $this->webhookService->dispatch($user, 'message.received', [
+        $this->webhookService->dispatchForWorkspace($conversation->workspace_id, 'message.received', [
             'event' => 'message.received',
             'message' => [
                 'id' => $message->id,
@@ -64,12 +54,8 @@ class DispatchOutboundWebhookListener
     public function handleCampaignCompleted(CampaignCompleted $event): void
     {
         $campaign = $event->campaign;
-        $user = User::where('workspace_id', $campaign->workspace_id)->first();
-        if (! $user) {
-            return;
-        }
 
-        $this->webhookService->dispatch($user, 'campaign.completed', [
+        $this->webhookService->dispatchForWorkspace($campaign->workspace_id, 'campaign.completed', [
             'event' => 'campaign.completed',
             'campaign' => [
                 'id' => $campaign->id,

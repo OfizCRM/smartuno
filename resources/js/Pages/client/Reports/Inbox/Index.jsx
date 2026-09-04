@@ -5,6 +5,7 @@ import { DatePicker } from '@/Components/ui';
 import { Download, Clock, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import ReportNav from '@/Components/ReportNav';
 
 function formatSeconds(seconds) {
     if (seconds == null) return '—';
@@ -47,6 +48,7 @@ export default function InboxReportIndex({ conversationsOverTime, channelMix, ag
         <ClientLayout title={t('reports.inbox_title')}>
             <Head title={t('reports.inbox_title')} />
 
+            <ReportNav className="mb-4" />
             <div className="space-y-6">
                 {/* Header + date range */}
                 <div className="flex flex-wrap items-end justify-between gap-4">

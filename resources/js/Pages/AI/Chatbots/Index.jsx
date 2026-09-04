@@ -5,6 +5,8 @@ import { Plus, Bot, Trash2, Play, Settings, Send, X, BookOpen, Zap, MessageSquar
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import MarkdownLite from '@/Components/MarkdownLite';
+import SettingsBackLink from '@/Components/SettingsBackLink';
+import RelatedLink from '@/Components/RelatedLink';
 
 const TONE_OPTIONS = ['professional', 'friendly', 'formal', 'casual'];
 
@@ -338,12 +340,14 @@ export default function AiChatbotsIndex({ chatbots, knowledgeBases }) {
     return (
         <ClientLayout title={t('ai.chatbots_title')}>
             <Head title={`${t('ai.chatbots_title')} · AI`} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{t('ai.chatbots_heading')}</h2>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{t('ai.chatbots_subtitle')}</p>
+                        <RelatedLink className="mt-1.5" routeName="client.ai.knowledge-bases.index" label={t('nav.knowledge_bases')} />
                     </div>
                     {(
                         <button

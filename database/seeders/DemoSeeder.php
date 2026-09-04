@@ -1590,14 +1590,14 @@ class DemoSeeder extends Seeder
             ['user_id' => $this->admin->id, 'url' => 'https://hooks.example.com/incoming/webhook'],
             [
                 'secret' => WebhookEndpoint::generateSecret(),
-                'events' => ['message.received', 'message.status', 'conversation.assigned', 'contact.created'],
+                'events' => ['message.received', 'contact.created', 'campaign.completed'],
                 'enabled' => true,
                 'description' => 'Sync inbound messages into our internal CRM.',
             ]
         );
 
         if ($endpoint->deliveries()->count() === 0) {
-            $events = ['message.received', 'message.status', 'contact.created', 'conversation.assigned'];
+            $events = ['message.received', 'contact.created', 'campaign.completed'];
             for ($i = 0; $i < 16; $i++) {
                 $when = $this->days(rand(0, 14))->setTime(rand(8, 20), rand(0, 59));
                 $ok = $i % 4 !== 0;

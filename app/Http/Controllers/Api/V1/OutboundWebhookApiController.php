@@ -5,18 +5,10 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\WebhookEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class OutboundWebhookApiController extends WorkspaceScopedController
 {
-    private const ALLOWED_EVENTS = [
-        'contact.created',
-        'contact.updated',
-        'message.received',
-        'message.sent',
-        'campaign.completed',
-        'automation.run.completed',
-    ];
-
     /**
      * GET /api/v1/webhooks
      */
@@ -38,7 +30,7 @@ class OutboundWebhookApiController extends WorkspaceScopedController
         $validated = $request->validate([
             'url' => ['required', 'url', 'max:500'],
             'events' => ['nullable', 'array'],
-            'events.*' => ['string', 'in:'.implode(',', self::ALLOWED_EVENTS)],
+            'events.*' => ['string', Rule::in(WebhookEndpoint::EVENTS)],
             'description' => ['nullable', 'string', 'max:200'],
         ]);
 

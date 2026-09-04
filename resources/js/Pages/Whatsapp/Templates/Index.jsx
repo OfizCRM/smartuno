@@ -5,6 +5,7 @@ import TemplatePreview from '@/Components/TemplatePreview';
 import { Plus, RefreshCw, CheckCircle, XCircle, Clock, PauseCircle, FileText, Search, Phone, Pencil, Trash2 } from 'lucide-react';
 import { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 const STATUS_CONFIG = {
     APPROVED: { color: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300', icon: <CheckCircle className="h-3 w-3" />, labelKey: 'whatsapp.templates_status_approved' },
@@ -51,6 +52,7 @@ export default function WhatsappTemplatesIndex({ templates, phoneNumbers = [], f
     return (
         <ClientLayout title={t('whatsapp.templates_title')}>
             <Head title={t('whatsapp.templates_title')} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>

@@ -4,6 +4,7 @@ import EmptyState from '@/Components/EmptyState';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, CheckCircle, Bot, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 const SETUP_GUIDES = {
     openai: {
@@ -179,6 +180,7 @@ export default function AiProvidersIndex({ providers }) {
     return (
         <ClientLayout title={t('ai.providers_title')}>
             <Head title={t('ai.providers_title')} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-5">
                 <div>
                     <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{t('ai.provider_settings')}</h2>

@@ -3,6 +3,7 @@ import { Button, Card, Input, Badge } from '@/Components/ui';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 
 function WorkspaceAvatar({ name }) {
     const initials = name
@@ -50,6 +51,7 @@ export default function WorkspacesIndex({ workspaces = [] }) {
         <ClientLayout title={t('workspaces.title')}>
             <Head title={t('workspaces.title')} />
 
+            <SettingsBackLink className="mb-3" />
             <div className="max-w-2xl space-y-8">
                 {/* Header */}
                 <div>

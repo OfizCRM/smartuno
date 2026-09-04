@@ -4,6 +4,7 @@ import { KpiCard, BarChart, DonutChart } from '@/Components/Charts';
 import { DatePicker } from '@/Components/ui';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import ReportNav from '@/Components/ReportNav';
 
 export default function AiReportIndex({ kpis, tokensByDay, tokensByModel, topChatbots, dateRange }) {
     const { t } = useTranslation();
@@ -18,6 +19,7 @@ export default function AiReportIndex({ kpis, tokensByDay, tokensByModel, topCha
         <ClientLayout title={t('reports.ai_title')}>
             <Head title={t('reports.ai_title')} />
 
+            <ReportNav className="mb-4" />
             <div className="space-y-6">
                 {/* Header + date range */}
                 <div className="flex flex-wrap items-end justify-between gap-4">

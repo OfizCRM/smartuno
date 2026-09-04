@@ -2,6 +2,7 @@ import { Head, useForm, usePage, router } from '@inertiajs/react';
 import ClientLayout from '@/Layouts/ClientLayout';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import SettingsBackLink from '@/Components/SettingsBackLink';
 import {
     Eye, EyeOff, CheckCircle, AlertCircle, Clock, Trash2, RefreshCw,
     PlugZap, Copy, Check, ShoppingBag, Store,
@@ -357,6 +358,7 @@ export default function EcommerceStoresIndex({ stores = [], platforms = [], oaut
     return (
         <ClientLayout title={t('ecommerce.title') || 'E-Commerce'}>
             <Head title={t('ecommerce.title') || 'E-Commerce'} />
+            <SettingsBackLink className="mb-3" />
             <div className="space-y-5">
                 <div>
                     <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{t('ecommerce.title') || 'E-Commerce Stores'}</h2>
