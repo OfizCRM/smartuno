@@ -51,6 +51,25 @@ class Client extends Model
         return $this->hasMany(Workspace::class);
     }
 
+    /** @return HasOne<ClientProfile, $this> */
+    public function profile(): HasOne
+    {
+        return $this->hasOne(ClientProfile::class);
+    }
+
+    /**
+     * Ordered so a split day (09:00-13:00, 15:00-19:00) comes back in reading
+     * order — day_of_week alone would leave the two intervals unordered.
+     *
+     * @return HasMany<ClientBusinessHour, $this>
+     */
+    public function businessHours(): HasMany
+    {
+        return $this->hasMany(ClientBusinessHour::class)
+            ->orderBy('day_of_week')
+            ->orderBy('sort_order');
+    }
+
     public function clientSubscriptions(): HasMany
     {
         return $this->hasMany(ClientSubscription::class);

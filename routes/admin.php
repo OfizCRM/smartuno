@@ -1,10 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminSearchController;
-use App\Http\Controllers\Admin\AiDashboardController;
-use App\Http\Controllers\Admin\LandingPageController;
-use App\Http\Controllers\Admin\LicenseController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AiDashboardController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\ClientBrandingController;
 use App\Http\Controllers\Admin\ClientController;
@@ -14,11 +12,14 @@ use App\Http\Controllers\Admin\CronSetupController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EmailSystemController;
+use App\Http\Controllers\Admin\LandingPageController;
+use App\Http\Controllers\Admin\LicenseController;
 use App\Http\Controllers\Admin\LocaleController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PaymentGatewayConfigController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\PusherSettingsController;
 use App\Http\Controllers\Admin\QueueController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\RolesPermissionsController;
@@ -28,7 +29,6 @@ use App\Http\Controllers\Admin\SystemSettingsController;
 use App\Http\Controllers\Admin\TaxRateController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\TranslationController;
-use App\Http\Controllers\Admin\PusherSettingsController;
 use App\Modules\Integrations\Http\Controllers\IntegrationConfigController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +42,12 @@ Route::get('/search', [AdminSearchController::class, 'search'])->name('search');
 // Client Management (clients table: organizations with multiple users)
 Route::get('/clients', [ClientController::class, 'index'])->name('clients.index')->middleware('permission:view_clients');
 Route::get('/clients/export', [ClientController::class, 'export'])->name('clients.export')->middleware('permission:view_clients');
+// Must stay below /clients/export: a wildcard declared first swallows the literal
+// "export" segment and the CSV download 404s.
+Route::get('/clients/{client}', [ClientController::class, 'show'])->name('clients.show')->middleware('permission:view_clients');
+// Separate from clients.update so the list page's edit modal keeps owning the
+// platform record (name, status, currency) and this owns the company profile.
+Route::put('/clients/{client}/profile', [ClientController::class, 'updateProfile'])->name('clients.profile.update')->middleware('permission:update_clients');
 Route::post('/clients', [ClientController::class, 'store'])->name('clients.store')->middleware('permission:create_clients');
 Route::put('/clients/{client}', [ClientController::class, 'update'])->name('clients.update')->middleware('permission:update_clients');
 Route::delete('/clients/{client}', [ClientController::class, 'destroy'])->name('clients.destroy')->middleware('permission:delete_clients');

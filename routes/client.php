@@ -57,6 +57,12 @@ Route::middleware(['verified'])->group(function () {
     Route::put('/settings', [ClientSettingsController::class, 'update'])->name('settings.update');
     Route::get('/settings/preferences', [ClientSettingsController::class, 'preferences'])->name('settings.preferences');
     Route::get('/settings/company', [ClientSettingsController::class, 'company'])->name('settings.company');
+    // Its own endpoint rather than more rules on PUT /settings: that one action
+    // already serves preferences, company and notifications through a single
+    // flat rule list, and the company form alone adds thirty-five fields.
+    Route::put('/settings/company', [ClientSettingsController::class, 'updateCompany'])->name('settings.company.update');
+    Route::post('/settings/company/logo', [ClientSettingsController::class, 'uploadLogo'])->name('settings.company.logo.store');
+    Route::delete('/settings/company/logo', [ClientSettingsController::class, 'deleteLogo'])->name('settings.company.logo.destroy');
     Route::get('/settings/notifications', [ClientSettingsController::class, 'notifications'])->name('settings.notifications');
     Route::get('/settings/data-export', [DataExportController::class, 'index'])->name('settings.data-export');
     Route::post('/settings/data-export', [DataExportController::class, 'store'])->name('settings.data-export.store');

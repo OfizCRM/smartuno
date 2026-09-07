@@ -4,10 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\ClientBusinessHour;
+use App\Models\ClientProfile;
 use App\Models\ClientSubscription;
 use App\Models\Plan;
 use App\Models\User;
+use App\Rules\ValidCui;
+use App\Rules\ValidIban;
 use App\Services\AuditLogService;
+use App\Support\Romania;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,6 +75,67 @@ class ClientController extends Controller
         ]);
     }
 
+    /**
+     * Detail page for one client: the company profile the platform admin may edit,
+     * plus a read-only view of the operating data the tenant maintains itself.
+     */
+    public function show(Request $request, Client $client): Response
+    {
+        $this->authorizeForUser($request->user('admin'), 'view', $client);
+
+        $client->load(['profile', 'businessHours', 'activeSubscription.plan']);
+
+        // Same reason the list uses it: a client whose plan comes from a user-level
+        // Subscription would otherwise read "No Plan" here while their own dashboard
+        // shows the plan.
+        $plan = $client->effectivePlan();
+
+        return Inertia::render('Admin/Clients/Show', [
+            'client' => [
+                'id' => $client->id,
+                'name' => $client->name,
+                'email' => $client->email,
+                'phone' => $client->phone,
+                // Derived from the profile address on every profile save; shown here so
+                // an admin can see what a client migrated from the free-text era has.
+                'address' => $client->address,
+                'status' => $client->status,
+                'base_currency' => $client->base_currency,
+                'currency_symbol' => $client->currency_symbol,
+                'currency_position' => $client->currency_position,
+                'logo_url' => $client->logoUrl(),
+                'created_at' => $client->created_at?->toDateString(),
+            ],
+            'profile' => $client->profile?->only([
+                'legal_name', 'industry', 'industry_other', 'company_size', 'short_description',
+                'cui', 'vat_status', 'vat_rate', 'trade_register_no', 'share_capital', 'iban', 'bank_name',
+                'mobile_phone', 'website', 'contact_person_name', 'contact_person_role',
+                'address_street', 'address_city', 'address_county', 'address_postcode', 'address_country',
+                'timezone', 'delivery_zones', 'delivery_time',
+                'facebook_url', 'instagram_url', 'google_maps_url', 'online_shop_url',
+            ]),
+            // One row per interval, so a clinic closing for lunch sends two Monday rows.
+            'businessHours' => $client->businessHours->map(fn (ClientBusinessHour $hour) => [
+                'id' => $hour->id,
+                'day_of_week' => (int) $hour->day_of_week,
+                'opens_at' => $hour->opens_at ? substr((string) $hour->opens_at, 0, 5) : null,
+                'closes_at' => $hour->closes_at ? substr((string) $hour->closes_at, 0, 5) : null,
+                'is_closed' => $hour->is_closed,
+            ])->values(),
+            'plan' => $plan ? ['name' => $plan->name] : null,
+            'userCount' => $client->users()->count(),
+            // Only the lists this form actually offers. Industries and company sizes are
+            // the tenant's own fields, read-only here, so their option lists stay client-side.
+            'options' => [
+                'counties' => Romania::counties(),
+                'vat_statuses' => Romania::vatStatuses(),
+                // Shown as a hint next to the rate field. The rate itself stays free
+                // text: 11% goods are ordinary here, not an exception to correct.
+                'standard_vat_rate' => Romania::standardVatRate(),
+            ],
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $this->authorizeForUser($request->user('admin'), 'create', Client::class);
@@ -115,6 +181,80 @@ class ClientController extends Controller
         $this->auditLog->logAdmin('client.updated', Client::class, (int) $client->id, ['name' => $client->name]);
 
         return redirect()->back()->with('success', __('Client updated.'));
+    }
+
+    /**
+     * The company profile as the *platform* needs it: what goes on an invoice, who to
+     * call, where to send post. Deliberately a separate endpoint from update() so the
+     * list page's edit modal keeps owning the platform record (name, status, currency).
+     *
+     * Industry, company size, description, delivery and social links are the tenant's
+     * own operating data and are editable only inside the client app — they are shown
+     * here read-only.
+     */
+    public function updateProfile(Request $request, Client $client): RedirectResponse
+    {
+        $this->authorizeForUser($request->user('admin'), 'update', $client);
+
+        $rules = [
+            'legal_name' => ['nullable', 'string', 'max:255'],
+            'cui' => ['nullable', 'string', 'max:16', new ValidCui],
+            'trade_register_no' => ['nullable', 'string', 'max:32'],
+            'vat_status' => ['nullable', 'string', Rule::in(Romania::vatStatuses())],
+            // decimal(5,2) in the column, but a rate over 100% is a typo, not a rate.
+            'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'iban' => ['nullable', 'string', 'max:34', new ValidIban],
+            'bank_name' => ['nullable', 'string', 'max:128'],
+            'share_capital' => ['nullable', 'numeric', 'min:0', 'max:9999999999999.99'],
+            'contact_person_name' => ['nullable', 'string', 'max:128'],
+            'contact_person_role' => ['nullable', 'string', 'max:128'],
+            'mobile_phone' => ['nullable', 'string', 'max:64'],
+            'website' => ['nullable', 'url', 'max:255'],
+            'address_street' => ['nullable', 'string', 'max:255'],
+            'address_city' => ['nullable', 'string', 'max:128'],
+            'address_county' => ['nullable', 'string', Rule::in(array_keys(Romania::counties()))],
+            'address_postcode' => ['nullable', 'string', 'max:16'],
+            'address_country' => ['nullable', 'string', 'size:2'],
+        ];
+
+        $validated = $request->validate($rules);
+
+        // Missing keys become explicit nulls: array_filter here would make a field the
+        // admin cleared impossible to clear, because the blank would just be skipped.
+        $data = array_merge(array_fill_keys(array_keys($rules), null), $validated);
+
+        // Stored uppercase and unspaced so the value that reaches an invoice or a
+        // payment file is the canonical one, whatever the admin pasted. cui goes
+        // through the shared normaliser rather than being stored verbatim: it is an
+        // indexed lookup column, and "RO 14399840" typed here has to match
+        // "14399840" typed by the tenant in its own company form.
+        $data['iban'] = $data['iban'] ? strtoupper(str_replace(' ', '', $data['iban'])) : null;
+        $data['cui'] = Romania::canonicalCui($data['cui']);
+        $data['address_country'] = $data['address_country'] ? strtoupper($data['address_country']) : null;
+
+        // A rate only means something alongside a status that charges it — a
+        // neplatitor de TVA carries the exemption mention instead. Keyed on the two
+        // statuses that do charge, not on 'none' alone, so clearing the status back
+        // to unset does not leave a stale rate behind. Same coupling the client-side
+        // company form applies.
+        if (! in_array($data['vat_status'], ['standard', 'on_collection'], true)) {
+            $data['vat_rate'] = null;
+        }
+
+        ClientProfile::updateOrCreate(['client_id' => $client->id], $data);
+
+        $derived = Romania::composeAddress($data);
+        if ($derived !== null) {
+            // clients.address is derived, not authoritative: the admin list and the CSV
+            // export still read that one column. Left untouched when the structured
+            // address is empty, so a first save does not wipe a legacy free-text address
+            // that nobody has re-entered yet.
+            $client->update(['address' => $derived]);
+        }
+
+        $this->auditLog->logAdmin('client.profile.updated', Client::class, (int) $client->id, ['name' => $client->name]);
+
+        return redirect()->back()->with('success', __('Client profile updated.'));
     }
 
     public function destroy(Request $request, Client $client): RedirectResponse

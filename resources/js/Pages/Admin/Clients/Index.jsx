@@ -1,6 +1,6 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Badge, Button, Card, Modal, Pagination, Tooltip } from '@/Components/ui';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
@@ -17,17 +17,25 @@ const STATUS_ACTIVE = 'active';
 const CLIENT_ROLE_ADMIN = 'administrator';
 const CLIENT_ROLE_STAFF = 'staff';
 
-function ActionIcon({ onClick, title, icon: Icon, className = 'text-brand-500 hover:text-brand-600' }) {
+/**
+ * One row action. Renders a real <Link> when given an `href` so the action that
+ * navigates — edit — is middle-clickable and shows its target in the status bar,
+ * like the client name in the same row. The others stay buttons.
+ */
+function ActionIcon({ onClick, href, title, icon: Icon, className = 'text-brand-500 hover:text-brand-600' }) {
+    const classes = `rounded-soft p-1.5 transition ${className}`;
+
     return (
         <Tooltip content={title}>
-            <button
-                type="button"
-                onClick={onClick}
-                className={`rounded-soft p-1.5 transition ${className}`}
-                aria-label={title}
-            >
-                <Icon className="h-4 w-4" />
-            </button>
+            {href ? (
+                <Link href={href} className={`inline-flex ${classes}`} aria-label={title}>
+                    <Icon className="h-4 w-4" />
+                </Link>
+            ) : (
+                <button type="button" onClick={onClick} className={classes} aria-label={title}>
+                    <Icon className="h-4 w-4" />
+                </button>
+            )}
         </Tooltip>
     );
 }
@@ -45,8 +53,6 @@ export default function AdminClientsIndex({ clients, plans = [], filters = {} })
 
     const [search, setSearch] = useState(filters.search ?? '');
     const [addClientOpen, setAddClientOpen] = useState(false);
-    const [editClientOpen, setEditClientOpen] = useState(false);
-    const [editClient, setEditClient] = useState(null);
     const [manageUsersOpen, setManageUsersOpen] = useState(false);
     const [manageUsersClient, setManageUsersClient] = useState(null);
     const [clientUsers, setClientUsers] = useState([]);
@@ -63,17 +69,6 @@ export default function AdminClientsIndex({ clients, plans = [], filters = {} })
     // currency. Defaulting them to USD here would persist USD onto every client the
     // admin touches, which shadows the platform default.
     const addClientForm = useForm({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        status: STATUS_ACTIVE,
-        base_currency: '',
-        currency_symbol: '',
-        currency_position: '',
-    });
-
-    const editClientForm = useForm({
         name: '',
         email: '',
         phone: '',
@@ -110,20 +105,6 @@ export default function AdminClientsIndex({ clients, plans = [], filters = {} })
         router.get(route('admin.clients.index'), { search: search || undefined }, { preserveState: true });
     };
 
-    const openEditClient = (c) => {
-        setEditClient(c);
-        editClientForm.setData({
-            name: c.name,
-            email: c.email ?? '',
-            phone: c.phone ?? '',
-            address: c.address ?? '',
-            status: c.status,
-            base_currency: c.base_currency ?? '',
-            currency_symbol: c.currency_symbol ?? '',
-            currency_position: c.currency_position ?? '',
-        });
-        setEditClientOpen(true);
-    };
 
     const fetchClientUsers = useCallback(async (client) => {
         setUsersLoading(true);
@@ -295,7 +276,14 @@ export default function AdminClientsIndex({ clients, plans = [], filters = {} })
                             <tbody>
                                 {data.map((c) => (
                                     <tr key={c.id} className="border-b border-neutral-100 dark:border-neutral-800">
-                                        <td className="py-3 pr-4 font-medium text-neutral-900 dark:text-neutral-100">{c.name}</td>
+                                        <td className="py-3 pr-4 font-medium">
+                                            <Link
+                                                href={route('admin.clients.show', { client: c.id })}
+                                                className="text-neutral-900 dark:text-neutral-100 hover:text-brand-600 dark:hover:text-brand-400 hover:underline"
+                                            >
+                                                {c.name}
+                                            </Link>
+                                        </td>
                                         <td className="py-3 pr-4 text-neutral-600 dark:text-neutral-300">{c.email ?? '—'}</td>
                                         <td className="py-3 pr-4">
                                             <Badge variant={c.status === STATUS_ACTIVE ? 'success' : 'default'}>
@@ -309,7 +297,7 @@ export default function AdminClientsIndex({ clients, plans = [], filters = {} })
                                             <div className="flex items-center justify-end gap-0.5">
                                                 {canUpdate && (
                                                     <>
-                                                        <ActionIcon title={t('admin.edit_client_title')} icon={Pencil} onClick={() => openEditClient(c)} />
+                                                        <ActionIcon title={t('admin.edit_client_title')} icon={Pencil} href={route('admin.clients.show', c.id)} />
                                                         <ActionIcon title={t('admin.manage_users_title')} icon={Users} onClick={() => openManageUsers(c)} />
                                                         <ActionIcon title={t('admin.assign_plan_title')} icon={CheckCircle} onClick={() => openAssignPlan(c)} />
                                                         <ActionIcon title={t('admin.impersonate_title')} icon={LogIn} onClick={() => doImpersonate(c)} />
@@ -430,105 +418,6 @@ export default function AdminClientsIndex({ clients, plans = [], filters = {} })
                         <Button type="submit" disabled={addClientForm.processing}>{t('admin.create_client')}</Button>
                     </Modal.Footer>
                 </form>
-            </Modal>
-
-            {/* Edit Client Modal */}
-            <Modal show={editClientOpen} onClose={() => setEditClientOpen(false)} maxWidth="2xl">
-                <Modal.Header title={t('admin.edit_client')} onClose={() => setEditClientOpen(false)} />
-                {editClient && (
-                    <form onSubmit={(e) => { e.preventDefault(); editClientForm.put(route('admin.clients.update', editClient.id), { preserveScroll: true, onSuccess: () => setEditClientOpen(false) }); }}>
-                        <Modal.Body className="space-y-4">
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('admin.client_name')} <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="text"
-                                        value={editClientForm.data.name}
-                                        onChange={(e) => editClientForm.setData('name', e.target.value)}
-                                        className="w-full rounded-soft border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
-                                    />
-                                    {editClientForm.errors.name && <p className="mt-0.5 text-xs text-red-500">{editClientForm.errors.name}</p>}
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('admin.col_email')}</label>
-                                    <input
-                                        type="email"
-                                        value={editClientForm.data.email}
-                                        onChange={(e) => editClientForm.setData('email', e.target.value)}
-                                        className="w-full rounded-soft border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('admin.phone')}</label>
-                                <input
-                                    type="text"
-                                    value={editClientForm.data.phone}
-                                    onChange={(e) => editClientForm.setData('phone', e.target.value)}
-                                    className="w-full rounded-soft border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('admin.address')}</label>
-                                <textarea
-                                    value={editClientForm.data.address}
-                                    onChange={(e) => editClientForm.setData('address', e.target.value)}
-                                    rows={2}
-                                    className="w-full rounded-soft border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('admin.col_status')}</label>
-                                <select
-                                    value={editClientForm.data.status}
-                                    onChange={(e) => editClientForm.setData('status', e.target.value)}
-                                    className="w-full rounded-soft border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
-                                >
-                                    <option value="active">{t('common.active')}</option>
-                                    <option value="inactive">{t('common.inactive')}</option>
-                                </select>
-                            </div>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('admin.base_currency')}</label>
-                                    <input
-                                        type="text"
-                                        value={editClientForm.data.base_currency}
-                                        onChange={(e) => editClientForm.setData('base_currency', e.target.value)}
-                                        placeholder={t('admin.currency_inherit')}
-                                        className="w-full rounded-soft border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('admin.currency_symbol')}</label>
-                                    <input
-                                        type="text"
-                                        value={editClientForm.data.currency_symbol}
-                                        onChange={(e) => editClientForm.setData('currency_symbol', e.target.value)}
-                                        placeholder={t('admin.currency_inherit')}
-                                        className="w-full rounded-soft border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('admin.currency_position')}</label>
-                                    <select
-                                        value={editClientForm.data.currency_position}
-                                        onChange={(e) => editClientForm.setData('currency_position', e.target.value)}
-                                        className="w-full rounded-soft border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
-                                    >
-                                        <option value="">{t('admin.currency_inherit')}</option>
-                                        <option value="before">{t('admin.currency_position_before')}</option>
-                                        <option value="after">{t('admin.currency_position_after')}</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </Modal.Body>
-                        <Modal.Footer>
-                            <Button type="button" variant="outline" onClick={() => setEditClientOpen(false)}>{t('common.cancel')}</Button>
-                            <Button type="submit" disabled={editClientForm.processing}>{t('common.save')}</Button>
-                        </Modal.Footer>
-                    </form>
-                )}
             </Modal>
 
             {/* Manage Client Users Modal */}

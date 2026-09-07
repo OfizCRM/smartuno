@@ -1,0 +1,13 @@
+{
+    "A Romanian IBAN must be 24 characters long.": "Un IBAN românesc are exact 24 de caractere.",
+    "Client profile updated.": "Datele firmei au fost salvate!",
+    "Logo removed.": "Logoul a fost șters.",
+    "Logo uploaded.": "Logoul a fost încărcat.",
+    "Set both an opening and a closing time, or mark the day as closed.": "Completează și ora de deschidere, și ora de închidere, sau marchează ziua ca închisă.",
+    "Settings saved.": "Setările au fost salvate!",
+    "The :attribute is not a valid IBAN.": "Contul IBAN nu este valid — verifică cifrele.",
+    "The :attribute is not a valid Romanian CUI.": "Codul fiscal nu este valid — verifică cifrele.",
+    "The :attribute must be a valid IBAN.": "Contul IBAN nu are formatul unui IBAN.",
+    "The :attribute must be a valid Romanian CUI.": "Codul fiscal nu are formatul unui CUI românesc.",
+    "The closing time must be after the opening time.": "Ora de închidere trebuie să fie după ora de deschidere."
+}
