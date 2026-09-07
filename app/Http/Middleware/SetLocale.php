@@ -31,30 +31,41 @@ class SetLocale
 
         $locale = $defaultCode;
 
+        // Track whether a higher-priority source has answered, rather than testing
+        // `$locale === $defaultCode`. That comparison silently fails whenever a
+        // user's own preference happens to equal the platform default: with both
+        // set to 'ro' the guard stayed true, so a stale session value from the
+        // login page (where the visitor is still a guest) overrode the account
+        // setting and the UI kept reverting to English.
+        $resolved = false;
+
         // 1) Authenticated user preference (web guard = client User)
         $user = $request->user();
         if ($user && ! empty($user->locale) && in_array($user->locale, $enabledCodes, true)) {
             $locale = $user->locale;
+            $resolved = true;
         }
 
         // 2) Workspace default locale (when no user locale and user has workspace)
-        if ($locale === $defaultCode && $user?->workspace_id) {
+        if (! $resolved && $user?->workspace_id) {
             $workspace = $user->workspace;
             if ($workspace && $workspace->default_locale && in_array($workspace->default_locale, $enabledCodes, true)) {
                 $locale = $workspace->default_locale;
+                $resolved = true;
             }
         }
 
         // 3) Guest/session preference (and admin panel: admin has no locale on model, use session)
-        if ($locale === $defaultCode && $request->hasSession()) {
+        if (! $resolved && $request->hasSession()) {
             $sessionLocale = $request->session()->get('locale');
             if ($sessionLocale && in_array($sessionLocale, $enabledCodes, true)) {
                 $locale = $sessionLocale;
+                $resolved = true;
             }
         }
 
         // 4) Cookie for guests (no session)
-        if ($locale === $defaultCode && ! $request->hasSession() && $request->cookie('locale')) {
+        if (! $resolved && ! $request->hasSession() && $request->cookie('locale')) {
             $cookieLocale = $request->cookie('locale');
             if (in_array($cookieLocale, $enabledCodes, true)) {
                 $locale = $cookieLocale;

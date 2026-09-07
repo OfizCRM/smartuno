@@ -26,6 +26,9 @@ class LocaleController extends Controller
         $user = $request->user();
         if ($user) {
             $user->update(['locale' => $validated['locale']]);
+            // Drop any locale left in the session from before they signed in, so
+            // the account preference is the only thing deciding from now on.
+            $request->session()->forget('locale');
         } else {
             $request->session()->put('locale', $validated['locale']);
         }

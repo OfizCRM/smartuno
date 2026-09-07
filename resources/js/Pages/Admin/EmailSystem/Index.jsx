@@ -321,6 +321,26 @@ function AddOrEditSmtpModal({ show, edit, encryptionOptions, onClose, onSaved })
         activate: edit?.is_active ?? false,
     });
 
+    // useForm applies its initial values only on mount, and this modal mounts once
+    // while `edit` is still undefined — so opening it on an existing configuration
+    // left the fields on their fallbacks ('smtp.gmail.com' and empty strings) and a
+    // save silently overwrote a working SMTP with blanks. Reset on every open, the
+    // same way EditTemplateModal below does it.
+    useEffect(() => {
+        if (!show) return;
+        setData({
+            host: edit?.host ?? 'smtp.gmail.com',
+            port: edit?.port ?? 587,
+            username: edit?.username ?? '',
+            // Never prefilled: the server keeps the stored password when this is blank.
+            password: '',
+            encryption: edit?.encryption ?? 'tls',
+            from_email: edit?.from_email ?? '',
+            from_name: edit?.from_name ?? '',
+            activate: edit?.is_active ?? false,
+        });
+    }, [show, edit?.id]);
+
     const submit = (e) => {
         e.preventDefault();
         if (isEdit) {
@@ -375,7 +395,11 @@ function AddOrEditSmtpModal({ show, edit, encryptionOptions, onClose, onSaved })
                         />
                         <div>
                             <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('email_server.enable_smtp')}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('email_server.connected_to')}</p>
+                            {/* Activating one configuration deactivates every other:
+                                EmailSystemController::store() and update() clear is_active
+                                on the rest first. Say so — a working SMTP can otherwise be
+                                switched off silently by adding a second one. */}
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{t('email_server.enable_smtp_hint')}</p>
                         </div>
                     </label>
                 </Modal.Body>

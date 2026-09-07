@@ -2239,6 +2239,7 @@
         "how_tip_1": "SMTP-ul spațiului de lucru este folosit pentru toate campaniile de email.",
         "how_tip_2": "Doar contactele cu email valid și opt-in email vor primi mesaje.",
         "connected_to": "Conectat la",
+        "enable_smtp_hint": "Doar o configurație poate fi activă. Dacă bifezi, celelalte se dezactivează.",
         "remove_confirm": "Elimini această configurație de server email? Campaniile de email vor folosi implicitul platformei.",
         "test_failed": "Trimiterea emailului de test a eșuat.",
         "enc_tls": "TLS (recomandat)",

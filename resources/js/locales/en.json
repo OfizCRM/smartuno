@@ -2207,6 +2207,7 @@
         "how_tip_1": "Your workspace SMTP is used for all email campaigns.",
         "how_tip_2": "Only contacts with a valid email and email opt-in will receive messages.",
         "connected_to": "Connected to",
+        "enable_smtp_hint": "Only one configuration can be active. Ticking this deactivates the others.",
         "remove_confirm": "Remove this email server configuration? Email campaigns will fall back to the platform default.",
         "test_failed": "Failed to send test email.",
         "enc_tls": "TLS (recommended)",
