@@ -59,7 +59,7 @@ class InvitationController extends Controller
             'expires_days' => 7,
         ]);
 
-        return back()->with('success', 'Invitation sent to '.$request->email);
+        return back()->with('success', __('Invitation sent to :email', ['email' => $request->email]));
     }
 
     /**
@@ -73,6 +73,6 @@ class InvitationController extends Controller
 
         $invitation->delete();
 
-        return back()->with('success', 'Invitation revoked.');
+        return back()->with('success', __('Invitation revoked.'));
     }
 }

@@ -68,7 +68,7 @@ class TwoFactorController extends Controller
 
         $request->session()->forget('2fa_secret');
 
-        return redirect()->route('client.profile.2fa')->with('success', 'Two-factor authentication enabled.');
+        return redirect()->route('client.profile.2fa')->with('success', __('Two-factor authentication enabled.'));
     }
 
     /**
@@ -84,7 +84,7 @@ class TwoFactorController extends Controller
             'two_factor_confirmed_at' => null,
         ]);
 
-        return redirect()->route('client.profile.2fa')->with('success', 'Two-factor authentication disabled.');
+        return redirect()->route('client.profile.2fa')->with('success', __('Two-factor authentication disabled.'));
     }
 
     /**
@@ -98,7 +98,7 @@ class TwoFactorController extends Controller
             'two_factor_recovery_codes' => $this->generateRecoveryCodes(),
         ]);
 
-        return redirect()->route('client.profile.2fa')->with('success', 'Recovery codes regenerated.');
+        return redirect()->route('client.profile.2fa')->with('success', __('Recovery codes regenerated.'));
     }
 
     /**

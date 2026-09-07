@@ -7,9 +7,10 @@ use App\Models\SystemSetting;
 use App\Services\StorageManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -95,20 +96,37 @@ class SystemSettingsController extends Controller
 
     public function uploadLogo(Request $request): RedirectResponse
     {
+        // SVG is accepted only because StorageManager stores the SvgSanitizer
+        // output for one rather than the bytes that were uploaded. 'image'
+        // rejects SVG in Laravel 12 without allow_svg, and the mimes rule spells
+        // the whole list out rather than resting on a framework default.
         $request->validate([
-            'logo' => ['required', 'image', 'mimes:png,jpg,jpeg,gif,svg,webp', 'max:2048'],
+            'logo' => ['required', 'image:allow_svg', 'mimes:png,jpg,jpeg,gif,svg,webp', 'max:2048'],
         ]);
 
+        $file = $request->file('logo');
+        if (! $file instanceof UploadedFile) {
+            abort(422);
+        }
+
+        // Through StorageManager rather than putFileAs on the raw upload: it
+        // names the file from the detected mime type instead of the client's
+        // own, so GIF bytes uploaded as "logo.html" cannot come back off the
+        // storage symlink as text/html on our own origin.
+        $stored = app(StorageManager::class)->storeImageUpload($file, 'branding');
+
+        if ($stored === null) {
+            throw ValidationException::withMessages([
+                'logo' => __('This SVG could not be used. Export it again as a plain SVG, without scripts and without internal CSS, or upload a PNG instead.'),
+            ]);
+        }
+
+        // Only now is the previous file safe to drop: deleting it first would
+        // leave app_logo_path naming nothing if the write above had failed.
         $this->deleteFile('app_logo_path', 'app_logo_disk');
 
-        $sm   = app(StorageManager::class);
-        $disk = $sm->diskName();
-        $file = $request->file('logo');
-        $path = $sm->prefixedPath('branding/logo-'.Str::uuid().'.'.$file->getClientOriginalExtension());
-        $sm->disk()->putFileAs(dirname($path), $file, basename($path));
-
-        SystemSetting::set('app_logo_path', $path, false, 'general');
-        SystemSetting::set('app_logo_disk', $disk, false, 'general');
+        SystemSetting::set('app_logo_path', $stored['path'], false, 'general');
+        SystemSetting::set('app_logo_disk', $stored['disk'], false, 'general');
 
         return back()->with('success', __('Logo uploaded.'));
     }
@@ -123,20 +141,33 @@ class SystemSettingsController extends Controller
 
     public function uploadFavicon(Request $request): RedirectResponse
     {
+        // 'file' and not 'image' because .ico is a favicon format the image rule
+        // does not know; the mimes list tests the detected type either way.
         $request->validate([
             'favicon' => ['required', 'file', 'mimes:png,jpg,jpeg,gif,ico,svg,webp', 'max:512'],
         ]);
 
+        $file = $request->file('favicon');
+        if (! $file instanceof UploadedFile) {
+            abort(422);
+        }
+
+        // Same route as the logo, and for the favicon it is the only thing
+        // standing between an uploaded <svg><script> and a stored XSS: the
+        // browser parses a favicon URL navigated to directly as a document, and
+        // a file served off the storage symlink never reaches SecureHeaders.
+        $stored = app(StorageManager::class)->storeImageUpload($file, 'branding');
+
+        if ($stored === null) {
+            throw ValidationException::withMessages([
+                'favicon' => __('This SVG could not be used. Export it again as a plain SVG, without scripts and without internal CSS, or upload a PNG instead.'),
+            ]);
+        }
+
         $this->deleteFile('app_favicon_path', 'app_favicon_disk');
 
-        $sm   = app(StorageManager::class);
-        $disk = $sm->diskName();
-        $file = $request->file('favicon');
-        $path = $sm->prefixedPath('branding/favicon-'.Str::uuid().'.'.$file->getClientOriginalExtension());
-        $sm->disk()->putFileAs(dirname($path), $file, basename($path));
-
-        SystemSetting::set('app_favicon_path', $path, false, 'general');
-        SystemSetting::set('app_favicon_disk', $disk, false, 'general');
+        SystemSetting::set('app_favicon_path', $stored['path'], false, 'general');
+        SystemSetting::set('app_favicon_disk', $stored['disk'], false, 'general');
 
         return back()->with('success', __('Favicon uploaded.'));
     }

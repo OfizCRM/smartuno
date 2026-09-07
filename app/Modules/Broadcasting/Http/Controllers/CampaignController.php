@@ -57,7 +57,7 @@ class CampaignController extends Controller
             'created_by' => $request->user()->id,
         ]));
 
-        return redirect()->route('client.campaigns.show', $campaign)->with('success', 'Campaign created.');
+        return redirect()->route('client.campaigns.show', $campaign)->with('success', __('Campaign created.'));
     }
 
     /**
@@ -143,7 +143,7 @@ class CampaignController extends Controller
         $validated = $this->validateCampaign($request);
         $campaign->update($validated);
 
-        return redirect()->route('client.campaigns.show', $campaign)->with('success', 'Campaign updated.');
+        return redirect()->route('client.campaigns.show', $campaign)->with('success', __('Campaign updated.'));
     }
 
     public function show(Request $request, Campaign $campaign): Response
@@ -207,7 +207,7 @@ class CampaignController extends Controller
 
         UsageMeter::track($campaign->workspace_id, 'campaigns');
 
-        return back()->with('success', 'Campaign launched.');
+        return back()->with('success', __('Campaign launched.'));
     }
 
     public function pause(Request $request, Campaign $campaign): RedirectResponse
@@ -216,7 +216,7 @@ class CampaignController extends Controller
         abort_unless(in_array($campaign->status, ['queued', 'sending'], true), 422, 'Only queued or sending campaigns can be paused.');
         $campaign->update(['status' => 'paused']);
 
-        return back()->with('success', 'Campaign paused.');
+        return back()->with('success', __('Campaign paused.'));
     }
 
     public function destroy(Request $request, Campaign $campaign): RedirectResponse
@@ -225,7 +225,7 @@ class CampaignController extends Controller
         abort_unless($campaign->status === 'draft', 422, 'Only draft campaigns can be deleted.');
         $campaign->delete();
 
-        return redirect()->route('client.campaigns.index')->with('success', 'Campaign deleted.');
+        return redirect()->route('client.campaigns.index')->with('success', __('Campaign deleted.'));
     }
 
     /**

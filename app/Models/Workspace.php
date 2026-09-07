@@ -31,6 +31,7 @@ class Workspace extends Model
         return $this->belongsTo(User::class, 'owner_id');
     }
 
+    /** @return BelongsTo<Client, $this> */
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);

@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Modules\Integrations\Models\IntegrationConfig;
+use App\Support\SvgSanitizer;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * Single source of truth for file storage configuration.
@@ -20,8 +23,9 @@ use Illuminate\Support\Facades\Storage;
  */
 class StorageManager
 {
-    private const CACHE_KEY    = 'storage_manager_resolved';
-    private const CACHE_TTL    = 60; // seconds
+    private const CACHE_KEY = 'storage_manager_resolved';
+
+    private const CACHE_TTL = 60; // seconds
 
     /**
      * Returns the active filesystem disk instance.
@@ -112,6 +116,60 @@ class StorageManager
         $this->injectDiskConfig($diskName, $diskConfig);
     }
 
+    /**
+     * Stores an uploaded image and returns its path and disk, or null when the
+     * file is an SVG that cannot be made safe.
+     *
+     * SVG is XML and can carry script, so what lands on the disk for one is the
+     * output of SvgSanitizer and never the bytes the uploader sent. Every other
+     * type is streamed through untouched.
+     *
+     * The extension comes from the file's own detected mime type, never from
+     * the client-supplied name: a valid PNG uploaded as "shell.php" passes an
+     * image rule, and stored under that name on the public disk it is served
+     * straight back through the storage symlink for the webserver to execute.
+     *
+     * @return array{path: string, disk: string}|null
+     */
+    public function storeImageUpload(UploadedFile $file, string $directory): ?array
+    {
+        $extension = $file->extension() ?: 'png';
+        $path = $this->prefixedPath(trim($directory, '/').'/'.Str::uuid().'.'.$extension);
+        $disk = $this->diskName();
+
+        if ($extension === 'svg') {
+            $cleaned = SvgSanitizer::sanitize((string) $file->get());
+
+            if ($cleaned === null) {
+                return null;
+            }
+
+            $this->disk()->put($path, $cleaned);
+        } else {
+            $this->disk()->putFileAs(dirname($path), $file, basename($path));
+        }
+
+        return ['path' => $path, 'disk' => $disk];
+    }
+
+    /**
+     * Removes one stored file, whichever disk it landed on.
+     *
+     * Takes the path and disk rather than the owning model, so a replacement
+     * can be written first and the file it superseded deleted afterwards — the
+     * order that keeps a failed write from leaving a logo_path naming nothing.
+     */
+    public function deleteStoredFile(?string $path, ?string $disk = null): void
+    {
+        if ($path === null || $path === '') {
+            return;
+        }
+
+        $disk ??= 'public';
+        $this->ensureDiskReady($disk);
+        Storage::disk($disk)->delete($path);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
@@ -147,8 +205,8 @@ class StorageManager
 
                 if ($provider === 'storage_local') {
                     return [
-                        'provider'         => 'storage_local',
-                        'disk_config'      => [],
+                        'provider' => 'storage_local',
+                        'disk_config' => [],
                         'directory_prefix' => '',
                     ];
                 }
@@ -160,16 +218,16 @@ class StorageManager
                 $prefix = trim($creds['directory_prefix'] ?? '', '/');
 
                 return [
-                    'provider'         => $provider,
-                    'disk_config'      => $diskConfig,
+                    'provider' => $provider,
+                    'disk_config' => $diskConfig,
                     'directory_prefix' => $prefix !== '' ? $prefix.'/' : '',
                 ];
             }
 
             // Nothing enabled → use local public disk
             return [
-                'provider'         => null,
-                'disk_config'      => [],
+                'provider' => null,
+                'disk_config' => [],
                 'directory_prefix' => '',
             ];
         });
@@ -183,39 +241,39 @@ class StorageManager
     {
         return match ($provider) {
             'storage_s3' => [
-                'driver'                  => 's3',
-                'key'                     => $creds['key']    ?? null,
-                'secret'                  => $creds['secret'] ?? null,
-                'region'                  => $creds['region'] ?? 'us-east-1',
-                'bucket'                  => $creds['bucket'] ?? null,
-                'url'                     => $creds['url']    ?? null,
-                'endpoint'                => null,
+                'driver' => 's3',
+                'key' => $creds['key'] ?? null,
+                'secret' => $creds['secret'] ?? null,
+                'region' => $creds['region'] ?? 'us-east-1',
+                'bucket' => $creds['bucket'] ?? null,
+                'url' => $creds['url'] ?? null,
+                'endpoint' => null,
                 'use_path_style_endpoint' => false,
-                'throw'                   => false,
+                'throw' => false,
             ],
             'storage_do' => [
-                'driver'                  => 's3',
-                'key'                     => $creds['key']      ?? null,
-                'secret'                  => $creds['secret']   ?? null,
-                'region'                  => $creds['region']   ?? 'nyc3',
-                'bucket'                  => $creds['bucket']   ?? null,
-                'url'                     => $creds['url']      ?? null,
-                'endpoint'                => $creds['endpoint'] ?? 'https://nyc3.digitaloceanspaces.com',
+                'driver' => 's3',
+                'key' => $creds['key'] ?? null,
+                'secret' => $creds['secret'] ?? null,
+                'region' => $creds['region'] ?? 'nyc3',
+                'bucket' => $creds['bucket'] ?? null,
+                'url' => $creds['url'] ?? null,
+                'endpoint' => $creds['endpoint'] ?? 'https://nyc3.digitaloceanspaces.com',
                 'use_path_style_endpoint' => false,
-                'throw'                   => false,
-                'visibility'              => 'public',
-                'options'                 => ['ACL' => 'public-read'],
+                'throw' => false,
+                'visibility' => 'public',
+                'options' => ['ACL' => 'public-read'],
             ],
             'storage_wasabi' => [
-                'driver'                  => 's3',
-                'key'                     => $creds['key']      ?? null,
-                'secret'                  => $creds['secret']   ?? null,
-                'region'                  => $creds['region']   ?? 'us-east-1',
-                'bucket'                  => $creds['bucket']   ?? null,
-                'url'                     => $creds['url']      ?? null,
-                'endpoint'                => $creds['endpoint'] ?? 'https://s3.wasabisys.com',
+                'driver' => 's3',
+                'key' => $creds['key'] ?? null,
+                'secret' => $creds['secret'] ?? null,
+                'region' => $creds['region'] ?? 'us-east-1',
+                'bucket' => $creds['bucket'] ?? null,
+                'url' => $creds['url'] ?? null,
+                'endpoint' => $creds['endpoint'] ?? 'https://s3.wasabisys.com',
                 'use_path_style_endpoint' => false,
-                'throw'                   => false,
+                'throw' => false,
             ],
             default => [],
         };

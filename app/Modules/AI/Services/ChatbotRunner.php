@@ -7,9 +7,17 @@ use App\Modules\Shared\Models\Message;
 
 class ChatbotRunner
 {
+    /**
+     * Framing for the tenant's own company facts. English, like the order
+     * framing below and the default system prompt — the reply language follows
+     * the customer's message, not this block.
+     */
+    private const COMPANY_FRAMING = "\n\nThese are the confirmed facts about the business you are answering for. Use them for questions about what it does, where it is, how to reach it, opening hours and delivery:\n";
+
     public function __construct(
         private LlmGateway $llmGateway,
         private EmbeddingStore $embedStore,
+        private CompanyProfileContext $companyProfile,
     ) {}
 
     public function run(AiChatbot $bot, Message $inboundMessage): ?string
@@ -45,6 +53,13 @@ class ChatbotRunner
         if (! empty($contextChunks)) {
             $context = implode("\n\n---\n\n", array_map(fn ($c) => $c->content, $contextChunks));
             $systemPrompt .= "\n\nRelevant context:\n".$context;
+        }
+
+        // Inject the tenant's own company facts so the bot can answer "cu ce vă
+        // ocupați?", "unde sunteți?", "sunteți deschis acum?" and "livrați la mine?".
+        $companyProfile = $this->companyProfile->forWorkspace($workspaceId);
+        if ($companyProfile !== null) {
+            $systemPrompt .= self::COMPANY_FRAMING.$companyProfile;
         }
 
         // Inject the customer's recent orders so the bot can answer "where is my order?".
@@ -175,6 +190,13 @@ class ChatbotRunner
         if (! empty($contextChunks)) {
             $context = implode("\n\n---\n\n", array_map(fn ($c) => $c->content, $contextChunks));
             $systemPrompt .= "\n\nRelevant context:\n".$context;
+        }
+
+        // Same injection as run(): the playground and the public API must show
+        // the operator the prompt their customers actually get.
+        $companyProfile = $this->companyProfile->forWorkspace($workspaceId);
+        if ($companyProfile !== null) {
+            $systemPrompt .= self::COMPANY_FRAMING.$companyProfile;
         }
 
         $messages = array_merge(

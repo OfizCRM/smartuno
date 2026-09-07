@@ -25,10 +25,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -298,13 +297,14 @@ class SettingsController extends Controller
     {
         $c = $this->administeredClient($request);
 
-        // SVG is deliberately absent from the list: one served from the public
-        // disk can carry a script, and it would be same-origin with the app on
-        // every page that renders the logo. 'image' also rejects it in Laravel 12
-        // without allow_svg, but the rule set should say so on its own rather
-        // than rest on a framework default one word can flip.
+        // SVG is allowed, but only because StorageManager stores the output of
+        // SvgSanitizer for one rather than the bytes that were uploaded: raw
+        // SVG is XML that can carry a script, and it would be same-origin with
+        // the app. 'image' rejects SVG in Laravel 12 without allow_svg, and the
+        // mimes rule states the whole list on its own rather than resting on a
+        // framework default one word can flip.
         $request->validate([
-            'logo' => ['required', 'image', 'mimes:png,jpg,jpeg,gif,webp', 'max:2048'],
+            'logo' => ['required', 'image:allow_svg', 'mimes:png,jpg,jpeg,gif,webp,svg', 'max:2048'],
         ]);
 
         $file = $request->file('logo');
@@ -313,13 +313,16 @@ class SettingsController extends Controller
         }
 
         $sm = app(StorageManager::class);
-        $disk = $sm->diskName();
-        // extension() guesses from the file's own mime type. The client-supplied
-        // name must not decide it: "logo.php" holding a valid PNG passes the
-        // mimes rule, and a webserver that runs PHP under the uploads directory
-        // would then execute what we stored.
-        $path = $sm->prefixedPath('client-logos/'.Str::uuid().'.'.($file->extension() ?: 'png'));
-        $sm->disk()->putFileAs(dirname($path), $file, basename($path));
+        $stored = $sm->storeImageUpload($file, 'client-logos');
+
+        // An SVG the sanitiser could not reduce to the allow-list. Reported as a
+        // validation error on the field rather than a 500: it is the uploader's
+        // file that is the problem, and they can export a different one.
+        if ($stored === null) {
+            throw ValidationException::withMessages([
+                'logo' => __('This SVG could not be used. Export it again as a plain SVG, without scripts and without internal CSS, or upload a PNG instead.'),
+            ]);
+        }
 
         // Only now is the old file safe to drop. Deleting it first — which is
         // what avoids the orphan on a paid object store — leaves logo_path
@@ -327,11 +330,11 @@ class SettingsController extends Controller
         $previousPath = $c->logo_path;
         $previousDisk = $c->logo_disk;
 
-        $c->logo_path = $path;
-        $c->logo_disk = $disk;
+        $c->logo_path = $stored['path'];
+        $c->logo_disk = $stored['disk'];
         $c->save();
 
-        $this->deleteLogoFile($previousPath, $previousDisk);
+        $sm->deleteStoredFile($previousPath, $previousDisk);
 
         return back()->with('success', __('Logo uploaded.'));
     }
@@ -340,7 +343,7 @@ class SettingsController extends Controller
     {
         $c = $this->administeredClient($request);
 
-        $this->deleteLogoFile($c->logo_path, $c->logo_disk);
+        app(StorageManager::class)->deleteStoredFile($c->logo_path, $c->logo_disk);
         $c->logo_path = null;
         $c->logo_disk = null;
         $c->save();
@@ -580,21 +583,5 @@ class SettingsController extends Controller
         }
 
         return mb_strtoupper((string) preg_replace($stripPattern, '', $value));
-    }
-
-    /**
-     * Remove one stored logo, whichever disk it landed on. Takes the path and
-     * disk rather than the client, so a replacement can be written first and the
-     * file it superseded deleted afterwards.
-     */
-    private function deleteLogoFile(?string $path, ?string $disk): void
-    {
-        if ($path === null || $path === '') {
-            return;
-        }
-
-        $disk ??= 'public';
-        app(StorageManager::class)->ensureDiskReady($disk);
-        Storage::disk($disk)->delete($path);
     }
 }

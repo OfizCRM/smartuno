@@ -76,7 +76,7 @@
         "section_hours": "Program și zonă de livrare",
         "section_online": "Prezență online",
         "choose": "Alege...",
-        "logo_hint": "PNG sau JPG, minimum 200x200 px, maximum 2 MB.",
+        "logo_hint": "PNG, JPG sau SVG, minimum 200x200 px, maximum 2 MB.",
         "logo_upload": "Încarcă",
         "logo_remove": "Șterge",
         "logo_alt": "Logoul firmei",

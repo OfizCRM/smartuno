@@ -49,6 +49,6 @@ class SessionController extends Controller
             ->where('id', '!=', $request->session()->getId())
             ->delete();
 
-        return back()->with('success', 'All other sessions have been revoked.');
+        return back()->with('success', __('All other sessions have been revoked.'));
     }
 }

@@ -76,7 +76,7 @@
         "section_hours": "Opening hours and delivery",
         "section_online": "Online presence",
         "choose": "Choose...",
-        "logo_hint": "PNG or JPG, at least 200x200 px, up to 2 MB.",
+        "logo_hint": "PNG, JPG or SVG, at least 200x200 px, up to 2 MB.",
         "logo_upload": "Upload",
         "logo_remove": "Remove",
         "logo_alt": "Company logo",

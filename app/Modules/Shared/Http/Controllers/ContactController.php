@@ -118,7 +118,7 @@ class ContactController extends Controller
             Segment::whereIn('id', $segmentIds)->each(fn ($s) => $s->update(['contact_count' => $s->contacts()->count()]));
         }
 
-        return back()->with('success', 'Contact saved.');
+        return back()->with('success', __('Contact saved.'));
     }
 
     public function update(Request $request, Contact $contact): RedirectResponse
@@ -151,7 +151,7 @@ class ContactController extends Controller
             Segment::whereIn('id', $affectedIds)->each(fn ($s) => $s->update(['contact_count' => $s->contacts()->count()]));
         }
 
-        return back()->with('success', 'Contact updated.');
+        return back()->with('success', __('Contact updated.'));
     }
 
     public function destroy(Request $request, Contact $contact): RedirectResponse
@@ -159,7 +159,7 @@ class ContactController extends Controller
         $this->authoriseContact($request, $contact);
         $contact->delete();
 
-        return back()->with('success', 'Contact deleted.');
+        return back()->with('success', __('Contact deleted.'));
     }
 
     public function uploadAvatar(Request $request, Contact $contact): RedirectResponse
@@ -179,7 +179,7 @@ class ContactController extends Controller
         $this->storageManager->disk()->putFileAs('contact-avatars', $file, basename($path));
         $contact->update(['avatar' => $path]);
 
-        return back()->with('success', 'Avatar updated.');
+        return back()->with('success', __('Avatar updated.'));
     }
 
     public function deleteAvatar(Request $request, Contact $contact): RedirectResponse
@@ -192,7 +192,7 @@ class ContactController extends Controller
 
         $contact->update(['avatar' => null]);
 
-        return back()->with('success', 'Avatar removed.');
+        return back()->with('success', __('Avatar removed.'));
     }
 
     public function import(Request $request): RedirectResponse
