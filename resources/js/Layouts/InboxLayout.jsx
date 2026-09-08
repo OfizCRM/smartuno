@@ -1,19 +1,31 @@
 import { router, usePage } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Toaster, toast } from 'sonner';
 import Sidebar from '@/Components/Sidebar';
 import UpgradeModal from '@/Components/UpgradeModal';
 import SubscriptionBanner from '@/Components/SubscriptionBanner';
 import useClientNav from '@/Layouts/useClientNav';
+import SidebarWorkspaceSwitcher from '@/Components/SidebarWorkspaceSwitcher';
+import SidebarUserCard from '@/Components/SidebarUserCard';
+import { describeNotification } from '@/Utils/notificationDescriptor';
 
 export default function InboxLayout({ children }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { auth, impersonation, current_workspace_usage, unreadNotificationsCount, branding, demo_mode } = usePage().props;
     const logoUrl = branding?.logo_url;
     const [unreadCount, setUnreadCount] = useState(unreadNotificationsCount ?? 0);
     const clientNavGroups = useClientNav();
+
+    // The Echo subscription below must not re-run when the language changes —
+    // tearing down and re-opening a websocket to relabel a toast would drop
+    // messages mid-switch. A ref keeps the translator current without becoming
+    // an effect dependency.
+    const i18nRef = useRef({ t, language: i18n.language });
+    useEffect(() => {
+        i18nRef.current = { t, language: i18n.language };
+    }, [t, i18n.language]);
 
     useEffect(() => {
         setUnreadCount(unreadNotificationsCount ?? 0);
@@ -24,18 +36,16 @@ export default function InboxLayout({ children }) {
         window.Echo.private(`App.Models.User.${auth.user.id}`)
             .notification((notification) => {
                 setUnreadCount(prev => prev + 1);
-                const msg = notification.snippet ?? notification.name ?? notification.automation ?? notification.error ?? 'New notification';
-                const title = {
-                    new_message: 'New message',
-                    mention: '@ You were mentioned',
-                    conversation_assigned: 'Conversation assigned',
-                    campaign_completed: 'Campaign completed',
-                    automation_failed: 'Automation failed',
-                    billing_failed: 'Payment failed',
-                }[notification.type] ?? 'Notification';
+                // Same descriptor ClientLayout and the bell dropdown use. This copy
+                // used to carry its own English strings, so the identical event read
+                // one way on the dashboard and another in the inbox.
+                const { t: tr, language } = i18nRef.current;
+                const { title, body } = describeNotification(notification, tr, language);
                 toast(title, {
-                    description: msg,
-                    action: notification.url ? { label: 'View', onClick: () => router.visit(notification.url) } : undefined,
+                    description: body || undefined,
+                    action: notification.url
+                        ? { label: tr('common.view'), onClick: () => router.visit(notification.url) }
+                        : undefined,
                 });
             });
         return () => { window.Echo.leave(`App.Models.User.${auth.user.id}`); };
@@ -70,6 +80,11 @@ export default function InboxLayout({ children }) {
                     logo={logoUrl ? <img src={logoUrl} alt="Logo" className="h-8 max-w-[160px] object-contain" /> : null}
                     showCreateButton={false}
                     navGroups={clientNavGroups}
+                    // The inbox renders no Topbar, so without these two the workspace
+                    // name, the account menu and the way out are all unreachable from
+                    // the screen people sit in all day.
+                    header={<SidebarWorkspaceSwitcher />}
+                    footer={<SidebarUserCard unreadCount={unreadCount} />}
                 />
 
                 <div className="lg:pl-64 rtl:lg:pl-0 rtl:lg:pr-64 flex-1 overflow-hidden flex flex-col">

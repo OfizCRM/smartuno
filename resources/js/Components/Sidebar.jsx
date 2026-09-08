@@ -119,6 +119,7 @@ export default function Sidebar({
     open = false,
     onClose,
     footer,
+    header,
     title,
     logo,
     showCreateButton = true,
@@ -138,6 +139,12 @@ export default function Sidebar({
                     <span className="text-lg font-semibold text-sidebar-item dark:text-white truncate max-w-[200px]">{appName}</span>
                 )}
             </div>
+
+            {/* Optional slot under the brand, for a workspace switcher. Opt-in so the
+                layouts that already carry one in the Topbar do not show two. It gets
+                no wrapper: the content decides whether it draws anything at all, and
+                an empty bordered strip would be worse than no strip. */}
+            {header}
 
             {showCreateButton && (
                 <div className="shrink-0 p-3 pb-2 border-b border-warm-border dark:border-white/8">

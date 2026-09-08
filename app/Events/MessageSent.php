@@ -42,6 +42,13 @@ class MessageSent implements ShouldBroadcast
             'direction' => $this->message->direction,
             'channel' => $this->message->channel,
             'type' => $this->message->type,
+            // Who sent it: 'human' | 'bot' | 'automation' | 'broadcast'. The inbox
+            // badges a bot reply, and a message that arrives over the socket must
+            // carry the same field the page-load payload does — otherwise the badge
+            // appears only after a refresh, which is a miserable thing to debug.
+            // getAttribute rather than ->sent_by: Message declares no @property
+            // docblock, so the magic accessor is invisible to static analysis.
+            'sent_by' => $this->message->getAttribute('sent_by'),
             'body' => $this->message->body,
             'payload' => $this->message->payload,
             'status' => $this->message->status,

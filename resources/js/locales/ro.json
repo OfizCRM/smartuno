@@ -3252,7 +3252,22 @@
         "health_last_inbound": "Ultimul mesaj primit",
         "health_${check": {
             "key}": "Key}"
-        }
+        },
+        "sent_by_bot": "Agentul AI",
+        "sent_by_automation": "Automatizare",
+        "sent_by_broadcast": "Campanie",
+        "day_today": "Astăzi",
+        "day_yesterday": "Ieri",
+        "customer_since": "client din {{date}}",
+        "resolve": "Rezolvă",
+        "contact_record": "Fișa contactului",
+        "details": "Detalii",
+        "detail_since": "Client din",
+        "msg_status_sent": "trimis",
+        "msg_status_delivered": "livrat",
+        "msg_status_read": "citit",
+        "msg_status_failed": "eșuat",
+        "msg_status_queued": "în așteptare"
     },
     "notifications": {
         "col_event": "Eveniment",

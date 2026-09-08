@@ -3220,7 +3220,22 @@
         "health_last_inbound": "Last inbound message",
         "health_${check": {
             "key}": "Key}"
-        }
+        },
+        "sent_by_bot": "AI agent",
+        "sent_by_automation": "Automation",
+        "sent_by_broadcast": "Campaign",
+        "day_today": "Today",
+        "day_yesterday": "Yesterday",
+        "customer_since": "customer since {{date}}",
+        "resolve": "Resolve",
+        "contact_record": "Contact record",
+        "details": "Details",
+        "detail_since": "Customer since",
+        "msg_status_sent": "sent",
+        "msg_status_delivered": "delivered",
+        "msg_status_read": "read",
+        "msg_status_failed": "failed",
+        "msg_status_queued": "queued"
     },
     "notifications": {
         "col_event": "Event",

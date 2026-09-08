@@ -8,9 +8,10 @@ import {
     Paperclip, Image as ImageIcon, ChevronDown, UserCheck,
     LayoutTemplate, Plus, Loader2, Bot, Calendar, BarChart2, PhoneMissed,
     Volume2, VolumeX, ShoppingBag, History, Tag, ArrowRightLeft, UserMinus,
+    Zap, Radio, IdCard, Check,
 } from 'lucide-react';
 import { ChannelBrandIcon, CHANNEL_LABELS } from '@/Components/BrandIcons';
-import { formatTimeTz, formatInTz } from '@/Utils/datetime';
+import { formatTimeTz, formatInTz, formatDateTz } from '@/Utils/datetime';
 import { playInboundSound, getSoundPrefs, setChannelSoundEnabled, SOUND_CHANNELS } from '@/Utils/notificationSound';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +39,18 @@ const FOLDERS = [
     { key: 'snoozed',    labelKey: 'inbox.folder_snoozed',    icon: Clock },
 ];
 const ALL_CHANNELS = ['whatsapp', 'instagram', 'messenger', 'sms', 'email'];
+
+/**
+ * Who sent an outbound message, from messages.sent_by. 'human' gets no badge —
+ * a colleague typing is the default and labelling it would be noise. The other
+ * three are the platform acting on the tenant's behalf, which is exactly what a
+ * person scanning the thread needs to be able to tell apart.
+ */
+const SENDER_BADGES = {
+    bot: { icon: Bot, labelKey: 'inbox.sent_by_bot' },
+    automation: { icon: Zap, labelKey: 'inbox.sent_by_automation' },
+    broadcast: { icon: Radio, labelKey: 'inbox.sent_by_broadcast' },
+};
 
 const STATUS_COLORS = {
     open:     'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
@@ -183,7 +196,7 @@ function WaText({ text, className = '' }) {
 
 /* ─── message type renderers ─────────────────────────── */
 
-function MediaImage({ src, alt, conversationId, messageId, isOut }) {
+function MediaImage({ src, alt, conversationId, messageId }) {
     const { t } = useTranslation();
     const [loaded, setLoaded]   = useState(false);
     const [errored, setErrored] = useState(false);
@@ -299,6 +312,76 @@ function groupMessagesForRender(messages) {
     return items;
 }
 
+/**
+ * The calendar day an instant falls on, in the reader's timezone, as YYYY-MM-DD.
+ * Built from Intl parts rather than toISOString(), which would answer in UTC and
+ * put a 01:30 message under the previous day for anyone east of Greenwich.
+ */
+/**
+ * "clientă din martie 2025", built from contacts.created_at.
+ *
+ * There is no customer_since column; created_at is when the row first appeared
+ * in SmartUno — the first inbound message or the import that created it. That is
+ * the honest reading of the phrase, and it is already in the page props.
+ */
+function customerSince(iso, locale) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+
+    return new Intl.DateTimeFormat(locale || 'ro', { month: 'long', year: 'numeric' }).format(d);
+}
+
+function dayKeyTz(iso, tz) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz || 'UTC', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(d);
+    const get = (type) => parts.find(x => x.type === type)?.value ?? '';
+
+    return get('year') + '-' + get('month') + '-' + get('day');
+}
+
+/**
+ * Insert a day marker before the first item of each calendar day, so a thread
+ * read months later still says when things happened.
+ */
+function withDayDividers(items, tz) {
+    const out = [];
+    let lastDay = null;
+    for (const item of items) {
+        const at = item.kind === 'album' ? item.messages[0]?.sent_at : item.msg?.sent_at;
+        const day = at ? dayKeyTz(at, tz) : null;
+        if (day && day !== lastDay) {
+            out.push({ kind: 'day', key: 'day-' + day, day, at });
+            lastDay = day;
+        }
+        out.push(item);
+    }
+
+    return out;
+}
+
+function DayDivider({ at, day, tz, nowMs }) {
+    const { t } = useTranslation();
+    // `nowMs` is read once when the page mounts rather than on every render:
+    // calling Date.now() during render is impure and makes the label unstable.
+    const today = dayKeyTz(new Date(nowMs).toISOString(), tz);
+    const yesterday = dayKeyTz(new Date(nowMs - 86400000).toISOString(), tz);
+
+    const label = day === today ? t('inbox.day_today')
+        : day === yesterday ? t('inbox.day_yesterday')
+        : formatDateTz(at, tz);
+
+    return (
+        <div className="my-3 flex items-center justify-center">
+            <span className="rounded-full bg-neutral-200/70 px-3 py-1 text-[11px] font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                {label}
+            </span>
+        </div>
+    );
+}
+
 function galleryImageSrc(msg, conversationId) {
     return msg.payload?.preview_url
         ?? route('client.inbox.message-media', { conversation: conversationId, message: msg.id });
@@ -306,7 +389,7 @@ function galleryImageSrc(msg, conversationId) {
 
 function ImageGallery({ messages, conversationId }) {
     const { props: pageProps } = usePage();
-    const bubbleTz = pageProps.timezone || 'Asia/Dhaka';
+    const bubbleTz = pageProps.timezone || 'Europe/Bucharest';
     const [lightbox, setLightbox] = useState(null);
 
     const isOut = messages[0].direction === 'out';
@@ -349,7 +432,7 @@ function ImageGallery({ messages, conversationId }) {
                         </button>
                     ))}
                 </div>
-                <div className={`flex items-center justify-end gap-1 px-3 py-1 text-[10px] ${isOut ? 'text-white/60' : 'text-neutral-400'}`}>
+                <div className={`flex items-center justify-end gap-1 px-3 py-1 text-[10px] text-neutral-400`}>
                     {last.sent_at ? formatTimeTz(last.sent_at, bubbleTz) : ''}
                     {isOut && <span title={last.status} className={statusClass}>{statusGlyph}</span>}
                 </div>
@@ -411,13 +494,13 @@ function MediaAudio({ src, conversationId, messageId }) {
     return <audio src={proxyUrl} controls className="w-full min-w-[200px] mb-1" />;
 }
 
-function MediaDocument({ src, filename, conversationId, messageId, isOut }) {
+function MediaDocument({ src, filename, conversationId, messageId }) {
     const { t } = useTranslation();
     const proxyUrl = src ?? route('client.inbox.message-media', { conversation: conversationId, message: messageId });
     return (
         <a href={proxyUrl} target="_blank" rel="noopener noreferrer"
-            className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-1 transition ${isOut ? 'bg-white/20 hover:bg-white/30' : 'bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600'}`}>
-            <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${isOut ? 'bg-white/20' : 'bg-neutral-200 dark:bg-neutral-600'}`}>
+            className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-1 transition bg-black/[0.04] hover:bg-black/[0.07] dark:bg-white/10 dark:hover:bg-white/15`}>
+            <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 bg-black/10 dark:bg-white/15`}>
                 <Paperclip className="h-4 w-4" />
             </div>
             <div className="min-w-0">
@@ -428,7 +511,7 @@ function MediaDocument({ src, filename, conversationId, messageId, isOut }) {
     );
 }
 
-function LocationCard({ location, isOut }) {
+function LocationCard({ location }) {
     const { t } = useTranslation();
     const { latitude, longitude, name, address } = location ?? {};
     if (!latitude || !longitude) return <span className="text-xs opacity-60 italic">{t('inbox.location_unavailable')}</span>;
@@ -442,7 +525,7 @@ function LocationCard({ location, isOut }) {
                     <span className="text-xs">{t('inbox.map')}</span>
                 </div>
             </div>
-            <div className={`px-3 py-2 ${isOut ? 'bg-white/10' : 'bg-neutral-50 dark:bg-neutral-800'}`}>
+            <div className={`px-3 py-2 bg-black/[0.03] dark:bg-white/5`}>
                 {name && <p className="text-xs font-semibold truncate">{name}</p>}
                 {address && <p className="text-[10px] opacity-70 truncate">{address}</p>}
                 <p className="text-[10px] opacity-50">{latitude}, {longitude}</p>
@@ -451,15 +534,15 @@ function LocationCard({ location, isOut }) {
     );
 }
 
-function ContactCard({ contacts, isOut }) {
+function ContactCard({ contacts }) {
     const { t } = useTranslation();
     const c = contacts?.[0];
     if (!c) return <span className="text-xs opacity-60 italic">{t('inbox.contact_unavailable')}</span>;
     const name = c.name?.formatted_name ?? c.name?.first_name ?? t('inbox.contact');
     const phone = c.phones?.[0]?.phone ?? c.phones?.[0]?.wa_id ?? '';
     return (
-        <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-1 ${isOut ? 'bg-white/20' : 'bg-neutral-100 dark:bg-neutral-700'}`}>
-            <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${isOut ? 'bg-white/20' : 'bg-neutral-200 dark:bg-neutral-600'}`}>
+        <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-1 bg-black/[0.04] dark:bg-white/10`}>
+            <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 bg-black/10 dark:bg-white/15`}>
                 {name[0]?.toUpperCase() ?? '?'}
             </div>
             <div className="min-w-0">
@@ -515,7 +598,7 @@ function resolveTemplateText(text, parameters = []) {
 }
 
 /** Render a full WA template: body text, footer, and quick-reply / call-to-action buttons */
-function TemplateBodyContent({ components, isOut }) {
+function TemplateBodyContent({ components }) {
     if (!components?.length) return null;
     const header   = components.find(c => (c.type ?? '').toUpperCase() === 'HEADER');
     const body     = components.find(c => (c.type ?? '').toUpperCase() === 'BODY');
@@ -534,12 +617,12 @@ function TemplateBodyContent({ components, isOut }) {
             )}
             {bodyText && <WaText text={bodyText} />}
             {footerText && (
-                <p className={`text-[11px] mt-1.5 ${isOut ? 'text-white/50' : 'text-neutral-400'}`}>{footerText}</p>
+                <p className={`text-[11px] mt-1.5 text-neutral-400`}>{footerText}</p>
             )}
             {btns.length > 0 && (
-                <div className={`mt-2 pt-2 border-t ${isOut ? 'border-white/20' : 'border-neutral-200 dark:border-neutral-600'} flex flex-col gap-1`}>
+                <div className={`mt-2 pt-2 border-t border-black/10 dark:border-white/15 flex flex-col gap-1`}>
                     {btns.map((b, i) => (
-                        <div key={i} className={`text-xs text-center py-1 rounded ${isOut ? 'text-white/80' : 'text-brand-600 dark:text-brand-400'}`}>
+                        <div key={i} className={`text-xs text-center py-1 rounded text-brand-600 dark:text-brand-400`}>
                             {b.type === 'URL' ? '🔗 ' : b.type === 'PHONE_NUMBER' ? '📞 ' : '↩ '}
                             {b.text}
                         </div>
@@ -564,7 +647,7 @@ function TemplateHeaderMedia({ components, conversationId, messageId }) {
     return null;
 }
 
-function PollBubble({ nfmReply, isOut }) {
+function PollBubble({ nfmReply }) {
     const { t } = useTranslation();
     const name = nfmReply?.name ?? '';
     // poll vote response
@@ -575,7 +658,7 @@ function PollBubble({ nfmReply, isOut }) {
         const selectedOptions = responseJson.selected_options ?? [];
         const options = responseJson.options ?? [];
         return (
-            <div className={`rounded-xl px-3 py-2.5 mb-1 ${isOut ? 'bg-white/20' : 'bg-neutral-100 dark:bg-neutral-700'}`}>
+            <div className={`rounded-xl px-3 py-2.5 mb-1 bg-black/[0.04] dark:bg-white/10`}>
                 <div className="flex items-center gap-1.5 mb-2">
                     <BarChart2 className="h-3.5 w-3.5 shrink-0" />
                     <span className="text-xs font-semibold">{pollName || t('inbox.poll')}</span>
@@ -584,7 +667,7 @@ function PollBubble({ nfmReply, isOut }) {
                     const label = opt.name ?? opt.title ?? opt;
                     const voted = selectedOptions.some(s => (s.local_id ?? s.id) === i || s.name === label);
                     return (
-                        <div key={i} className={`text-xs px-2 py-1 rounded mt-1 ${voted ? (isOut ? 'bg-white/30 font-semibold' : 'bg-brand-100 dark:bg-brand-900/30 font-semibold text-brand-700 dark:text-brand-300') : 'opacity-70'}`}>
+                        <div key={i} className={`text-xs px-2 py-1 rounded mt-1 ${voted ? 'bg-brand-100 font-semibold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300' : 'opacity-70'}`}>
                             {voted ? '✓ ' : ''}{label}
                         </div>
                     );
@@ -607,12 +690,12 @@ function InteractiveBubble({ payload, isOut }) {
     const nfmReply    = interactive.nfm_reply;
     if (buttonReply) return <WaText text={`✓ ${buttonReply.title}`} />;
     if (listReply)   return <WaText text={`☑ ${listReply.title}`} />;
-    if (nfmReply)    return <PollBubble nfmReply={nfmReply} isOut={isOut} />;
+    if (nfmReply)    return <PollBubble nfmReply={nfmReply} />;
     return (
         <div>
             {body && <WaText text={body} className="mb-2 block" />}
             {buttons.map((b, i) => (
-                <div key={i} className={`mt-1 rounded-lg border px-3 py-1.5 text-xs text-center ${isOut ? 'border-white/30' : 'border-neutral-200 dark:border-neutral-600'}`}>
+                <div key={i} className={`mt-1 rounded-lg border px-3 py-1.5 text-xs text-center border-black/10 dark:border-white/15`}>
                     {b.reply?.title ?? b.title ?? b.text}
                 </div>
             ))}
@@ -620,13 +703,13 @@ function InteractiveBubble({ payload, isOut }) {
     );
 }
 
-function PollTopLevelBubble({ payload, isOut }) {
+function PollTopLevelBubble({ payload }) {
     const { t } = useTranslation();
     const poll = payload?.poll ?? {};
     const title = poll.title ?? t('inbox.poll');
     const options = poll.options ?? [];
     return (
-        <div className={`rounded-xl px-3 py-2.5 mb-1 ${isOut ? 'bg-white/20' : 'bg-neutral-100 dark:bg-neutral-700'}`}>
+        <div className={`rounded-xl px-3 py-2.5 mb-1 bg-black/[0.04] dark:bg-white/10`}>
             <div className="flex items-center gap-1.5 mb-2">
                 <BarChart2 className="h-3.5 w-3.5 shrink-0" />
                 <span className="text-xs font-semibold">{title}</span>
@@ -717,8 +800,9 @@ function SoundPrefsMenu() {
 }
 
 function MessageBubble({ msg, conversationId }) {
+    const { t } = useTranslation();
     const { props: pageProps } = usePage();
-    const bubbleTz = pageProps.timezone || 'Asia/Dhaka';
+    const bubbleTz = pageProps.timezone || 'Europe/Bucharest';
     const isOut = msg.direction === 'out';
     const p     = msg.payload ?? {};
 
@@ -739,9 +823,12 @@ function MessageBubble({ msg, conversationId }) {
     const sticker  = mediaType === 'sticker';
     const caption  = p.caption ?? p[mediaType]?.caption ?? (msg.body && msg.body !== '(media)' ? msg.body : '');
 
-    const bubbleBase = `max-w-[70%] rounded-2xl overflow-hidden text-sm ${isOut
-        ? 'bg-brand-600 text-white rounded-br-sm'
-        : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-bl-sm border border-neutral-200 dark:border-neutral-700'}`;
+    // Both sides sit on a light surface: outbound is a brand tint rather than a
+    // solid fill, so a long reply does not become a slab of colour and the status
+    // ticks, links and inset cards stay legible without a second palette.
+    const bubbleBase = `max-w-[72%] overflow-hidden rounded-2xl border text-sm ${isOut
+        ? 'rounded-br-md border-brand-100 bg-brand-50 text-neutral-900 dark:border-brand-900/40 dark:bg-brand-900/25 dark:text-neutral-100'
+        : 'rounded-bl-md border-neutral-200 bg-white text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100'}`;
 
     // Reaction: no bubble, just float
     if (mediaType === 'reaction' || reaction) {
@@ -761,36 +848,61 @@ function MessageBubble({ msg, conversationId }) {
         );
     }
 
+    // messages.sent_by is an enum written by the platform itself — 'bot' by the
+    // chatbot, 'automation' by a workflow, 'broadcast' by a campaign. It has always
+    // been stored and never shown, so an automated reply was indistinguishable from
+    // one a colleague typed. Inbound messages carry no useful value here.
+    const senderKind = isOut ? (msg.sent_by ?? 'human') : 'human';
+    const senderBadge = SENDER_BADGES[senderKind] ? (() => {
+        const { icon: BadgeIcon, labelKey } = SENDER_BADGES[senderKind];
+        return (
+            <span className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-brand-700 dark:text-brand-300">
+                <BadgeIcon className="h-3.5 w-3.5" />
+                {t(labelKey)}
+            </span>
+        );
+    })() : null;
+
     const statusGlyph = msg.status === 'read'      ? '✓✓'
                        : msg.status === 'delivered' ? '✓✓'
                        : msg.status === 'sent'      ? '✓'
                        : msg.status === 'failed'    ? '✗'
                        : '⋯';
-    const statusClass = msg.status === 'read'   ? 'text-sky-200'
-                      : msg.status === 'failed' ? 'text-red-200'
-                      : '';
+    const statusClass = msg.status === 'read'   ? 'text-brand-600 dark:text-brand-400'
+                      : msg.status === 'failed' ? 'text-coral-600'
+                      : 'text-neutral-400';
+    // An unmapped status must read as itself rather than as a missing key.
+    const statusFallback = { defaultValue: msg.status };
 
+    // Outside the bubble, under it: inside, the timestamp competed with the last
+    // line of the message and forced a blank strip on every short reply.
     const timeRow = (
-        <div className={`flex items-center gap-1 text-[10px] mt-1 ${isOut ? 'text-white/60 justify-end' : 'text-neutral-400'}`}>
-            {msg.sent_at ? formatTimeTz(msg.sent_at, bubbleTz) : ''}
-            {isOut && (
-                <span title={msg.status} className={statusClass}>{statusGlyph}</span>
+        <div className={`mt-1 flex items-center gap-1 px-1 text-[10px] text-neutral-400 ${isOut ? 'justify-end' : ''}`}>
+            <span>{msg.sent_at ? formatTimeTz(msg.sent_at, bubbleTz) : ''}</span>
+            {isOut && msg.status && (
+                <>
+                    <span aria-hidden>·</span>
+                    <span title={msg.status} className={statusClass}>{t(`inbox.msg_status_${msg.status}`, statusFallback)}</span>
+                    <span className={statusClass}>{statusGlyph}</span>
+                </>
             )}
         </div>
     );
 
     return (
-        <div className={`flex ${isOut ? 'justify-end' : 'justify-start'} mb-2`}>
+        <div className={`mb-2 flex flex-col ${isOut ? 'items-end' : 'items-start'}`}>
             <div className={bubbleBase}>
                 {/* Template header image/video/doc */}
                 {templateComponents && (
                     <TemplateHeaderMedia components={templateComponents} conversationId={conversationId} messageId={msg.id} />
                 )}
 
-                <div className="px-3 py-2.5">
+                <div className="px-3.5 py-2.5">
+                    {senderBadge}
+
                     {/* IMAGE */}
                     {mediaType === 'image' && (
-                        <MediaImage src={mediaSrc} alt={caption} conversationId={conversationId} messageId={msg.id} isOut={isOut} />
+                        <MediaImage src={mediaSrc} alt={caption} conversationId={conversationId} messageId={msg.id} />
                     )}
 
                     {/* VIDEO */}
@@ -810,18 +922,17 @@ function MessageBubble({ msg, conversationId }) {
                             filename={p.filename ?? p.document?.filename ?? p[mediaType]?.filename}
                             conversationId={conversationId}
                             messageId={msg.id}
-                            isOut={isOut}
                         />
                     )}
 
                     {/* LOCATION */}
                     {mediaType === 'location' && (
-                        <LocationCard location={p.location ?? p} isOut={isOut} />
+                        <LocationCard location={p.location ?? p} />
                     )}
 
                     {/* CONTACTS */}
                     {mediaType === 'contacts' && (
-                        <ContactCard contacts={contacts ?? [p]} isOut={isOut} />
+                        <ContactCard contacts={contacts ?? [p]} />
                     )}
 
                     {/* INTERACTIVE */}
@@ -831,7 +942,7 @@ function MessageBubble({ msg, conversationId }) {
 
                     {/* TEMPLATE — with components (outbound structured) */}
                     {templateComponents && (
-                        <TemplateBodyContent components={templateComponents} isOut={isOut} />
+                        <TemplateBodyContent components={templateComponents} />
                     )}
 
                     {/* TEMPLATE — inbound raw (no components) */}
@@ -841,7 +952,7 @@ function MessageBubble({ msg, conversationId }) {
 
                     {/* POLL (native WhatsApp poll type) */}
                     {mediaType === 'poll' && (
-                        <PollTopLevelBubble payload={p} body={msg.body} isOut={isOut} />
+                        <PollTopLevelBubble payload={p} body={msg.body} />
                     )}
 
                     {/* EVENT */}
@@ -864,9 +975,9 @@ function MessageBubble({ msg, conversationId }) {
                         <p className="text-xs mt-1 opacity-90"><WaText text={caption} /></p>
                     )}
 
-                    {timeRow}
                 </div>
             </div>
+            {timeRow}
         </div>
     );
 }
@@ -938,12 +1049,21 @@ function ConversationCard({ conv, isActive, userTz }) {
     );
 }
 
+/** One heading + rows block in the filter rail. */
+function FilterSection({ title, children }) {
+    return (
+        <div className="px-2 py-3">
+            <p className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400">{title}</p>
+            <div className="space-y-0.5">{children}</div>
+        </div>
+    );
+}
+
 function FilterSidebar({ filters, labels, channelAccounts = [], onFolder, onChannel, onAccount, onLabel }) {
     const { t } = useTranslation();
     return (
-        <div className="flex flex-col h-full overflow-y-auto">
-            <div className="p-2 border-b border-neutral-100 dark:border-neutral-800">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 py-1.5">{t('inbox.views')}</p>
+        <div className="flex h-full flex-col divide-y divide-neutral-100 overflow-y-auto dark:divide-neutral-800">
+            <FilterSection title={t('inbox.views')}>
                 {FOLDERS.map(({ key, labelKey, icon: Icon }) => (
                     <button key={key ?? 'all'} onClick={() => onFolder(key)}
                         className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition ${
@@ -954,9 +1074,9 @@ function FilterSidebar({ filters, labels, channelAccounts = [], onFolder, onChan
                         <Icon className="h-4 w-4 shrink-0" />{t(labelKey)}
                     </button>
                 ))}
-            </div>
-            <div className="p-2 border-b border-neutral-100 dark:border-neutral-800">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 py-1.5">{t('inbox.channels')}</p>
+            </FilterSection>
+
+            <FilterSection title={t('inbox.channels')}>
                 {ALL_CHANNELS.map(ch => (
                     <button key={ch} onClick={() => onChannel(ch)}
                         className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition ${
@@ -968,10 +1088,10 @@ function FilterSidebar({ filters, labels, channelAccounts = [], onFolder, onChan
                         <span>{CHANNEL_LABELS[ch] ?? ch}</span>
                     </button>
                 ))}
-            </div>
+            </FilterSection>
+
             {channelAccounts.length > 0 && (
-                <div className="p-2 border-b border-neutral-100 dark:border-neutral-800">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 py-1.5">{t('inbox.numbers')}</p>
+                <FilterSection title={t('inbox.numbers')}>
                     {channelAccounts.map(account => (
                         <button key={account.id} onClick={() => onAccount(account.id)}
                             className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition ${
@@ -983,24 +1103,31 @@ function FilterSidebar({ filters, labels, channelAccounts = [], onFolder, onChan
                             <span className="truncate">{account.display_name || account.phone_number_id || account.channel}</span>
                         </button>
                     ))}
-                </div>
+                </FilterSection>
             )}
-            {labels.length > 0 && (
-                <div className="p-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 py-1.5">{t('inbox.labels')}</p>
-                    {labels.map(label => (
-                        <button key={label.id} onClick={() => onLabel(label.id)}
-                            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition ${
-                                String(filters.label) === String(label.id)
-                                    ? 'bg-brand-50 dark:bg-brand-900/30 font-semibold'
-                                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                            }`}>
-                            <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: label.color }} />
-                            <span className="truncate">{label.name}</span>
-                        </button>
-                    ))}
-                </div>
-            )}
+
+            <FilterSection title={t('inbox.labels')}>
+                {labels.map(label => (
+                    <button key={label.id} onClick={() => onLabel(label.id)}
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm transition ${
+                            String(filters.label) === String(label.id)
+                                ? 'bg-brand-50 font-semibold dark:bg-brand-900/30'
+                                : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800'
+                        }`}>
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: label.color }} />
+                        <span className="truncate">{label.name}</span>
+                    </button>
+                ))}
+                {/* Labels are managed on their own page — the rail links to it rather
+                    than growing an inline editor. */}
+                <Link
+                    href={route('client.inbox.labels.index')}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800"
+                >
+                    <Plus className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{t('inbox.new_label')}</span>
+                </Link>
+            </FilterSection>
         </div>
     );
 }
@@ -1469,11 +1596,11 @@ export default function InboxShow({
     channelAccounts = [],
     hasEcommerceStore = false,
 }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { props } = usePage();
     const flash = props.flash ?? {};
     const authUser = props.auth?.user;
-    const userTz = props.timezone || 'Asia/Dhaka';
+    const userTz = props.timezone || 'Europe/Bucharest';
     // Prefer the active workspace (user can switch between accessible workspaces);
     // fall back to the user's primary workspace if not present.
     const workspaceId = props.currentWorkspace?.id ?? authUser?.workspace_id;
@@ -1499,6 +1626,10 @@ export default function InboxShow({
     const [showNewModal, setShowNewModal]   = useState(false);
     const [sending, setSending]             = useState(false);
     const [sendError, setSendError]         = useState(null);
+    // Read once on mount, so the "Astazi" / "Ieri" dividers do not recompute the
+    // clock on every render. A session left open past midnight relabels on the
+    // next navigation, which is the right trade for a stable render.
+    const [nowMs] = useState(() => Date.now());
 
     // When Inertia navigates between conversations the page component is
     // re-used, so seed local state from the new server props on conversation
@@ -1775,6 +1906,10 @@ export default function InboxShow({
         ? `${conversation.contact.first_name ?? ''} ${conversation.contact.last_name ?? ''}`.trim()
         : conversation.contact?.phone_e164 ?? 'Unknown';
 
+    const contactSince = conversation.contact?.created_at
+        ? customerSince(conversation.contact.created_at, i18n.language)
+        : null;
+
     const assignedAgent = teamMembers.find(m => m.id === assignedUserId);
 
     return (
@@ -1784,17 +1919,14 @@ export default function InboxShow({
             <div className="flex flex-1 overflow-hidden">
 
                 {/* ── Filter sidebar ── */}
-                <aside className="w-48 shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col overflow-hidden">
-                    <div className="px-3 py-3 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-1">
-                        <Link href={route('client.inbox.index')} className="text-sm font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-2 hover:text-brand-600 transition">
-                            <Inbox className="h-4 w-4 text-brand-600" />{t('inbox.title')}
-                        </Link>
+                <aside className="flex w-56 shrink-0 flex-col overflow-hidden border-r border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+                    <div className="border-b border-neutral-100 p-3 dark:border-neutral-800">
                         <button
                             onClick={() => setShowNewModal(true)}
-                            title={t('inbox.new_conversation')}
-                            className="h-7 w-7 rounded-lg bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center transition shrink-0"
+                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-700"
                         >
                             <Plus className="h-4 w-4" />
+                            {t('inbox.new_conversation')}
                         </button>
                     </div>
                     <FilterSidebar
@@ -1809,8 +1941,8 @@ export default function InboxShow({
                 </aside>
 
                 {/* ── Conversation list ── */}
-                <div className="w-72 shrink-0 border-r border-neutral-200 dark:border-neutral-700 flex flex-col bg-white dark:bg-neutral-900">
-                    <div className="px-3 py-2.5 border-b border-neutral-100 dark:border-neutral-800 space-y-2">
+                <div className="flex w-80 shrink-0 flex-col border-r border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+                    <div className="space-y-2 border-b border-neutral-100 px-3 py-3 dark:border-neutral-800">
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1 flex-wrap">
                                 {t(FOLDERS.find(f => (f.key ?? null) === (filters.folder ?? null))?.labelKey ?? 'inbox.folder_all')}
@@ -1851,7 +1983,8 @@ export default function InboxShow({
                 <div className="flex-1 flex flex-col min-w-0 bg-neutral-50 dark:bg-neutral-950">
 
                     {/* Header */}
-                    <div className="flex items-center gap-3 px-4 py-2.5 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shrink-0">
+                    <div className="shrink-0 border-b border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900">
+                      <div className="flex items-center gap-3">
                         <div className="relative shrink-0">
                             <div className="h-9 w-9 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-sm font-semibold text-brand-700 dark:text-brand-300">
                                 {contactName[0]?.toUpperCase() ?? '?'}
@@ -1861,22 +1994,37 @@ export default function InboxShow({
                             </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 truncate">{contactName}</p>
-                            <p className="text-xs text-neutral-400 flex items-center gap-1.5">
+                            <p className="truncate text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">{contactName}</p>
+                            {/* channel · number · since. The old third segment read
+                                channel_account.name, a column that does not exist, so it
+                                never rendered anything. */}
+                            <p className="flex items-center gap-1.5 text-xs text-neutral-400">
                                 <ChannelBrandIcon channel={channel} className="h-3 w-3 shrink-0" />
                                 <span>{CHANNEL_LABELS[channel] ?? channel}</span>
-                                {conversation.channel_account?.name && <><span className="text-neutral-300 dark:text-neutral-600">·</span><span>{conversation.channel_account.name}</span></>}
+                                {conversation.contact?.phone_e164 && (
+                                    <><span className="text-neutral-300 dark:text-neutral-600">·</span>
+                                    <span className="tabular-nums">{conversation.contact.phone_e164}</span></>
+                                )}
+                                {contactSince && (
+                                    <><span className="text-neutral-300 dark:text-neutral-600">·</span>
+                                    <span className="hidden lg:inline">{t('inbox.customer_since', { date: contactSince })}</span></>
+                                )}
                             </p>
                         </div>
 
                         {/* Presence */}
                         {otherViewers.length > 0 && (
-                            <div className="flex items-center gap-1 text-xs text-neutral-400 hidden xl:flex">
+                            <div className="hidden items-center gap-1 text-xs text-neutral-400 xl:flex">
                                 <Eye className="h-3.5 w-3.5" />
                                 <span>{t('inbox.viewing', { names: otherViewers.map(v => v.name).join(', ') })}</span>
                             </div>
                         )}
+                      </div>
 
+                      {/* Actions on their own row, right-aligned. On one row with the
+                          name they squeezed the contact's own details out of view the
+                          moment a name ran long. */}
+                      <div className="mt-2.5 flex flex-wrap items-center justify-end gap-2">
                         {/* Agent assign */}
                         <div className="relative">
                             <button
@@ -1903,14 +2051,28 @@ export default function InboxShow({
                         <select
                             defaultValue={conversation.status}
                             onChange={e => handleStatus(e.target.value)}
-                            className={`rounded-full border-0 px-3 py-1 text-xs font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 ${STATUS_COLORS[conversation.status] ?? 'bg-neutral-100 text-neutral-600'}`}
+                            className={`cursor-pointer rounded-full border-0 px-3 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 ${STATUS_COLORS[conversation.status] ?? 'bg-neutral-100 text-neutral-600'}`}
                         >
                             {['open','pending','resolved','snoozed'].map(s => (
-                                <option key={s} value={s} className="bg-white dark:bg-neutral-800 text-neutral-900">
+                                <option key={s} value={s} className="bg-white text-neutral-900 dark:bg-neutral-800">
                                     {t(`inbox.status_${s}`)}
                                 </option>
                             ))}
                         </select>
+
+                        {/* Resolve — the same endpoint as the dropdown, one click instead
+                            of three. Hidden once it is already resolved. */}
+                        {conversation.status !== 'resolved' && (
+                            <button
+                                type="button"
+                                onClick={() => handleStatus('resolved')}
+                                className="hidden items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 sm:inline-flex"
+                            >
+                                <Check className="h-3.5 w-3.5" />
+                                {t('inbox.resolve')}
+                            </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Tab bar */}
@@ -1935,10 +2097,12 @@ export default function InboxShow({
                     {/* Messages tab */}
                     {activeTab === 'messages' && (
                         <div className="flex-1 overflow-y-auto p-4 space-y-1">
-                            {groupMessagesForRender(messages).map(item => (
-                                item.kind === 'album'
-                                    ? <ImageGallery key={item.key} messages={item.messages} conversationId={conversation.uuid} />
-                                    : <MessageBubble key={item.key} msg={item.msg} conversationId={conversation.uuid} />
+                            {withDayDividers(groupMessagesForRender(messages), userTz).map(item => (
+                                item.kind === 'day'
+                                    ? <DayDivider key={item.key} at={item.at} day={item.day} tz={userTz} nowMs={nowMs} />
+                                    : item.kind === 'album'
+                                        ? <ImageGallery key={item.key} messages={item.messages} conversationId={conversation.uuid} />
+                                        : <MessageBubble key={item.key} msg={item.msg} conversationId={conversation.uuid} />
                             ))}
                             {messages.length === 0 && (
                                 <div className="py-8"><EmptyState icon={<MessageSquare className="h-8 w-8" />} title={t('inbox.no_messages_yet')} description={t('inbox.no_messages_desc')} /></div>
@@ -2082,6 +2246,30 @@ export default function InboxShow({
                             </div>
                         )}
 
+                        {/* Canned replies as visible chips.
+                            The list was already fetched on mount and already filtered by
+                            a "/" prefix in the composer — a feature nobody discovers
+                            unless they are told it exists. Same data, same click, just
+                            shown. Hidden while the slash menu is open so the two do not
+                            stack, and while the WhatsApp window is shut, when free text
+                            cannot be sent at all. */}
+                        {cannedReplies.length > 0 && slashMenu.length === 0 && !(isWhatsApp && !isWindowOpen) && (
+                            <div className="mb-2 flex flex-wrap gap-1.5">
+                                {cannedReplies.slice(0, 6).map(reply => (
+                                    <button
+                                        key={reply.id}
+                                        type="button"
+                                        title={reply.body}
+                                        onClick={() => setData('body', renderCannedBody(reply.body, conversation.contact))}
+                                        className="inline-flex max-w-[14rem] items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs text-neutral-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                                    >
+                                        <Zap className="h-3 w-3 shrink-0 text-brand-500" />
+                                        <span className="truncate">{reply.shortcut}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         {/* Toolbar + textarea */}
                         <div className="relative">
                             {/* Emoji picker */}
@@ -2110,9 +2298,25 @@ export default function InboxShow({
                                 />
                             )}
 
-                            <form onSubmit={handleSend}>
+                            <form onSubmit={handleSend} className="rounded-2xl border border-neutral-300 bg-white transition focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/20 dark:border-neutral-600 dark:bg-neutral-800">
+                                {/* Text first, tools underneath — one field rather than a
+                                    toolbar floating above a separate box. */}
+                                <textarea
+                                    value={data.body}
+                                    onChange={e => handleReplyChange(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
+                                    placeholder={
+                                        isWhatsApp && !isWindowOpen
+                                            ? t('inbox.session_closed_placeholder')
+                                            : t('inbox.type_message_placeholder')
+                                    }
+                                    rows={2}
+                                    disabled={isWhatsApp && !isWindowOpen && !attachPreview}
+                                    className="w-full resize-none border-0 bg-transparent px-4 pb-1 pt-3 text-sm focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60"
+                                />
+
                                 {/* Toolbar */}
-                                <div className="flex items-center gap-1 mb-1.5">
+                                <div className="flex items-center gap-1 px-2 pb-2">
                                     {/* Emoji */}
                                     <button type="button" onClick={() => setShowEmoji(v => !v)}
                                         title={t('inbox.emoji')}
@@ -2155,28 +2359,13 @@ export default function InboxShow({
                                     )}
                                     {/* Hidden file input */}
                                     <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange} />
-                                </div>
 
-                                {/* Text input + send */}
-                                <div className="flex gap-2 items-end">
-                                    <textarea
-                                        value={data.body}
-                                        onChange={e => handleReplyChange(e.target.value)}
-                                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
-                                        placeholder={
-                                            isWhatsApp && !isWindowOpen
-                                                ? t('inbox.session_closed_placeholder')
-                                                : t('inbox.type_message_placeholder')
-                                        }
-                                        rows={2}
-                                        disabled={isWhatsApp && !isWindowOpen && !attachPreview}
-                                        className="flex-1 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60 disabled:cursor-not-allowed"
-                                    />
                                     <button
                                         type="submit"
                                         disabled={sending || (!data.body.trim() && !attachPreview) || (isWhatsApp && !isWindowOpen && !attachPreview)}
-                                        className="self-end rounded-xl bg-brand-600 p-2.5 text-white hover:bg-brand-700 disabled:opacity-50 transition">
-                                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                        className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
+                                    >
+                                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>{t('inbox.send')}</span><Send className="h-4 w-4" /></>}
                                     </button>
                                 </div>
                             </form>
@@ -2186,44 +2375,53 @@ export default function InboxShow({
                 </div>
 
                 {/* ── Contact panel (right) ── */}
-                <div className="w-60 shrink-0 border-l border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hidden lg:flex flex-col overflow-y-auto">
+                <div className="hidden w-64 shrink-0 flex-col overflow-y-auto border-l border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900 lg:flex">
                     {/* Contact summary */}
-                    <div className="p-4 border-b border-neutral-100 dark:border-neutral-800">
-                        <div className="flex items-center gap-2.5 mb-3">
-                            <div className="h-10 w-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-base font-bold text-brand-700 dark:text-brand-300 shrink-0">
+                    <div className="border-b border-neutral-100 p-4 text-center dark:border-neutral-800">
+                        {/* contacts.avatar_url is appended on every serialisation and has
+                            always reached this page — the panel just drew an initial. */}
+                        {conversation.contact?.avatar_url ? (
+                            <img src={conversation.contact.avatar_url} alt="" className="mx-auto h-14 w-14 rounded-full object-cover" />
+                        ) : (
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-lg font-bold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
                                 {contactName[0]?.toUpperCase() ?? '?'}
                             </div>
-                            <div className="min-w-0">
-                                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">{contactName}</p>
-                                <p className="text-[11px] text-neutral-400 truncate">{conversation.contact?.phone_e164}</p>
-                            </div>
-                        </div>
-                        {conversation.contact?.email && (
-                            <p className="flex items-center gap-1.5 text-xs text-neutral-500 mb-1">
-                                <ChannelBrandIcon channel="email" className="h-3.5 w-3.5 shrink-0" />
-                                <span className="truncate">{conversation.contact.email}</span>
-                            </p>
                         )}
-                        <Link href={route('client.contacts.show', conversation.contact?.uuid ?? '')} className="text-xs text-brand-600 hover:underline dark:text-brand-400">
-                            {t('inbox.view_full_profile')}
+                        <p className="mt-2.5 truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">{contactName}</p>
+                        {conversation.contact?.phone_e164 && (
+                            <p className="truncate text-xs tabular-nums text-neutral-400">{conversation.contact.phone_e164}</p>
+                        )}
+
+                        <Link
+                            href={route('client.contacts.show', conversation.contact?.uuid ?? '')}
+                            className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                        >
+                            <IdCard className="h-3.5 w-3.5" />
+                            {t('inbox.contact_record')}
                         </Link>
                     </div>
 
-                    {/* Conversation meta */}
-                    <div className="p-4 border-b border-neutral-100 dark:border-neutral-800">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">{t('inbox.conversation')}</p>
+                    {/* Details */}
+                    <div className="border-b border-neutral-100 p-4 dark:border-neutral-800">
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-neutral-400">{t('inbox.details')}</p>
                         <div className="space-y-1.5 text-xs">
-                            <div className="flex items-center justify-between">
-                                <span className="text-neutral-500">{t('inbox.status')}</span>
-                                <span className={`rounded-full px-2 py-0.5 font-medium ${STATUS_COLORS[conversation.status] ?? 'bg-neutral-100 text-neutral-600'}`}>{t(`inbox.status_${conversation.status}`)}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-neutral-500">{t('inbox.agent')}</span>
-                                <span className="font-medium text-neutral-800 dark:text-neutral-200 truncate max-w-[100px]">{assignedAgent?.name ?? '—'}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
+                            {contactSince && (
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-neutral-500">{t('inbox.detail_since')}</span>
+                                    <span className="truncate font-medium text-neutral-800 dark:text-neutral-200">{contactSince}</span>
+                                </div>
+                            )}
+                            {conversation.contact?.email && (
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-neutral-500">{t('common.email')}</span>
+                                    <span className="truncate font-medium text-neutral-800 dark:text-neutral-200" title={conversation.contact.email}>
+                                        {conversation.contact.email}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="flex items-center justify-between gap-2">
                                 <span className="text-neutral-500">{t('inbox.messages')}</span>
-                                <span className="font-medium text-neutral-800 dark:text-neutral-200">{messages.length}</span>
+                                <span className="font-medium tabular-nums text-neutral-800 dark:text-neutral-200">{messages.length}</span>
                             </div>
                         </div>
                     </div>
