@@ -4123,12 +4123,6 @@ parameters:
 			path: app/Modules/Inbox/Http/Controllers/InboxController.php
 
 		-
-			message: '#^Relation ''lastMessage'' is not found in App\\Modules\\Shared\\Models\\Conversation model\.$#'
-			identifier: larastan.relationExistence
-			count: 2
-			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>channel" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
@@ -4539,12 +4533,6 @@ parameters:
 		-
 			message: '#^Method App\\Modules\\Shared\\Models\\Conversation\:\:labels\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany does not specify its types\: TRelatedModel, TDeclaringModel, TPivotModel, TAccessor \(2\-4 required\)$#'
 			identifier: missingType.generics
-			count: 1
-			path: app/Modules/Shared/Models/Conversation.php
-
-		-
-			message: '#^Method App\\Modules\\Shared\\Models\\Conversation\:\:lastMessage\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: app/Modules/Shared/Models/Conversation.php
 

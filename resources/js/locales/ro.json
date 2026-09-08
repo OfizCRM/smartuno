@@ -239,7 +239,9 @@
         "deleting": "Se șterge…",
         "dismiss": "Închide",
         "view": "Vezi",
-        "settings": "Setări"
+        "settings": "Setări",
+        "clear": "Golește",
+        "refresh": "Reîmprospătează"
     },
     "nav": {
         "home": "Acasă",
@@ -3267,7 +3269,12 @@
         "msg_status_delivered": "livrat",
         "msg_status_read": "citit",
         "msg_status_failed": "eșuat",
-        "msg_status_queued": "în așteptare"
+        "msg_status_queued": "în așteptare",
+        "chip_open": "Deschise",
+        "chip_unread": "Necitite",
+        "chip_pending": "În așteptare",
+        "unknown_contact": "Contact necunoscut",
+        "media_placeholder": "(fișier)"
     },
     "notifications": {
         "col_event": "Eveniment",

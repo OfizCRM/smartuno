@@ -6,10 +6,12 @@ use App\Models\InternalNote;
 use App\Models\User;
 use App\Modules\Inbox\Models\ConversationActivity;
 use App\Modules\Inbox\Models\InboxLabel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class Conversation extends Model
@@ -113,7 +115,8 @@ class Conversation extends Model
         return $this->hasMany(Message::class);
     }
 
-    public function lastMessage()
+    /** @return HasOne<Message, $this> */
+    public function lastMessage(): HasOne
     {
         return $this->hasOne(Message::class)->latestOfMany('sent_at');
     }
@@ -141,6 +144,104 @@ class Conversation extends Model
     public function assignedUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_user_id');
+    }
+
+    /**
+     * Statuses a workspace still has work to do on.
+     *
+     * 'pending' belongs here. The inbox list used to force status='open' for
+     * every view except resolved/snoozed, so a conversation a person marked "in
+     * asteptare" — a value the status dropdown offers and the API accepts —
+     * disappeared from every screen with no way back to it.
+     */
+    public const ACTIVE_STATUSES = ['open', 'pending'];
+
+    /**
+     * The status / assignment predicate behind one sidebar view.
+     *
+     * Kept on the model because three controllers render this same list — the
+     * inbox index, the sidebar on the conversation page, and the mobile API —
+     * and until now each carried its own copy. A filter added to one and missed
+     * in another shows as the list quietly changing when you open a conversation.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeInboxFolder(Builder $query, ?string $folder, ?int $userId): Builder
+    {
+        // Qualified: the count queries join channel_accounts and the label pivot,
+        // and both carry a status / workspace_id of their own. Unqualified these
+        // read fine until the first join and then fail as ambiguous.
+        $status = $query->qualifyColumn('status');
+        $assignee = $query->qualifyColumn('assigned_user_id');
+        $unread = $query->qualifyColumn('unread_count');
+
+        return match ($folder) {
+            'mine' => $query->whereIn($status, self::ACTIVE_STATUSES)->where($assignee, $userId),
+            'unassigned' => $query->whereIn($status, self::ACTIVE_STATUSES)->whereNull($assignee),
+            'unread' => $query->whereIn($status, self::ACTIVE_STATUSES)->where($unread, '>', 0),
+            'pending' => $query->where($status, 'pending'),
+            'resolved' => $query->where($status, 'resolved'),
+            'snoozed' => $query->where($status, 'snoozed'),
+            default => $query->whereIn($status, self::ACTIVE_STATUSES),
+        };
+    }
+
+    /**
+     * Channel / account / label / search narrowing, applied on top of a folder.
+     *
+     * @param  Builder<self>  $query
+     * @param  array<string, mixed>  $filters
+     * @return Builder<self>
+     */
+    public function scopeInboxNarrowed(Builder $query, array $filters): Builder
+    {
+        return $query
+            ->when($filters['channel'] ?? null, fn (Builder $q, $channel) => $q->whereHas(
+                'channelAccount', fn ($c) => $c->where('channel', $channel)
+            ))
+            ->when($filters['account_id'] ?? null, fn (Builder $q, $accountId) => $q->where($q->qualifyColumn('channel_account_id'), $accountId))
+            ->when($filters['label'] ?? null, fn (Builder $q, $labelId) => $q->whereHas(
+                'labels', fn ($l) => $l->where('inbox_labels.id', $labelId)
+            ))
+            ->tap(function (Builder $q) use ($filters) {
+                $search = is_string($filters['search'] ?? null) ? trim($filters['search']) : '';
+                if ($search !== '') {
+                    $this->scopeInboxSearch($q, $search);
+                }
+            });
+    }
+
+    /**
+     * Find a conversation by who it is with, or by something that was said in it.
+     *
+     * Deliberately LIKE on both halves rather than a FULLTEXT index on
+     * messages.body. FULLTEXT is faster, and it was the first thing tried, but it
+     * matches whole words: a person typing "livr" would be told there is nothing,
+     * then find it on typing "livrare". For a box people use by typing a fragment
+     * they half-remember, that reads as broken.
+     *
+     * The message half is a correlated EXISTS, so it walks each conversation's own
+     * rows through the conversation_id index rather than scanning the table. That
+     * holds comfortably at this product's scale; a workspace with tens of
+     * thousands of conversations would want the index back, and a prefix-mode
+     * MATCH ... AGAINST with a LIKE fallback for short terms.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeInboxSearch(Builder $query, string $term): Builder
+    {
+        $like = '%'.addcslashes($term, '%_\\').'%';
+
+        return $query->where(fn (Builder $q) => $q
+            ->whereHas('contact', fn ($c) => $c
+                ->where('first_name', 'like', $like)
+                ->orWhere('last_name', 'like', $like)
+                ->orWhere('phone_e164', 'like', $like)
+                ->orWhere('email', 'like', $like)
+                ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) LIKE ?", [$like]))
+            ->orWhereHas('messages', fn ($m) => $m->where('body', 'like', $like)));
     }
 
     /**

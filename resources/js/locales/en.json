@@ -207,7 +207,9 @@
         "deleting": "Deleting…",
         "dismiss": "Dismiss",
         "view": "View",
-        "settings": "Settings"
+        "settings": "Settings",
+        "clear": "Clear",
+        "refresh": "Refresh"
     },
     "nav": {
         "home": "Home",
@@ -3235,7 +3237,12 @@
         "msg_status_delivered": "delivered",
         "msg_status_read": "read",
         "msg_status_failed": "failed",
-        "msg_status_queued": "queued"
+        "msg_status_queued": "queued",
+        "chip_open": "Open",
+        "chip_unread": "Unread",
+        "chip_pending": "Pending",
+        "unknown_contact": "Unknown contact",
+        "media_placeholder": "(media)"
     },
     "notifications": {
         "col_event": "Event",

@@ -2,9 +2,11 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import InboxLayout from '@/Layouts/InboxLayout';
 import EmptyState from '@/Components/EmptyState';
 import NewConversationModal from '@/Components/Inbox/NewConversationModal';
+import ConversationListPanel from '@/Components/Inbox/ConversationListPanel';
+import FilterSidebar from '@/Components/Inbox/FilterSidebar';
 import {
     Send, AlertTriangle, Eye, StickyNote, MessageSquare, Phone, Globe,
-    RefreshCw, Search, Inbox, User, CheckCircle, Clock, X, Smile,
+    Search, User, CheckCircle, X, Smile,
     Paperclip, Image as ImageIcon, ChevronDown, UserCheck,
     LayoutTemplate, Plus, Loader2, Bot, Calendar, BarChart2, PhoneMissed,
     Volume2, VolumeX, ShoppingBag, History, Tag, ArrowRightLeft, UserMinus,
@@ -30,15 +32,6 @@ function reportActionError(err, fallback) {
 }
 
 /* ─── helpers ─────────────────────────────────────────── */
-
-const FOLDERS = [
-    { key: null,         labelKey: 'inbox.folder_all',        icon: Inbox },
-    { key: 'mine',       labelKey: 'inbox.folder_mine',       icon: User },
-    { key: 'unassigned', labelKey: 'inbox.folder_unassigned', icon: MessageSquare },
-    { key: 'resolved',   labelKey: 'inbox.folder_resolved',   icon: CheckCircle },
-    { key: 'snoozed',    labelKey: 'inbox.folder_snoozed',    icon: Clock },
-];
-const ALL_CHANNELS = ['whatsapp', 'instagram', 'messenger', 'sms', 'email'];
 
 /**
  * Who sent an outbound message, from messages.sent_by. 'human' gets no badge —
@@ -982,156 +975,6 @@ function MessageBubble({ msg, conversationId }) {
     );
 }
 
-function ConversationCard({ conv, isActive, userTz }) {
-    const { t } = useTranslation();
-    const channel = conv.channel_account?.channel ?? 'whatsapp';
-    const name = conv.contact?.first_name || conv.contact?.last_name
-        ? `${conv.contact.first_name ?? ''} ${conv.contact.last_name ?? ''}`.trim()
-        : conv.contact?.phone_e164 ?? 'Unknown';
-
-    const handleContactClick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (conv.contact?.id) {
-            router.visit(route('client.contacts.show', conv.contact.uuid));
-        }
-    };
-
-    return (
-        <Link
-            href={route('client.inbox.show', conv.uuid)}
-            className={`block px-3 py-3 border-b border-neutral-100 dark:border-neutral-800 transition-colors ${
-                isActive
-                    ? 'bg-brand-50 dark:bg-brand-900/20 border-l-2 border-l-brand-600'
-                    : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
-            }`}
-        >
-            <div className="flex items-start gap-2.5">
-                <button onClick={handleContactClick} title={t('inbox.view_contact')} className="relative shrink-0 group">
-                    <div className="h-9 w-9 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-sm font-semibold text-brand-700 dark:text-brand-300 group-hover:ring-2 group-hover:ring-brand-400 transition">
-                        {name[0]?.toUpperCase() ?? '?'}
-                    </div>
-                    <span className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-white dark:bg-neutral-900 flex items-center justify-center">
-                        <ChannelBrandIcon channel={channel} className="h-3 w-3" />
-                    </span>
-                </button>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1">
-                        <button
-                            onClick={handleContactClick}
-                            className={`text-sm truncate text-left hover:underline ${conv.unread_count > 0 ? 'font-semibold text-neutral-900 dark:text-neutral-100' : 'font-medium text-neutral-700 dark:text-neutral-300'}`}
-                            title={t('inbox.view_contact_profile')}
-                        >
-                            {name}
-                        </button>
-                        <span className="text-[11px] text-neutral-400 shrink-0">
-                            {conv.last_message_at ? formatTimeTz(conv.last_message_at, userTz) : ''}
-                        </span>
-                    </div>
-                    <p className={`text-xs truncate mt-0.5 ${conv.unread_count > 0 ? 'text-neutral-700 dark:text-neutral-300' : 'text-neutral-400'}`}>
-                        {conv.last_message?.body || '(media)'}
-                    </p>
-                    {conv.labels?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                            {conv.labels.map(l => (
-                                <span key={l.id} className="rounded-full px-1.5 py-px text-[10px] font-medium text-white" style={{ backgroundColor: l.color }}>{l.name}</span>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                {conv.unread_count > 0 && (
-                    <span className="shrink-0 h-5 min-w-5 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center px-1 mt-0.5">
-                        {conv.unread_count > 99 ? '99+' : conv.unread_count}
-                    </span>
-                )}
-            </div>
-        </Link>
-    );
-}
-
-/** One heading + rows block in the filter rail. */
-function FilterSection({ title, children }) {
-    return (
-        <div className="px-2 py-3">
-            <p className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400">{title}</p>
-            <div className="space-y-0.5">{children}</div>
-        </div>
-    );
-}
-
-function FilterSidebar({ filters, labels, channelAccounts = [], onFolder, onChannel, onAccount, onLabel }) {
-    const { t } = useTranslation();
-    return (
-        <div className="flex h-full flex-col divide-y divide-neutral-100 overflow-y-auto dark:divide-neutral-800">
-            <FilterSection title={t('inbox.views')}>
-                {FOLDERS.map(({ key, labelKey, icon: Icon }) => (
-                    <button key={key ?? 'all'} onClick={() => onFolder(key)}
-                        className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition ${
-                            (filters.folder ?? null) === key
-                                ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-semibold'
-                                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                        }`}>
-                        <Icon className="h-4 w-4 shrink-0" />{t(labelKey)}
-                    </button>
-                ))}
-            </FilterSection>
-
-            <FilterSection title={t('inbox.channels')}>
-                {ALL_CHANNELS.map(ch => (
-                    <button key={ch} onClick={() => onChannel(ch)}
-                        className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition ${
-                            filters.channel === ch
-                                ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-semibold'
-                                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                        }`}>
-                        <ChannelBrandIcon channel={ch} className="h-4 w-4 shrink-0" />
-                        <span>{CHANNEL_LABELS[ch] ?? ch}</span>
-                    </button>
-                ))}
-            </FilterSection>
-
-            {channelAccounts.length > 0 && (
-                <FilterSection title={t('inbox.numbers')}>
-                    {channelAccounts.map(account => (
-                        <button key={account.id} onClick={() => onAccount(account.id)}
-                            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition ${
-                                String(filters.account_id) === String(account.id)
-                                    ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-semibold'
-                                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                            }`}>
-                            <ChannelBrandIcon channel={account.channel} className="h-4 w-4 shrink-0" />
-                            <span className="truncate">{account.display_name || account.phone_number_id || account.channel}</span>
-                        </button>
-                    ))}
-                </FilterSection>
-            )}
-
-            <FilterSection title={t('inbox.labels')}>
-                {labels.map(label => (
-                    <button key={label.id} onClick={() => onLabel(label.id)}
-                        className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm transition ${
-                            String(filters.label) === String(label.id)
-                                ? 'bg-brand-50 font-semibold dark:bg-brand-900/30'
-                                : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800'
-                        }`}>
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: label.color }} />
-                        <span className="truncate">{label.name}</span>
-                    </button>
-                ))}
-                {/* Labels are managed on their own page — the rail links to it rather
-                    than growing an inline editor. */}
-                <Link
-                    href={route('client.inbox.labels.index')}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800"
-                >
-                    <Plus className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{t('inbox.new_label')}</span>
-                </Link>
-            </FilterSection>
-        </div>
-    );
-}
-
 /* ─── emoji picker ───────────────────────────────────── */
 function EmojiPicker({ onPick, onClose }) {
     const ref = useRef(null);
@@ -1595,6 +1438,7 @@ export default function InboxShow({
     whatsappTemplates = [],
     channelAccounts = [],
     hasEcommerceStore = false,
+    counts = {},
 }) {
     const { t, i18n } = useTranslation();
     const { props } = usePage();
@@ -1613,6 +1457,8 @@ export default function InboxShow({
     const [typingUsers, setTypingUsers]     = useState([]);
     const [activeTab, setActiveTab]         = useState('messages');
     const [notes, setNotes]                 = useState([]);
+    const [notesLoaded, setNotesLoaded]     = useState(false);
+    const [ordersTotal, setOrdersTotal]     = useState(0);
     const [noteBody, setNoteBody]           = useState('');
     const [notePosting, setNotePosting]     = useState(false);
     const [cannedReplies, setCannedReplies] = useState([]);
@@ -1621,7 +1467,6 @@ export default function InboxShow({
     const [assignedTo, setAssignedTo]       = useState(conversation.assigned_to ?? 'bot');
     const [assignedUserId, setAssignedUserId] = useState(conversation.assigned_user_id ?? null);
     const [conversations, setConversations] = useState(initialConversations);
-    const [listSearch, setListSearch]       = useState('');
     const [listLoading, setListLoading]     = useState(false);
     const [showNewModal, setShowNewModal]   = useState(false);
     const [sending, setSending]             = useState(false);
@@ -1641,6 +1486,8 @@ export default function InboxShow({
         setAssignedTo(conversation.assigned_to ?? 'bot');
         setAssignedUserId(conversation.assigned_user_id ?? null);
         setSendError(null);
+        setNotesLoaded(false);
+        setOrdersTotal(0);
     }, [conversation.id]);
 
     useEffect(() => {
@@ -1752,7 +1599,7 @@ export default function InboxShow({
 
     const loadNotes = useCallback(() => {
         axios.get(route('client.inbox.notes.index', conversation.uuid))
-            .then(r => setNotes(r.data ?? []))
+            .then(r => { setNotes(r.data ?? []); setNotesLoaded(true); })
             .catch(() => {});
     }, [conversation.id]);
 
@@ -1763,7 +1610,14 @@ export default function InboxShow({
     const loadOrders = useCallback(() => {
         if (!conversation.contact?.uuid) return;
         axios.get(route('client.ecommerce.contacts.orders', conversation.contact.uuid))
-            .then(r => setOrders(r.data ?? []))
+            .then(r => {
+                // The endpoint used to answer with a bare array; it now returns
+                // { orders, total } so the tab can show a count the five rendered
+                // rows could never supply.
+                const payload = r.data ?? {};
+                setOrders(Array.isArray(payload) ? payload : (payload.orders ?? []));
+                setOrdersTotal(Array.isArray(payload) ? payload.length : (payload.total ?? 0));
+            })
             .catch(() => {})
             .finally(() => setOrdersLoaded(true));
     }, [conversation.id]);
@@ -1889,18 +1743,15 @@ export default function InboxShow({
 
     const handleStatus = (status) => router.post(route('client.inbox.status', conversation.uuid), { status }, { preserveScroll: true });
 
-    const navigateList = (params) => {
+    // Memoised so the debounced search effect below can depend on it without
+    // rebuilding its timer on every render, which would defeat the debounce.
+    const navigateList = useCallback((params) => {
         setListLoading(true);
         router.get(route('client.inbox.show', conversation.uuid), { ...filters, ...params }, { preserveState: true, replace: true });
-    };
+    }, [conversation.uuid, filters]);
 
     const otherViewers = viewers.filter(v => v.id !== authUser?.id);
-    const filteredList = listSearch.trim() && conversations?.data
-        ? conversations.data.filter(c => {
-            const n = `${c.contact?.first_name ?? ''} ${c.contact?.last_name ?? ''} ${c.contact?.phone_e164 ?? ''}`.toLowerCase();
-            return n.includes(listSearch.toLowerCase());
-        })
-        : (conversations?.data ?? []);
+
 
     const contactName = conversation.contact?.first_name || conversation.contact?.last_name
         ? `${conversation.contact.first_name ?? ''} ${conversation.contact.last_name ?? ''}`.trim()
@@ -1933,6 +1784,7 @@ export default function InboxShow({
                         filters={filters}
                         labels={allLabels}
                         channelAccounts={channelAccounts}
+                        counts={counts}
                         onFolder={(k) => navigateList({ folder: k, channel: undefined, label: undefined, account_id: undefined })}
                         onChannel={(ch) => navigateList({ channel: filters.channel === ch ? undefined : ch, account_id: undefined })}
                         onAccount={(id) => navigateList({ account_id: String(filters.account_id) === String(id) ? undefined : id, channel: undefined })}
@@ -1941,43 +1793,18 @@ export default function InboxShow({
                 </aside>
 
                 {/* ── Conversation list ── */}
-                <div className="flex w-80 shrink-0 flex-col border-r border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
-                    <div className="space-y-2 border-b border-neutral-100 px-3 py-3 dark:border-neutral-800">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1 flex-wrap">
-                                {t(FOLDERS.find(f => (f.key ?? null) === (filters.folder ?? null))?.labelKey ?? 'inbox.folder_all')}
-                                {filters.channel && <span className="text-xs font-normal text-neutral-400">· {CHANNEL_LABELS[filters.channel] ?? filters.channel}</span>}
-                                {filters.account_id && (() => {
-                                    const acct = channelAccounts.find(a => String(a.id) === String(filters.account_id));
-                                    return acct ? <span className="text-xs font-normal text-neutral-400">· {acct.display_name || acct.phone_number_id}</span> : null;
-                                })()}
-                            </span>
-                            <div className="flex items-center gap-1">
-                                <span className="text-xs text-neutral-400 tabular-nums">{conversations?.total ?? 0}</span>
-                                <SoundPrefsMenu />
-                                <button onClick={() => { setListLoading(true); router.reload(); }} className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition">
-                                    <RefreshCw className={`h-3.5 w-3.5 ${listLoading ? 'animate-spin' : ''}`} />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none" />
-                            <input value={listSearch} onChange={e => setListSearch(e.target.value)}
-                                placeholder={t('inbox.search_conversations')}
-                                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg bg-neutral-100 dark:bg-neutral-800 border-0 focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder-neutral-400"
-                            />
-                        </div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto">
-                        {filteredList.length === 0 ? (
-                            <div className="py-10 px-4">
-                                <EmptyState icon={<Inbox className="h-7 w-7" />} title={t('inbox.no_conversations')} description={t('inbox.no_conversations_match')} />
-                            </div>
-                        ) : filteredList.map(conv => (
-                            <ConversationCard key={conv.id} conv={conv} isActive={conv.uuid === conversation.uuid} userTz={userTz} />
-                        ))}
-                    </div>
-                </div>
+                <ConversationListPanel
+                    conversations={conversations}
+                    filters={filters}
+                    counts={counts}
+                    channelAccounts={channelAccounts}
+                    activeUuid={conversation.uuid}
+                    loading={listLoading}
+                    userTz={userTz}
+                    onNavigate={navigateList}
+                    onRefresh={() => { setListLoading(true); router.reload(); }}
+                    headerExtra={<SoundPrefsMenu />}
+                />
 
                 {/* ── Main thread ── */}
                 <div className="flex-1 flex flex-col min-w-0 bg-neutral-50 dark:bg-neutral-950">
@@ -2079,17 +1906,23 @@ export default function InboxShow({
                     <div className="flex border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shrink-0">
                         {[
                             { key: 'messages', label: t('inbox.tab_messages'), icon: null },
-                            { key: 'notes',    label: t('inbox.tab_notes'),    icon: <StickyNote className="inline h-3.5 w-3.5 mr-1 -mt-0.5" /> },
-                            ...(hasEcommerceStore ? [{ key: 'orders', label: t('inbox.tab_orders'), icon: <ShoppingBag className="inline h-3.5 w-3.5 mr-1 -mt-0.5" /> }] : []),
-                            { key: 'activity', label: t('inbox.tab_activity'), icon: <History className="inline h-3.5 w-3.5 mr-1 -mt-0.5" /> },
+                            // notesCount comes from the server so the badge is right
+                            // before the tab is ever opened; once it has been, the
+                            // local list is the fresher of the two.
+                            { key: 'notes',    label: t('inbox.tab_notes'),    icon: <StickyNote className="mr-1 -mt-0.5 inline h-3.5 w-3.5" />, count: notesLoaded ? notes.length : (conversation.internal_notes_count ?? 0) },
+                            ...(hasEcommerceStore ? [{ key: 'orders', label: t('inbox.tab_orders'), icon: <ShoppingBag className="mr-1 -mt-0.5 inline h-3.5 w-3.5" />, count: ordersTotal }] : []),
+                            { key: 'activity', label: t('inbox.tab_activity'), icon: <History className="mr-1 -mt-0.5 inline h-3.5 w-3.5" /> },
                         ].map(tab => (
                             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                                className={`px-5 py-2.5 text-sm font-medium border-b-2 transition ${
+                                className={`border-b-2 px-5 py-2.5 text-sm font-medium transition ${
                                     activeTab === tab.key
                                         ? 'border-brand-600 text-brand-700 dark:text-brand-300'
                                         : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
                                 }`}>
                                 {tab.icon}{tab.label}
+                                {tab.count > 0 && (
+                                    <span className="ml-1.5 text-xs font-semibold tabular-nums text-neutral-400">{tab.count}</span>
+                                )}
                             </button>
                         ))}
                     </div>

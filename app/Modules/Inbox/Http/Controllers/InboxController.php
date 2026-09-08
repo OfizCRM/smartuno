@@ -18,6 +18,7 @@ use App\Modules\Whatsapp\Services\CloudApiClient;
 use App\Notifications\ConversationHandoverNotification;
 use App\Services\StorageManager;
 use App\Support\Demo;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,24 +36,95 @@ class InboxController extends Controller
         private StorageManager $storageManager,
     ) {}
 
-    public function index(Request $request): Response
-    {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
-        $userId = $request->user()->id;
+    /** Filters the inbox list understands. Anything else in the query string is ignored. */
+    private const LIST_FILTERS = ['folder', 'channel', 'label', 'account_id', 'search'];
 
-        $conversations = Conversation::where('workspace_id', $workspaceId)
-            ->with(['contact', 'channelAccount', 'lastMessage', 'labels'])
-            ->when($request->folder === 'mine', fn ($q) => $q->where('assigned_user_id', $userId))
-            ->when($request->folder === 'unassigned', fn ($q) => $q->whereNull('assigned_user_id'))
-            ->when($request->channel, fn ($q) => $q->whereHas('channelAccount', fn ($q) => $q->where('channel', $request->channel)))
-            ->when($request->account_id, fn ($q) => $q->where('channel_account_id', $request->account_id))
-            ->when(! in_array($request->folder, ['resolved', 'snoozed'], true), fn ($q) => $q->where('status', 'open'))
-            ->when($request->folder === 'resolved', fn ($q) => $q->where('status', 'resolved'))
-            ->when($request->folder === 'snoozed', fn ($q) => $q->where('status', 'snoozed'))
-            ->when($request->label, fn ($q) => $q->whereHas('labels', fn ($q) => $q->where('inbox_labels.id', $request->label)))
+    /**
+     * The conversation list, built once.
+     *
+     * index() and show() both render it — the sidebar has to stay populated when
+     * a conversation is opened — and they used to carry byte-similar copies of
+     * this query. A filter added to one and missed in the other shows up as the
+     * list silently changing the moment you click a row.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, Conversation>
+     */
+    private function conversationList(int $workspaceId, ?int $userId, array $filters): LengthAwarePaginator
+    {
+        return Conversation::where('workspace_id', $workspaceId)
+            // assignedUser is limited to id+name on purpose: the row only needs a
+            // label, and the full user model carries things a prop must not.
+            ->with(['contact', 'channelAccount', 'lastMessage', 'labels', 'assignedUser:id,name'])
+            ->inboxFolder($filters['folder'] ?? null, $userId)
+            ->inboxNarrowed($filters)
             ->orderByDesc('last_message_at')
             ->paginate(30)
             ->withQueryString();
+    }
+
+    /**
+     * The numbers beside every filter.
+     *
+     * All three are computed inside the ACTIVE FOLDER and ignore the channel and
+     * label selection, which is what makes them add up: pick "Toate" and the five
+     * channel counts sum to the total. Narrowing them as well would make every
+     * number move whenever any filter is touched, and a count that shifts under
+     * you is worse than no count.
+     *
+     * Three queries, not one per row: a naive version costs ten plus one per
+     * label on every page load.
+     *
+     * @return array{views: array<string, int>, channels: array<string, int>, labels: array<int, int>}
+     */
+    private function filterCounts(int $workspaceId, ?int $userId, ?string $folder): array
+    {
+        $active = "'".implode("','", Conversation::ACTIVE_STATUSES)."'";
+
+        $views = DB::table('conversations')
+            ->where('workspace_id', $workspaceId)
+            ->selectRaw("
+                SUM(status IN ($active)) as `all`,
+                SUM(status IN ($active) AND assigned_user_id = ?) as mine,
+                SUM(status IN ($active) AND assigned_user_id IS NULL) as unassigned,
+                SUM(status IN ($active) AND unread_count > 0) as unread,
+                SUM(status = 'pending') as pending,
+                SUM(status = 'resolved') as resolved,
+                SUM(status = 'snoozed') as snoozed
+            ", [$userId])
+            ->first();
+
+        // Same folder predicate the list uses, so the per-channel and per-label
+        // numbers describe the rows actually on screen.
+        $inFolder = fn () => Conversation::where('conversations.workspace_id', $workspaceId)
+            ->inboxFolder($folder, $userId);
+
+        $channels = $inFolder()
+            ->join('channel_accounts', 'channel_accounts.id', '=', 'conversations.channel_account_id')
+            ->groupBy('channel_accounts.channel')
+            ->selectRaw('channel_accounts.channel as channel, count(*) as aggregate')
+            ->pluck('aggregate', 'channel');
+
+        $labels = $inFolder()
+            ->join('inbox_label_conversation as pivot', 'pivot.conversation_id', '=', 'conversations.id')
+            ->groupBy('pivot.label_id')
+            ->selectRaw('pivot.label_id as label_id, count(*) as aggregate')
+            ->pluck('aggregate', 'label_id');
+
+        return [
+            'views' => array_map('intval', (array) $views),
+            'channels' => $channels->map(fn ($n) => (int) $n)->all(),
+            'labels' => $labels->map(fn ($n) => (int) $n)->all(),
+        ];
+    }
+
+    public function index(Request $request): Response
+    {
+        $workspaceId = $request->user()->workspace_id;
+        $userId = $request->user()->id;
+        $filters = $request->only(self::LIST_FILTERS);
+
+        $conversations = $this->conversationList($workspaceId, $userId, $filters);
 
         $labels = InboxLabel::where('workspace_id', $workspaceId)->orderBy('name')->get(['id', 'name', 'color']);
         $channelAccounts = ChannelAccount::where('workspace_id', $workspaceId)
@@ -63,9 +135,10 @@ class InboxController extends Controller
 
         return Inertia::render('Inbox/Index', [
             'conversations' => $conversations,
-            'filters' => $request->only('folder', 'channel', 'label', 'account_id'),
+            'filters' => $filters,
             'labels' => $labels,
             'channelAccounts' => $channelAccounts,
+            'counts' => $this->filterCounts($workspaceId, $userId, $filters['folder'] ?? null),
         ]);
     }
 
@@ -74,6 +147,8 @@ class InboxController extends Controller
         $this->authorise($request, $conversation);
 
         $conversation->load(['contact', 'channelAccount', 'labels']);
+        // The Notes tab shows how many there are before you open it.
+        $conversation->loadCount('internalNotes');
         $messages = $conversation->messages()->with('conversation')->orderBy('sent_at')->get();
 
         // Mark as read
@@ -85,7 +160,7 @@ class InboxController extends Controller
             $conversation->channelAccount?->channel !== 'whatsapp' || $conversation->isWhatsappWindowOpen(),
         );
 
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
         $userId = $request->user()->id;
         $allLabels = InboxLabel::where('workspace_id', $workspaceId)->orderBy('name')->get(['id', 'name', 'color']);
 
@@ -103,21 +178,10 @@ class InboxController extends Controller
                 ->get(['id', 'name', 'language', 'components'])
             : collect();
 
-        // Pass conversation list so the left panel stays populated on the show page
-        $filters = $request->only('folder', 'channel', 'label', 'account_id');
-        $conversations = Conversation::where('workspace_id', $workspaceId)
-            ->with(['contact', 'channelAccount', 'lastMessage', 'labels'])
-            ->when(($filters['folder'] ?? null) === 'mine', fn ($q) => $q->where('assigned_user_id', $userId))
-            ->when(($filters['folder'] ?? null) === 'unassigned', fn ($q) => $q->whereNull('assigned_user_id'))
-            ->when($filters['channel'] ?? null, fn ($q, $ch) => $q->whereHas('channelAccount', fn ($q) => $q->where('channel', $ch)))
-            ->when($filters['account_id'] ?? null, fn ($q, $aid) => $q->where('channel_account_id', $aid))
-            ->when(! in_array($filters['folder'] ?? null, ['resolved', 'snoozed'], true), fn ($q) => $q->where('status', 'open'))
-            ->when(($filters['folder'] ?? null) === 'resolved', fn ($q) => $q->where('status', 'resolved'))
-            ->when(($filters['folder'] ?? null) === 'snoozed', fn ($q) => $q->where('status', 'snoozed'))
-            ->when($filters['label'] ?? null, fn ($q, $lid) => $q->whereHas('labels', fn ($q) => $q->where('inbox_labels.id', $lid)))
-            ->orderByDesc('last_message_at')
-            ->paginate(30)
-            ->withQueryString();
+        // Same builder the index uses, so the sidebar list cannot drift from the
+        // one the user was looking at a click earlier.
+        $filters = $request->only(self::LIST_FILTERS);
+        $conversations = $this->conversationList($workspaceId, $userId, $filters);
 
         $channelAccounts = ChannelAccount::where('workspace_id', $workspaceId)
             ->where('status', 'active')
@@ -143,6 +207,7 @@ class InboxController extends Controller
             'whatsappTemplates' => $whatsappTemplates,
             'channelAccounts' => $channelAccounts,
             'hasEcommerceStore' => $hasEcommerceStore,
+            'counts' => $this->filterCounts($workspaceId, $userId, $filters['folder'] ?? null),
         ]);
     }
 

@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import {
     LayoutDashboard, Users, Settings, Radio, Inbox, Zap, Share2,
@@ -29,6 +30,9 @@ function safeRoute(name, ...args) {
  */
 export default function useClientNav() {
     const { t } = useTranslation();
+    // Shared on every client request; 0 on admin routes and before a workspace
+    // is resolved, which the badge renders as nothing.
+    const { inboxOpenCount = 0 } = usePage().props;
 
     const groups = [
         // Daily work. No heading: these four are self-evident and the space is
@@ -38,7 +42,7 @@ export default function useClientNav() {
             label: null,
             items: [
                 { label: t('nav.dashboard'),     href: safeRoute('client.dashboard'),            icon: <LayoutDashboard className={iconClass} />, activePattern: 'client.dashboard' },
-                { label: t('nav.inbox'),         href: safeRoute('client.inbox.index'),          icon: <Inbox className={iconClass} />,          activePattern: 'client.inbox.*' },
+                { label: t('nav.inbox'),         href: safeRoute('client.inbox.index'),          icon: <Inbox className={iconClass} />,          activePattern: 'client.inbox.*', badge: inboxOpenCount },
                 { label: t('nav.contacts'),      href: safeRoute('client.contacts.index'),       icon: <Users className={iconClass} />,          activePattern: 'client.contacts.*' },
             ],
         },

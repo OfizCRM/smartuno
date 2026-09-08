@@ -36,25 +36,18 @@ class MobileConversationController extends WorkspaceScopedController
         $userId = $request->user()->id;
         $folder = $request->input('folder', 'all');
 
+        // The same two scopes the web inbox uses. This was a third hand-written
+        // copy of that query: it hid 'pending' conversations exactly as the web
+        // one did, and its search never looked at a message body.
         $conversations = Conversation::where('workspace_id', $wsId)
             ->with(['contact', 'channelAccount', 'lastMessage', 'labels', 'assignedUser'])
-            ->when($folder === 'mine', fn ($q) => $q->where('assigned_user_id', $userId))
-            ->when($folder === 'unassigned', fn ($q) => $q->whereNull('assigned_user_id'))
-            ->when(! in_array($folder, ['resolved', 'snoozed'], true), fn ($q) => $q->where('status', 'open'))
-            ->when($folder === 'resolved', fn ($q) => $q->where('status', 'resolved'))
-            ->when($folder === 'snoozed', fn ($q) => $q->where('status', 'snoozed'))
-            ->when($request->channel, fn ($q) => $q->whereHas('channelAccount', fn ($q) => $q->where('channel', $request->channel)))
-            ->when($request->account_id, fn ($q) => $q->where('channel_account_id', $request->account_id))
-            ->when($request->label_id, fn ($q) => $q->whereHas('labels', fn ($q) => $q->where('inbox_labels.id', $request->label_id)))
-            ->when($request->search, function ($q) use ($request) {
-                $term = '%'.$request->search.'%';
-                $q->whereHas('contact', function ($c) use ($term) {
-                    $c->where('first_name', 'like', $term)
-                        ->orWhere('last_name', 'like', $term)
-                        ->orWhere('phone_e164', 'like', $term)
-                        ->orWhere('email', 'like', $term);
-                });
-            })
+            ->inboxFolder($folder === 'all' ? null : $folder, $userId)
+            ->inboxNarrowed([
+                'channel' => $request->channel,
+                'account_id' => $request->account_id,
+                'label' => $request->label_id,
+                'search' => $request->search,
+            ])
             ->orderByDesc('last_message_at')
             ->paginate(30);
 

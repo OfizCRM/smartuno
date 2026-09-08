@@ -37,8 +37,13 @@ function NavRow({ item, onClose, showActiveDot = false }) {
                 </span>
             )}
             <span className="truncate">{item.label}</span>
-            {showActiveDot && isActive && (
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-active-icon dark:bg-white/70 shrink-0" />
+            {item.badge > 0 && (
+                <span className="ml-auto shrink-0 rounded-full bg-black/10 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums dark:bg-white/15">
+                    {item.badge > 99 ? '99+' : item.badge}
+                </span>
+            )}
+            {showActiveDot && isActive && ! (item.badge > 0) && (
+                <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-sidebar-active-icon dark:bg-white/70" />
             )}
         </>
     );
