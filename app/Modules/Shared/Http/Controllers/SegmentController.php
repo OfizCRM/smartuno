@@ -8,6 +8,7 @@ use App\Modules\Shared\Models\Segment;
 use App\Modules\Shared\Services\SegmentResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,7 +18,7 @@ class SegmentController extends Controller
 
     public function index(Request $request): Response
     {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
         $segments = Segment::where('workspace_id', $workspaceId)->latest()->get();
 
         return Inertia::render('Contacts/Segments', ['segments' => $segments]);
@@ -25,7 +26,7 @@ class SegmentController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:128'],
             'type' => ['required', 'in:static,dynamic'],
@@ -71,7 +72,7 @@ class SegmentController extends Controller
         $this->authorise($request, $segment);
         abort_if($segment->type !== 'static', 403, __('Only static segments support manual contact management.'));
 
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
 
         $segmentContacts = $segment->contacts()
             ->orderBy('first_name')
@@ -102,9 +103,15 @@ class SegmentController extends Controller
         $this->authorise($request, $segment);
         abort_if($segment->type !== 'static', 403);
 
+        // exists:contacts,id alone accepted any id in the install: a crafted
+        // request could pull another workspace's contacts into this segment, and
+        // from there into a campaign. There is no global scope to catch this.
         $validated = $request->validate([
             'contact_ids' => ['required', 'array', 'min:1'],
-            'contact_ids.*' => ['integer', 'exists:contacts,id'],
+            'contact_ids.*' => [
+                'integer',
+                Rule::exists('contacts', 'id')->where(fn ($q) => $q->where('workspace_id', $request->user()->workspace_id)),
+            ],
         ]);
 
         $segment->contacts()->syncWithoutDetaching($validated['contact_ids']);
@@ -126,7 +133,7 @@ class SegmentController extends Controller
 
     private function authorise(Request $request, Segment $segment): void
     {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
         abort_unless((int) $segment->workspace_id === (int) $workspaceId, 403);
     }
 }

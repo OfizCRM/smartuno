@@ -83,6 +83,7 @@ class Contact extends Model
         'workspace_id', 'phone_e164', 'email', 'first_name', 'last_name',
         'avatar', 'country', 'language', 'opt_in_whatsapp', 'opt_in_sms', 'opt_in_email',
         'custom_fields', 'last_seen_at', 'source', 'lead_id',
+        'company', 'job_title', 'tax_id', 'address', 'city', 'birthday', 'status',
     ];
 
     protected function casts(): array
@@ -93,8 +94,18 @@ class Contact extends Model
             'opt_in_email' => 'boolean',
             'custom_fields' => 'array',
             'last_seen_at' => 'datetime',
+            'birthday' => 'date',
         ];
     }
+
+    /**
+     * Where a contact stands with the business. Mirrored by the migration's enum
+     * and by STATUS_META in the React list.
+     *
+     * 'inactive' is only ever set by a person. Inferring it from silence would
+     * label a perfectly good customer who simply had nothing to ask this quarter.
+     */
+    public const STATUSES = ['lead', 'negotiating', 'client', 'inactive'];
 
     public function tags(): BelongsToMany
     {

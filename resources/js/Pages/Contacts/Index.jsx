@@ -1,85 +1,151 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { CheckSquare, Download, Layers, Minus, Plus, Search, Square, Table2, Tag, Trash2, Upload, Users, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ClientLayout from '@/Layouts/ClientLayout';
 import EmptyState from '@/Components/EmptyState';
+import { ChannelBrandIcon } from '@/Components/BrandIcons';
+import { formatInTz } from '@/Utils/datetime';
+import { relativeTime } from '@/Utils/relativeTime';
 import ImportCsvModal from './ImportCsvModal';
-import { useState, useCallback } from 'react';
-import { UserPlus, Upload, Search, Tag, Trash2, Eye, Users, Table2, Download, CheckSquare, Square, X, Layers, Plus, Minus } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
-function ContactAvatar({ contact, size = 8 }) {
+/**
+ * The contact list.
+ *
+ * The "Channels" column used to render the three opt_in_* flags. Those say
+ * whether you may message someone, not where they talk to you — and their
+ * defaults make them nearly meaningless (opt_in_email defaults to true for
+ * everyone, and the CSV import sets the WhatsApp and SMS flags from the mere
+ * presence of a phone number). It now shows the channels a contact has actually
+ * written on, computed server-side; consent moved to its own tab on the record.
+ *
+ * "Last seen" comes from the same aggregate, not from contacts.last_seen_at:
+ * that column exists but nothing in the application ever writes it.
+ */
+
+/**
+ * Where a contact stands, mirrored from Contact::STATUSES.
+ *
+ * 'inactive' is grey rather than red: someone who has gone quiet is not a
+ * problem to fix, and a wall of red badges would say the business is failing.
+ */
+const STATUS_META = {
+    lead: { labelKey: 'contacts_page.status_lead', className: 'bg-accent-100 text-accent-800 dark:bg-accent-900/30 dark:text-accent-200' },
+    negotiating: { labelKey: 'contacts_page.status_negotiating', className: 'bg-secondary-100 text-secondary-800 dark:bg-secondary-900/40 dark:text-secondary-200' },
+    client: { labelKey: 'contacts_page.status_client', className: 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' },
+    inactive: { labelKey: 'contacts_page.status_inactive', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400' },
+};
+
+const STATUS_CHIPS = [
+    { key: null, countKey: 'all', labelKey: 'contacts_page.chip_all' },
+    { key: 'client', countKey: 'client', labelKey: 'contacts_page.chip_client' },
+    { key: 'negotiating', countKey: 'negotiating', labelKey: 'contacts_page.chip_negotiating' },
+    { key: 'lead', countKey: 'lead', labelKey: 'contacts_page.chip_lead' },
+    { key: 'inactive', countKey: 'inactive', labelKey: 'contacts_page.chip_inactive' },
+];
+
+export function StatusBadge({ status }) {
+    const { t } = useTranslation();
+    const meta = STATUS_META[status];
+
+    if (! meta) {
+        return <span className="text-sm text-neutral-300">—</span>;
+    }
+
+    return (
+        <span className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ${meta.className}`}>
+            {t(meta.labelKey)}
+        </span>
+    );
+}
+
+function ContactAvatar({ contact }) {
     const { t } = useTranslation();
     const name = `${contact.first_name ?? ''} ${contact.last_name ?? ''}`.trim();
-    const initials = name
-        ? name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
-        : '?';
+    const initials = name ? name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase() : '?';
 
     if (contact.avatar_url) {
-        return (
-            <img
-                src={contact.avatar_url}
-                alt={name || t('contacts_page.contact_alt')}
-                className={`h-${size} w-${size} rounded-full object-cover flex-shrink-0`}
-                onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-            />
-        );
+        return <img src={contact.avatar_url} alt={name || t('contacts_page.contact_alt')} className="h-9 w-9 shrink-0 rounded-full object-cover" />;
     }
+
     return (
-        <div className={`h-${size} w-${size} rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 flex items-center justify-center text-xs font-semibold flex-shrink-0`}>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
             {initials}
         </div>
     );
 }
 
-function ContactRow({ contact, selected, onToggle, onDelete }) {
+function ContactRow({ contact, activity, selected, onToggle, onDelete, locale, userTz }) {
     const { t } = useTranslation();
+    const name = `${contact.first_name ?? ''} ${contact.last_name ?? ''}`.trim();
+    const channels = activity?.channels ?? [];
+    const lastAt = activity?.last_at ?? null;
+
+    const open = () => router.visit(route('client.contacts.show', contact.uuid));
+
     return (
-        <tr className={`hover:bg-neutral-50 dark:hover:bg-neutral-800/50 ${selected ? 'bg-brand-50 dark:bg-brand-900/10' : ''}`}>
-            <td className="px-4 py-3">
-                <button type="button" onClick={() => onToggle(contact.uuid)} className="text-neutral-400 hover:text-brand-600 transition">
-                    {selected
-                        ? <CheckSquare className="h-4 w-4 text-brand-600" />
-                        : <Square className="h-4 w-4" />
-                    }
+        <tr
+            onClick={open}
+            className="cursor-pointer border-b border-neutral-100 transition-colors last:border-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/40"
+        >
+            <td className="w-10 px-3 py-3" onClick={e => e.stopPropagation()}>
+                <button type="button" onClick={() => onToggle(contact.uuid)} aria-label={name || contact.uuid}
+                    className="text-neutral-400 transition hover:text-brand-600">
+                    {selected ? <CheckSquare className="h-4 w-4 text-brand-600" /> : <Square className="h-4 w-4" />}
                 </button>
             </td>
-            <td className="px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100">
-                <div className="flex items-center gap-2.5">
-                    <ContactAvatar contact={contact} size={8} />
-                    <span>
-                        {contact.first_name || contact.last_name
-                            ? `${contact.first_name ?? ''} ${contact.last_name ?? ''}`.trim()
-                            : <span className="text-neutral-400">—</span>
-                        }
-                    </span>
+
+            <td className="px-3 py-3">
+                <div className="flex items-center gap-3">
+                    <ContactAvatar contact={contact} />
+                    <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                            {name || t('contacts_page.unknown_contact')}
+                        </p>
+                        {contact.company && (
+                            <p className="truncate text-xs text-ink-muted dark:text-neutral-400">{contact.company}</p>
+                        )}
+                    </div>
                 </div>
             </td>
-            <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-400">{contact.phone_e164 || '—'}</td>
-            <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-400">{contact.email || '—'}</td>
-            <td className="px-4 py-3">
+
+            <td className="px-3 py-3">
+                {contact.phone_e164 && <p className="text-sm tabular-nums text-neutral-700 dark:text-neutral-300">{contact.phone_e164}</p>}
+                {contact.email && <p className="truncate text-xs text-ink-muted dark:text-neutral-400">{contact.email}</p>}
+                {! contact.phone_e164 && ! contact.email && <span className="text-sm text-neutral-300">—</span>}
+            </td>
+
+            <td className="px-3 py-3">
                 <div className="flex flex-wrap gap-1">
                     {contact.tags?.map(tag => (
-                        <span key={tag.id} className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: tag.color + '33', color: tag.color }}>
+                        <span key={tag.id} className="rounded-full px-2 py-0.5 text-[11px] font-medium text-white" style={{ backgroundColor: tag.color }}>
                             {tag.name}
                         </span>
                     ))}
                 </div>
             </td>
-            <td className="px-4 py-3">
-                <div className="flex items-center gap-1">
-                    {contact.opt_in_whatsapp && <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 rounded px-1">{t('contacts_page.channel_wa')}</span>}
-                    {contact.opt_in_sms      && <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded px-1">{t('contacts_page.channel_sms')}</span>}
-                    {contact.opt_in_email    && <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 rounded px-1">{t('contacts_page.channel_email')}</span>}
+
+            <td className="px-3 py-3">
+                <div className="flex items-center gap-1.5">
+                    {channels.length === 0
+                        ? <span className="text-sm text-neutral-300">—</span>
+                        : channels.map(ch => <ChannelBrandIcon key={ch} channel={ch} className="h-4 w-4" />)}
                 </div>
             </td>
-            <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                    <Link href={route('client.contacts.show', contact.uuid)} className="text-neutral-400 hover:text-brand-600 transition">
-                        <Eye className="h-4 w-4" />
-                    </Link>
-                    <button type="button" onClick={() => onDelete(contact.uuid)} className="text-neutral-400 hover:text-red-500 transition">
-                        <Trash2 className="h-4 w-4" />
-                    </button>
-                </div>
+
+            <td className="whitespace-nowrap px-3 py-3 text-sm text-ink-muted dark:text-neutral-400">
+                {lastAt ? (relativeTime(lastAt, locale) ?? formatInTz(lastAt, userTz)) : '—'}
+            </td>
+
+            <td className="px-3 py-3">
+                <StatusBadge status={contact.status} />
+            </td>
+
+            <td className="w-10 px-3 py-3 text-right" onClick={e => e.stopPropagation()}>
+                <button type="button" onClick={() => onDelete(contact.uuid)} title={t('contacts_page.delete_contact')}
+                    className="rounded p-1 text-neutral-300 transition hover:bg-coral-50 hover:text-coral-600 dark:hover:bg-coral-900/20">
+                    <Trash2 className="h-4 w-4" />
+                </button>
             </td>
         </tr>
     );
@@ -230,37 +296,47 @@ function BulkManageModal({ mode, count, tags, segments, processing, onClose, onA
     );
 }
 
-export default function ContactsIndex({ contacts, filters, tags = [], segments = [] }) {
-    const { t } = useTranslation();
+
+export default function ContactsIndex({ contacts, filters = {}, tags = [], segments = [], activity = {}, statusCounts = {} }) {
+    const { t, i18n } = useTranslation();
     const { props } = usePage();
     const flash = props.flash ?? {};
+    const userTz = props.timezone || 'Europe/Bucharest';
+
     const [search, setSearch] = useState(filters.search ?? '');
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [showImportModal, setShowImportModal] = useState(false);
+    const [showAdd, setShowAdd] = useState(false);
+    const [showImport, setShowImport] = useState(false);
     const [bulkModal, setBulkModal] = useState(null); // null | 'tags' | 'segments'
     const [bulkProcessing, setBulkProcessing] = useState(false);
     const [selected, setSelected] = useState(new Set());
 
     const { data, setData, post, processing, reset } = useForm({
-        first_name: '', last_name: '', phone_e164: '', email: '',
+        first_name: '', last_name: '', phone_e164: '', email: '', company: '',
         opt_in_whatsapp: true, opt_in_sms: true, opt_in_email: true,
         segment_ids: [],
     });
 
-    const allUuids = contacts.data.map(c => c.uuid);
+    const rows = contacts.data ?? [];
+    const allUuids = rows.map(c => c.uuid);
     const allSelected = allUuids.length > 0 && allUuids.every(id => selected.has(id));
     const someSelected = selected.size > 0;
 
     const toggleAll = useCallback(() => {
-        if (allSelected) {
-            setSelected(prev => { const next = new Set(prev); allUuids.forEach(id => next.delete(id)); return next; });
-        } else {
-            setSelected(prev => new Set([...prev, ...allUuids]));
-        }
+        setSelected(prev => {
+            const next = new Set(prev);
+            allUuids.forEach(id => (allSelected ? next.delete(id) : next.add(id)));
+
+            return next;
+        });
     }, [allSelected, allUuids]);
 
     const toggleOne = useCallback((uuid) => {
-        setSelected(prev => { const next = new Set(prev); next.has(uuid) ? next.delete(uuid) : next.add(uuid); return next; });
+        setSelected(prev => {
+            const next = new Set(prev);
+            next.has(uuid) ? next.delete(uuid) : next.add(uuid);
+
+            return next;
+        });
     }, []);
 
     const clearSelection = () => setSelected(new Set());
@@ -277,7 +353,7 @@ export default function ContactsIndex({ contacts, filters, tags = [], segments =
     };
 
     const handleBulkDelete = () => {
-        if (!confirm(t('contacts_page.confirm_delete_selected', { count: selected.size }))) return;
+        if (! confirm(t('contacts_page.confirm_delete_selected', { count: selected.size }))) return;
         router.delete(route('client.contacts.bulk-destroy'), {
             data: { uuids: [...selected] },
             preserveScroll: true,
@@ -305,169 +381,293 @@ export default function ContactsIndex({ contacts, filters, tags = [], segments =
         });
     };
 
-    const handlePhoneChange = (value) => {
-        setData(prev => ({
-            ...prev,
-            phone_e164: value,
-            opt_in_whatsapp: value.trim() ? prev.opt_in_whatsapp : false,
-            opt_in_sms: value.trim() ? prev.opt_in_sms : false,
-        }));
-    };
+    // Consent follows the identifier: ticking "may we WhatsApp them" for someone
+    // with no phone number would be a promise nothing can keep.
+    const setPhone = (value) => setData(prev => ({
+        ...prev,
+        phone_e164: value,
+        opt_in_whatsapp: value.trim() ? prev.opt_in_whatsapp : false,
+        opt_in_sms: value.trim() ? prev.opt_in_sms : false,
+    }));
 
-    const handleEmailChange = (value) => {
-        setData(prev => ({
-            ...prev,
-            email: value,
-            opt_in_email: value.trim() ? prev.opt_in_email : false,
-        }));
-    };
+    const setEmail = (value) => setData(prev => ({
+        ...prev,
+        email: value,
+        opt_in_email: value.trim() ? prev.opt_in_email : false,
+    }));
 
     const submitAdd = (e) => {
         e.preventDefault();
-        if (!data.phone_e164.trim() && !data.email.trim()) {
-            alert(t('contacts_page.alert_phone_or_email'));
-            return;
-        }
-        post(route('client.contacts.store'), { onSuccess: () => { reset(); setShowAddModal(false); } });
+        post(route('client.contacts.store'), { onSuccess: () => { reset(); setShowAdd(false); } });
     };
+
+    const canSubmit = data.phone_e164.trim() !== '' || data.email.trim() !== '';
 
     return (
         <ClientLayout title={t('contacts_page.title')}>
             <Head title={t('contacts_page.title')} />
-            <div className="space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{t('contacts_page.title')}</h2>
-                    <div className="flex gap-2">
-                        {(
-                            <Link
-                                href={route('client.contacts.bulk-import')}
-                                className="flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition"
-                            >
-                                <Table2 className="h-4 w-4" /> {t('contacts_page.bulk_import')}
-                            </Link>
-                        )}
-                        {(
-                            <button type="button" onClick={() => setShowImportModal(true)} className="flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition">
-                                <Upload className="h-4 w-4" /> {t('contacts_page.import_csv')}
-                            </button>
-                        )}
-                        <button type="button" onClick={() => handleExport(false)} className="flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition">
-                            <Download className="h-4 w-4" /> {t('contacts_page.export_csv')}
-                        </button>
-                        <Link href={route('client.segments.index')} className="flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition">
-                            <Tag className="h-4 w-4" /> {t('contacts_page.segments')}
+
+            <div className="space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">{t('contacts_page.title')}</h1>
+                        <p className="mt-1 text-sm text-ink-muted dark:text-neutral-400">{t('contacts_page.subtitle')}</p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        <Link href={route('client.segments.index')}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800">
+                            <Layers className="h-4 w-4" /> {t('contacts_page.segments')}
                         </Link>
-                        {(
-                            <button type="button" onClick={() => setShowAddModal(true)} className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 transition">
-                                <UserPlus className="h-4 w-4" /> {t('contacts_page.add_contact')}
-                            </button>
-                        )}
+                        <Link href={route('client.contacts.bulk-import')}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800">
+                            <Table2 className="h-4 w-4" /> {t('contacts_page.bulk_import')}
+                        </Link>
+                        <button type="button" onClick={() => setShowImport(true)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800">
+                            <Upload className="h-4 w-4" /> {t('contacts_page.import_list')}
+                        </button>
+                        <button type="button" onClick={() => handleExport(false)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800">
+                            <Download className="h-4 w-4" /> {t('contacts_page.download_all')}
+                        </button>
+                        <button type="button" onClick={() => setShowAdd(v => ! v)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700">
+                            <Plus className="h-4 w-4" /> {t('contacts_page.new_contact')}
+                        </button>
                     </div>
                 </div>
 
-                {flash.success && <div className="rounded-lg bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-4 py-2 text-sm">{flash.success}</div>}
+                {flash.success && (
+                    <div className="rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:bg-brand-900/25 dark:text-brand-200">{flash.success}</div>
+                )}
 
-                {/* Search */}
-                <form onSubmit={handleSearch} className="flex gap-2">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder={t('contacts_page.search_placeholder')}
-                            className="w-full rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 pl-9 pr-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                        />
-                    </div>
-                    <button type="submit" className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition">{t('common.search')}</button>
+                {/* Counts are of the whole workspace, not of the current search: the
+                    chips are how you narrow, so a number that moved while you typed
+                    would describe a list you had already left. */}
+                <div className="flex flex-wrap gap-2">
+                    {STATUS_CHIPS.map(({ key, countKey, labelKey }) => {
+                        const active = (filters.status ?? null) === key;
+                        const count = statusCounts[countKey];
+
+                        return (
+                            <button key={key ?? 'all'} type="button"
+                                onClick={() => router.get(route('client.contacts.index'), { ...filters, status: key ?? undefined }, { preserveState: true, replace: true })}
+                                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                                    active
+                                        ? 'bg-brand-600 text-white'
+                                        : 'border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
+                                }`}>
+                                {t(labelKey)}
+                                {count > 0 && <span className="tabular-nums opacity-70">{count}</span>}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <form onSubmit={handleSearch} className="relative">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                    <input
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder={t('contacts_page.search_with_company')}
+                        className="w-full rounded-xl border border-neutral-200 bg-white py-3 pl-11 pr-4 text-sm placeholder-neutral-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-neutral-700 dark:bg-neutral-900"
+                    />
                 </form>
 
-                {/* Bulk action bar */}
+                {/* Create — an inline panel rather than an overlay: adding a contact is
+                    a small, frequent job and a dialog over the list is heavier than it
+                    needs to be. */}
+                {showAdd && (
+                    <form onSubmit={submitAdd} className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{t('contacts_page.new_contact')}</h2>
+                                <p className="mt-0.5 text-sm text-ink-muted dark:text-neutral-400">{t('contacts_page.new_contact_hint')}</p>
+                            </div>
+                            <button type="button" onClick={() => setShowAdd(false)} aria-label={t('common.cancel')}
+                                className="rounded p-1 text-neutral-400 transition hover:text-neutral-600 dark:hover:text-neutral-200">
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+
+                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                            {[
+                                ['first_name', t('contacts_page.first_name'), 'ex. Elena', v => setData('first_name', v)],
+                                ['last_name', t('contacts_page.last_name'), 'ex. Pop', v => setData('last_name', v)],
+                                ['phone_e164', t('contacts_page.col_phone'), '+40 7xx xxx xxx', setPhone],
+                                ['email', t('common.email'), 'nume@exemplu.ro', setEmail],
+                                ['company', t('contacts_page.company_optional'), 'ex. Cofetăria Ana', v => setData('company', v)],
+                            ].map(([key, label, placeholder, onChange]) => (
+                                <div key={key} className={key === 'company' ? 'sm:col-span-2' : undefined}>
+                                    <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{label}</label>
+                                    <input
+                                        value={data[key]}
+                                        placeholder={placeholder}
+                                        onChange={e => onChange(e.target.value)}
+                                        className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-neutral-600 dark:bg-neutral-800"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+
+                        {segments.length > 0 && (
+                            <div className="mt-4">
+                                <label className="mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('contacts_page.segments')}</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {segments.map(seg => {
+                                        const on = data.segment_ids.includes(seg.id);
+
+                                        return (
+                                            <button key={seg.id} type="button"
+                                                onClick={() => setData('segment_ids', on
+                                                    ? data.segment_ids.filter(id => id !== seg.id)
+                                                    : [...data.segment_ids, seg.id])}
+                                                className={`rounded-full border px-3 py-1 text-xs transition ${
+                                                    on
+                                                        ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                                                        : 'border-neutral-300 text-neutral-600 hover:border-brand-400 dark:border-neutral-600 dark:text-neutral-400'
+                                                }`}>
+                                                {seg.name}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mt-5 flex items-center gap-3">
+                            <button type="submit" disabled={processing || ! canSubmit}
+                                title={canSubmit ? undefined : t('contacts_page.alert_phone_or_email')}
+                                className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50">
+                                {processing ? t('common.saving') : t('contacts_page.save_contact')}
+                            </button>
+                            <button type="button" onClick={() => { reset(); setShowAdd(false); }}
+                                className="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800">
+                                {t('common.cancel')}
+                            </button>
+                            {! canSubmit && (
+                                <span className="text-xs text-ink-muted">{t('contacts_page.alert_phone_or_email')}</span>
+                            )}
+                        </div>
+                    </form>
+                )}
+
                 {someSelected && (
-                    <div className="flex items-center gap-3 rounded-lg bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-700 px-4 py-2.5">
-                        <span className="text-sm font-medium text-brand-700 dark:text-brand-300">{t('contacts_page.n_selected', { count: selected.size })}</span>
-                        <div className="flex gap-2 ml-auto">
-                            <button type="button" onClick={() => setBulkModal('tags')} className="flex items-center gap-1.5 rounded-lg border border-brand-300 dark:border-brand-600 px-3 py-1.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-900/40 transition">
+                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 dark:border-brand-900/50 dark:bg-brand-900/20">
+                        <span className="text-sm font-medium text-brand-800 dark:text-brand-200">
+                            {t('contacts_page.n_selected', { count: selected.size })}
+                        </span>
+                        <div className="ml-auto flex flex-wrap gap-2">
+                            <button type="button" onClick={() => setBulkModal('tags')}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
                                 <Tag className="h-3.5 w-3.5" /> {t('contacts_page.bulk_tags_btn')}
                             </button>
-                            <button type="button" onClick={() => setBulkModal('segments')} className="flex items-center gap-1.5 rounded-lg border border-brand-300 dark:border-brand-600 px-3 py-1.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-900/40 transition">
+                            <button type="button" onClick={() => setBulkModal('segments')}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
                                 <Layers className="h-3.5 w-3.5" /> {t('contacts_page.bulk_segments_btn')}
                             </button>
-                            <button type="button" onClick={() => handleExport(true)} className="flex items-center gap-1.5 rounded-lg border border-brand-300 dark:border-brand-600 px-3 py-1.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-900/40 transition">
+                            <button type="button" onClick={() => handleExport(true)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-xs text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
                                 <Download className="h-3.5 w-3.5" /> {t('contacts_page.export_selected')}
                             </button>
-                            <button type="button" onClick={handleBulkDelete} className="flex items-center gap-1.5 rounded-lg border border-red-300 dark:border-red-700 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                            <button type="button" onClick={handleBulkDelete}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-coral-200 bg-white px-2.5 py-1.5 text-xs text-coral-600 transition hover:bg-coral-50 dark:border-coral-900/50 dark:bg-neutral-800">
                                 <Trash2 className="h-3.5 w-3.5" /> {t('contacts_page.delete_selected')}
                             </button>
-                            <button type="button" onClick={clearSelection} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition">
-                                <X className="h-4 w-4" />
+                            <button type="button" onClick={clearSelection}
+                                className="rounded-lg px-2 py-1.5 text-xs text-neutral-500 transition hover:text-neutral-700 dark:hover:text-neutral-300">
+                                {t('common.cancel')}
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* Table */}
-                <div className="overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
-                    <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700 text-sm">
-                        <thead className="bg-neutral-50 dark:bg-neutral-800">
-                            <tr>
-                                <th className="px-4 py-3 w-10">
-                                    <button type="button" onClick={toggleAll} className="text-neutral-400 hover:text-brand-600 transition">
-                                        {allSelected
-                                            ? <CheckSquare className="h-4 w-4 text-brand-600" />
-                                            : <Square className="h-4 w-4" />
-                                        }
-                                    </button>
-                                </th>
-                                {[t('common.name'), t('contacts_page.col_phone'), t('common.email'), t('contacts_page.col_tags'), t('contacts_page.col_optins'), ''].map(h => (
-                                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                            {contacts.data.map(c => (
-                                <ContactRow
-                                    key={c.id}
-                                    contact={c}
-                                    selected={selected.has(c.uuid)}
-                                    onToggle={toggleOne}
-                                    onDelete={handleDelete}
-                                />
-                            ))}
-                            {contacts.data.length === 0 && (
-                                <tr>
-                                    <td colSpan={7}>
-                                        <EmptyState
-                                            icon={<Users className="h-8 w-8" />}
-                                            title={t('contacts_page.empty_title')}
-                                            description={t('contacts_page.empty_description')}
-                                            action={{ label: t('contacts_page.add_contact'), onClick: () => setShowAddModal(true) }}
-                                            secondaryAction={{ label: t('contacts_page.bulk_import'), href: route('client.contacts.bulk-import') }}
-                                        />
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+                    {rows.length === 0 ? (
+                        <EmptyState
+                            icon={<Users className="h-7 w-7" />}
+                            title={t('contacts_page.empty_title')}
+                            description={t('contacts_page.empty_description')}
+                            action={{ label: t('contacts_page.new_contact'), onClick: () => setShowAdd(true) }}
+                        />
+                    ) : (
+                        <>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-neutral-200 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:border-neutral-700">
+                                            <th className="w-10 px-3 py-3">
+                                                <button type="button" onClick={toggleAll} aria-label={t('common.name')}
+                                                    className="text-neutral-400 transition hover:text-brand-600">
+                                                    {allSelected ? <CheckSquare className="h-4 w-4 text-brand-600" /> : <Square className="h-4 w-4" />}
+                                                </button>
+                                            </th>
+                                            <th className="px-3 py-3">{t('common.name')}</th>
+                                            <th className="px-3 py-3">{t('contacts_page.col_contact')}</th>
+                                            <th className="px-3 py-3">{t('contacts_page.col_tags')}</th>
+                                            <th className="px-3 py-3">{t('contacts_page.col_channels')}</th>
+                                            <th className="px-3 py-3">{t('contacts_page.col_last_seen')}</th>
+                                            <th className="px-3 py-3">{t('contacts_page.col_status')}</th>
+                                            <th className="w-10 px-3 py-3" />
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {rows.map(contact => (
+                                            <ContactRow
+                                                key={contact.uuid}
+                                                contact={contact}
+                                                activity={activity[contact.id]}
+                                                selected={selected.has(contact.uuid)}
+                                                onToggle={toggleOne}
+                                                onDelete={handleDelete}
+                                                locale={i18n.language}
+                                                userTz={userTz}
+                                            />
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 px-4 py-3 dark:border-neutral-800">
+                                <p className="text-xs text-ink-muted dark:text-neutral-400">
+                                    {t('contacts_page.row_hint', { count: contacts.total ?? rows.length })}
+                                </p>
+
+                                {/* Inertia links, and no dangerouslySetInnerHTML: the previous
+                                    version rendered Laravel's raw label HTML and navigated with a
+                                    plain anchor, which reloaded the page and dropped the selection. */}
+                                {contacts.last_page > 1 && (
+                                    <div className="flex items-center gap-1">
+                                        {contacts.links?.map((link, i) => {
+                                            const label = link.label.replace(/&laquo;|&raquo;/g, '').trim() || (i === 0 ? '‹' : '›');
+
+                                            return link.url ? (
+                                                <Link key={i} href={link.url} preserveScroll
+                                                    className={`rounded-lg px-2.5 py-1 text-xs transition ${
+                                                        link.active
+                                                            ? 'bg-brand-600 font-semibold text-white'
+                                                            : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800'
+                                                    }`}>
+                                                    {label}
+                                                </Link>
+                                            ) : (
+                                                <span key={i} className="px-2.5 py-1 text-xs text-neutral-300">{label}</span>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
 
-                {/* Pagination */}
-                {contacts.last_page > 1 && (
-                    <div className="flex gap-1">
-                        {contacts.links.map((link, i) => (
-                            <a key={i} href={link.url ?? '#'} className={`px-3 py-1.5 rounded text-sm border ${link.active ? 'bg-brand-600 text-white border-brand-600' : 'border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800'} ${!link.url ? 'opacity-40 pointer-events-none' : ''}`} dangerouslySetInnerHTML={{ __html: link.label }} />
-                        ))}
-                    </div>
-                )}
             </div>
 
-            {/* Import CSV wizard */}
-            <ImportCsvModal open={showImportModal} onClose={() => setShowImportModal(false)} tags={tags} segments={segments} />
+            {showImport && <ImportCsvModal tags={tags} segments={segments} onClose={() => setShowImport(false)} />}
 
-            {/* Bulk tag/segment modal */}
             {bulkModal && (
                 <BulkManageModal
-                    key={bulkModal}
                     mode={bulkModal}
                     count={selected.size}
                     tags={tags}
@@ -476,70 +676,6 @@ export default function ContactsIndex({ contacts, filters, tags = [], segments =
                     onClose={() => setBulkModal(null)}
                     onApply={applyBulk}
                 />
-            )}
-
-            {/* Add Contact Modal */}
-            {showAddModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md rounded-xl bg-white dark:bg-neutral-900 p-6 shadow-xl space-y-4">
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{t('contacts_page.add_contact')}</h3>
-                        <form onSubmit={submitAdd} className="space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{t('contacts_page.first_name')}</label>
-                                    <input type="text" value={data.first_name} onChange={e => setData('first_name', e.target.value)} className="mt-1 w-full rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm" />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{t('contacts_page.last_name')}</label>
-                                    <input type="text" value={data.last_name} onChange={e => setData('last_name', e.target.value)} className="mt-1 w-full rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm" />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{t('contacts_page.phone_e164')}</label>
-                                <input type="text" value={data.phone_e164} onChange={e => handlePhoneChange(e.target.value)} placeholder="+8801XXXXXXXXX" className="mt-1 w-full rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{t('common.email')}</label>
-                                <input type="email" value={data.email} onChange={e => handleEmailChange(e.target.value)} className="mt-1 w-full rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm" />
-                            </div>
-                            <div className="flex gap-4">
-                                {[['opt_in_whatsapp', 'WhatsApp', !data.phone_e164.trim()], ['opt_in_sms', t('contacts_page.channel_sms'), !data.phone_e164.trim()], ['opt_in_email', t('common.email'), !data.email.trim()]].map(([key, label, disabled]) => (
-                                    <label key={key} className={`flex items-center gap-1.5 text-sm ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-                                        <input type="checkbox" checked={data[key]} onChange={e => setData(key, e.target.checked)} disabled={disabled} className="rounded" />
-                                        {label}
-                                    </label>
-                                ))}
-                            </div>
-                            {segments.length > 0 && (
-                                <div>
-                                    <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{t('contacts_page.add_to_segments')}</label>
-                                    <div className="mt-1.5 flex flex-wrap gap-2">
-                                        {segments.map(seg => {
-                                            const checked = data.segment_ids.includes(seg.id);
-                                            return (
-                                                <label key={seg.id} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs cursor-pointer transition ${checked ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300' : 'border-neutral-300 dark:border-neutral-600 text-neutral-600 dark:text-neutral-400 hover:border-brand-400'}`}>
-                                                    <input type="checkbox" className="sr-only" checked={checked} onChange={() => {
-                                                        const ids = checked ? data.segment_ids.filter(id => id !== seg.id) : [...data.segment_ids, seg.id];
-                                                        setData('segment_ids', ids);
-                                                    }} />
-                                                    {seg.name}
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                            <div className="flex gap-2 pt-2">
-                                <button type="submit" disabled={processing} className="flex-1 rounded-lg bg-brand-600 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60 transition">
-                                    {processing ? t('common.saving') : t('common.save')}
-                                </button>
-                                <button type="button" onClick={() => setShowAddModal(false)} className="rounded-lg border border-neutral-300 dark:border-neutral-600 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition">
-                                    {t('common.cancel')}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
             )}
         </ClientLayout>
     );

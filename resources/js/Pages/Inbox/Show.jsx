@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { ChannelBrandIcon, CHANNEL_LABELS } from '@/Components/BrandIcons';
 import { formatTimeTz, formatInTz, formatDateTz } from '@/Utils/datetime';
+import { activityText } from '@/Utils/conversationActivity';
 import { playInboundSound, getSoundPrefs, setChannelSoundEnabled, SOUND_CHANNELS } from '@/Utils/notificationSound';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -64,35 +65,6 @@ const ACTIVITY_STYLES = {
     label_removed:  { Icon: Tag,            color: 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-300' },
 };
 
-function activityText(a, t) {
-    const actor = a.user?.name || t('inbox.activity_system');
-    const m = a.meta || {};
-    const status = (s) => s ? t(`inbox.status_${s}`) : '—';
-    switch (a.type) {
-        case 'created':
-            return a.user
-                ? t('inbox.activity_created', { actor })
-                : t('inbox.activity_conversation_started');
-        case 'assigned':
-            return t('inbox.activity_assigned', { actor, agent: m.to_name || '—' });
-        case 'transferred':
-            return t('inbox.activity_transferred', { actor, from: m.from_name || '—', to: m.to_name || '—' });
-        case 'unassigned':
-            return t('inbox.activity_unassigned', { actor, agent: m.from_name || '—' });
-        case 'status_changed':
-            return t('inbox.activity_status_changed', { actor, from: status(m.from), to: status(m.to) });
-        case 'handover':
-            return m.to === 'human'
-                ? t('inbox.activity_handover_human', { actor })
-                : t('inbox.activity_handover_bot', { actor });
-        case 'label_added':
-            return t('inbox.activity_label_added', { actor, label: m.label || '—' });
-        case 'label_removed':
-            return t('inbox.activity_label_removed', { actor, label: m.label || '—' });
-        default:
-            return a.type;
-    }
-}
 
 function ActivityRow({ activity, t, userTz, isLast }) {
     const { Icon, color } = ACTIVITY_STYLES[activity.type]

@@ -29,17 +29,32 @@ class ContactController extends Controller
 
     public function index(Request $request): Response
     {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
 
         $contacts = Contact::where('workspace_id', $workspaceId)
             ->with('tags')
-            ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
-                $q->where('first_name', 'like', '%'.$request->search.'%')
-                    ->orWhere('last_name', 'like', '%'.$request->search.'%')
-                    ->orWhere('phone_e164', 'like', '%'.$request->search.'%')
-                    ->orWhere('email', 'like', '%'.$request->search.'%');
-            }))
+            ->when($request->search, function ($q) use ($request) {
+                $like = '%'.addcslashes((string) $request->search, '%_\\').'%';
+                $q->where(fn ($q) => $q
+                    ->where('first_name', 'like', $like)
+                    ->orWhere('last_name', 'like', $like)
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) LIKE ?", [$like])
+                    ->orWhere('phone_e164', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhere('company', 'like', $like)
+                    // The placeholder promises tags, so search them.
+                    ->orWhereHas('tags', fn ($t) => $t->where('name', 'like', $like)));
+            })
             ->when($request->tag, fn ($q) => $q->whereHas('tags', fn ($q) => $q->where('name', $request->tag)))
+            ->when(
+                in_array($request->status, Contact::STATUSES, true),
+                fn ($q) => $q->where('status', $request->status)
+            )
+            // Every segment card links here with ?segment=, and nothing read it —
+            // "Vezi contactele" quietly returned the whole list instead.
+            ->when($request->segment, fn ($q, $segmentId) => $q->whereHas(
+                'segments', fn ($s) => $s->where('segments.id', $segmentId)
+            ))
             ->latest()
             ->paginate(50)
             ->withQueryString();
@@ -51,8 +66,84 @@ class ContactController extends Controller
             'contacts' => $contacts,
             'tags' => $tags,
             'segments' => $segments,
-            'filters' => $request->only('search', 'tag'),
+            'filters' => $request->only('search', 'tag', 'segment', 'status'),
+            'activity' => $this->activityFor($workspaceId, $contacts->pluck('id')->all()),
+            'statusCounts' => $this->statusCounts($workspaceId),
         ]);
+    }
+
+    /**
+     * How many contacts sit in each state, for the chips above the list.
+     *
+     * Deliberately unfiltered by the search box: the chips are how you narrow,
+     * so a number that moved while you typed would be describing a list you had
+     * already left behind. One grouped query, on the (workspace_id, status) index.
+     *
+     * @return array<string, int>
+     */
+    private function statusCounts(int $workspaceId): array
+    {
+        $counts = DB::table('contacts')
+            ->where('workspace_id', $workspaceId)
+            ->whereNull('deleted_at')
+            ->groupBy('status')
+            ->selectRaw('status, count(*) as aggregate')
+            ->pluck('aggregate', 'status');
+
+        $out = ['all' => (int) $counts->sum()];
+        foreach (Contact::STATUSES as $status) {
+            $out[$status] = (int) ($counts[$status] ?? 0);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Which channels each contact has actually written on, and when they last did.
+     *
+     * The list used to show the three opt_in_* flags under a "Channels" heading.
+     * Those answer "may we message them", not "where do they talk to us" — and
+     * their defaults make them close to meaningless: opt_in_email defaults to
+     * true for everyone, and the CSV import sets the WhatsApp and SMS flags from
+     * the mere presence of a phone number.
+     *
+     * "Last seen" comes from the same query. contacts.last_seen_at exists as a
+     * column but nothing in the application ever writes it, so a list built on it
+     * would show a dash for every contact in a real workspace.
+     *
+     * One grouped query for the whole page rather than two per row.
+     *
+     * @param  array<int, int>  $contactIds
+     * @return array<int, array{channels: array<int, string>, last_at: string|null}>
+     */
+    private function activityFor(int $workspaceId, array $contactIds): array
+    {
+        if ($contactIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('conversations')
+            ->leftJoin('channel_accounts', 'channel_accounts.id', '=', 'conversations.channel_account_id')
+            ->where('conversations.workspace_id', $workspaceId)
+            ->whereIn('conversations.contact_id', $contactIds)
+            ->groupBy('conversations.contact_id', 'channel_accounts.channel')
+            ->selectRaw('conversations.contact_id as contact_id, channel_accounts.channel as channel, MAX(conversations.last_message_at) as last_at')
+            ->get();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $id = (int) $row->contact_id;
+            $out[$id] ??= ['channels' => [], 'last_at' => null];
+
+            if ($row->channel && ! in_array($row->channel, $out[$id]['channels'], true)) {
+                $out[$id]['channels'][] = $row->channel;
+            }
+            if ($row->last_at && ($out[$id]['last_at'] === null || $row->last_at > $out[$id]['last_at'])) {
+                $out[$id]['last_at'] = $row->last_at;
+            }
+        }
+
+        return $out;
     }
 
     public function bulkImport(Request $request): Response
@@ -65,7 +156,7 @@ class ContactController extends Controller
      */
     private function bulkImportProps(Request $request): array
     {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
 
         return [
             'tags' => ContactTag::where('workspace_id', $workspaceId)->orderBy('name')->get(),
@@ -80,20 +171,97 @@ class ContactController extends Controller
     {
         $this->authoriseContact($request, $contact);
 
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
-        $contact->load(['tags', 'segments', 'conversations' => fn ($q) => $q->with(['messages' => fn ($q) => $q->latest('sent_at')->limit(5)])->latest('last_message_at')->limit(10)]);
+        $workspaceId = $request->user()->workspace_id;
+        // channelAccount was missing, so every conversation on this page rendered
+        // as "unknown channel" — the component has always read it.
+        $contact->load([
+            'tags',
+            'segments',
+            'conversations' => fn ($q) => $q
+                ->with(['channelAccount:id,channel,display_name', 'messages' => fn ($q) => $q->latest('sent_at')->limit(5)])
+                ->latest('last_message_at')
+                ->limit(10),
+        ]);
 
         $staticSegments = Segment::where('workspace_id', $workspaceId)->where('type', 'static')->orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('Contacts/Show', [
             'contact' => $contact,
             'staticSegments' => $staticSegments,
+            'allTags' => ContactTag::where('workspace_id', $workspaceId)->orderBy('name')->get(['id', 'name', 'color']),
+            'summary' => $this->summaryFor($workspaceId, $contact),
+            'activity' => $this->contactTimeline($workspaceId, $contact),
         ]);
+    }
+
+    /**
+     * The numbers in the header of a contact record.
+     *
+     * Deliberately only what can be answered honestly: how much they have spent,
+     * how many conversations they have had, and when the last one was. There is
+     * no quotes module and no appointments module in this codebase, so the two
+     * cards the design had for those are not here.
+     *
+     * @return array{lifetime_value: string|null, lifetime_currency: string|null, conversations: int, last_at: string|null}
+     */
+    private function summaryFor(int $workspaceId, Contact $contact): array
+    {
+        // Written by the Ecommerce enricher when a store is connected and synced;
+        // absent for every workspace without one, which is most of them.
+        $custom = $contact->custom_fields ?? [];
+
+        $last = DB::table('conversations')
+            ->where('workspace_id', $workspaceId)
+            ->where('contact_id', $contact->id)
+            ->max('last_message_at');
+
+        return [
+            'lifetime_value' => $custom['lifetime_value'] ?? null,
+            'lifetime_currency' => $custom['lifetime_currency'] ?? null,
+            'conversations' => (int) DB::table('conversations')
+                ->where('workspace_id', $workspaceId)
+                ->where('contact_id', $contact->id)
+                ->count(),
+            'last_at' => $last,
+        ];
+    }
+
+    /**
+     * What has happened with this contact, newest first.
+     *
+     * conversation_activities has no contact_id — it hangs off a conversation —
+     * so this joins through conversations. There is no index for that shape; at
+     * the volumes this product sells into it is a small filesort, and capping at
+     * 30 keeps it that way.
+     *
+     * @return array<int, array{type: string, channel: string|null, at: string, actor: string|null, meta: array<string, mixed>}>
+     */
+    private function contactTimeline(int $workspaceId, Contact $contact): array
+    {
+        return DB::table('conversation_activities as a')
+            ->join('conversations as c', 'c.id', '=', 'a.conversation_id')
+            ->leftJoin('channel_accounts as ca', 'ca.id', '=', 'c.channel_account_id')
+            // Who did it. Without the name every line reads "Sistem", and the
+            // sentences that interpolate an actor read as a placeholder.
+            ->leftJoin('users as u', 'u.id', '=', 'a.user_id')
+            ->where('a.workspace_id', $workspaceId)
+            ->where('c.contact_id', $contact->id)
+            ->orderByDesc('a.created_at')
+            ->limit(30)
+            ->get(['a.type as type', 'a.meta as meta', 'a.created_at as at', 'ca.channel as channel', 'u.name as actor'])
+            ->map(fn ($row) => [
+                'type' => $row->type,
+                'channel' => $row->channel,
+                'at' => $row->at,
+                'actor' => $row->actor,
+                'meta' => json_decode((string) $row->meta, true) ?: [],
+            ])
+            ->all();
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
         $validated = $request->validate([
             'phone_e164' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:191'],
@@ -104,6 +272,16 @@ class ContactController extends Controller
             'opt_in_whatsapp' => ['boolean'],
             'opt_in_sms' => ['boolean'],
             'opt_in_email' => ['boolean'],
+            'company' => ['nullable', 'string', 'max:191'],
+            'job_title' => ['nullable', 'string', 'max:128'],
+            // Deliberately unvalidated beyond a length: the Romanian CUI checksum
+            // in App\Rules\ValidCui would reject a foreign VAT number, and a field
+            // that refuses a correct value is worse than one that accepts a typo.
+            'tax_id' => ['nullable', 'string', 'max:32'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:128'],
+            'birthday' => ['nullable', 'date'],
+            'status' => ['nullable', Rule::in(Contact::STATUSES)],
             'segment_ids' => ['nullable', 'array'],
             'segment_ids.*' => ['integer', Rule::exists('segments', 'id')->where(fn ($q) => $q->where('workspace_id', $workspaceId)->where('type', 'static'))],
         ]);
@@ -124,7 +302,7 @@ class ContactController extends Controller
     public function update(Request $request, Contact $contact): RedirectResponse
     {
         $this->authoriseContact($request, $contact);
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
         $validated = $request->validate([
             'first_name' => ['nullable', 'string', 'max:128'],
             'last_name' => ['nullable', 'string', 'max:128'],
@@ -134,15 +312,43 @@ class ContactController extends Controller
             'opt_in_whatsapp' => ['boolean'],
             'opt_in_sms' => ['boolean'],
             'opt_in_email' => ['boolean'],
-            'custom_fields' => ['nullable', 'array'],
+            'company' => ['nullable', 'string', 'max:191'],
+            'job_title' => ['nullable', 'string', 'max:128'],
+            // Deliberately unvalidated beyond a length: the Romanian CUI checksum
+            // in App\Rules\ValidCui would reject a foreign VAT number, and a field
+            // that refuses a correct value is worse than one that accepts a typo.
+            'tax_id' => ['nullable', 'string', 'max:32'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:128'],
+            'birthday' => ['nullable', 'date'],
+            'status' => ['nullable', Rule::in(Contact::STATUSES)],
             'segment_ids' => ['nullable', 'array'],
             'segment_ids.*' => ['integer', Rule::exists('segments', 'id')->where(fn ($q) => $q->where('workspace_id', $workspaceId)->where('type', 'static'))],
+            'tag_names' => ['nullable', 'array', 'max:20'],
+            'tag_names.*' => ['string', 'max:64'],
         ]);
 
         $segmentIds = $validated['segment_ids'] ?? null;
-        unset($validated['segment_ids']);
+        $tagNames = $validated['tag_names'] ?? null;
+        unset($validated['segment_ids'], $validated['tag_names']);
 
+        // custom_fields is deliberately NOT accepted here. It holds instagram_psid
+        // and messenger_psid, which the two drivers use to match an incoming DM to
+        // an existing contact, and this method replaces the whole JSON blob — a
+        // form that posted it would fork every repeat sender into a new contact,
+        // silently, days later.
         $contact->update($validated);
+
+        if ($tagNames !== null) {
+            $ids = [];
+            foreach (array_filter(array_map('trim', $tagNames)) as $name) {
+                $ids[] = ContactTag::firstOrCreate(
+                    ['workspace_id' => $workspaceId, 'name' => $name],
+                    ['color' => '#6366f1'],
+                )->id;
+            }
+            $contact->tags()->sync($ids);
+        }
 
         if ($segmentIds !== null) {
             $oldSegmentIds = $contact->segments()->where('type', 'static')->pluck('segments.id')->toArray();
@@ -197,7 +403,7 @@ class ContactController extends Controller
 
     public function import(Request $request): RedirectResponse
     {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
         $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:10240']]);
 
         $path = $request->file('file')->getRealPath();
@@ -242,7 +448,7 @@ class ContactController extends Controller
      */
     public function importRows(Request $request): JsonResponse
     {
-        $workspaceId = (int) ($request->user()->current_workspace_id ?? $request->user()->workspace_id);
+        $workspaceId = (int) ($request->user()->workspace_id);
 
         $validated = $request->validate([
             'rows' => ['required', 'array', 'min:1', 'max:500'],
@@ -266,7 +472,7 @@ class ContactController extends Controller
 
     public function bulkStore(Request $request): Response
     {
-        $workspaceId = (int) ($request->user()->current_workspace_id ?? $request->user()->workspace_id);
+        $workspaceId = (int) ($request->user()->workspace_id);
 
         $validated = $request->validate([
             'rows' => ['required', 'array', 'max:500'],
@@ -311,7 +517,7 @@ class ContactController extends Controller
 
     public function bulkTags(Request $request): RedirectResponse
     {
-        $workspaceId = (int) ($request->user()->current_workspace_id ?? $request->user()->workspace_id);
+        $workspaceId = (int) ($request->user()->workspace_id);
 
         $validated = $request->validate([
             'uuids' => ['required', 'array', 'max:500'],
@@ -362,7 +568,7 @@ class ContactController extends Controller
 
     public function bulkSegments(Request $request): RedirectResponse
     {
-        $workspaceId = (int) ($request->user()->current_workspace_id ?? $request->user()->workspace_id);
+        $workspaceId = (int) ($request->user()->workspace_id);
 
         $validated = $request->validate([
             'uuids' => ['required', 'array', 'max:500'],
@@ -414,7 +620,7 @@ class ContactController extends Controller
 
     public function bulkDestroy(Request $request): RedirectResponse
     {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
         $validated = $request->validate([
             'uuids' => ['required', 'array', 'max:500'],
             'uuids.*' => ['string', 'uuid'],
@@ -429,7 +635,7 @@ class ContactController extends Controller
 
     public function export(Request $request): HttpResponse
     {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
 
         $contacts = Contact::where('workspace_id', $workspaceId)
             ->with('tags')
@@ -467,7 +673,7 @@ class ContactController extends Controller
 
     private function authoriseContact(Request $request, Contact $contact): void
     {
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        $workspaceId = $request->user()->workspace_id;
         abort_unless((int) $contact->workspace_id === (int) $workspaceId, 403);
     }
 }
