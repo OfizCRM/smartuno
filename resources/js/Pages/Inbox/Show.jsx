@@ -277,6 +277,15 @@ function groupMessagesForRender(messages) {
     return items;
 }
 
+/** Human file size for an attachment row. */
+function formatBytes(bytes) {
+    const n = Number(bytes) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+
+    return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
 /**
  * The calendar day an instant falls on, in the reader's timezone, as YYYY-MM-DD.
  * Built from Intl parts rather than toISOString(), which would answer in UTC and
@@ -865,6 +874,14 @@ function MessageBubble({ msg, conversationId }) {
                 <div className="px-3.5 py-2.5">
                     {senderBadge}
 
+                    {/* Email carries a subject; chat does not. Shown above the body
+                        because a thread can be renamed halfway through. */}
+                    {msg.channel === 'email' && p.subject && (
+                        <p className="mb-1 border-b border-black/5 pb-1 text-[13px] font-semibold dark:border-white/10">
+                            {p.subject}
+                        </p>
+                    )}
+
                     {/* IMAGE */}
                     {mediaType === 'image' && (
                         <MediaImage src={mediaSrc} alt={caption} conversationId={conversationId} messageId={msg.id} />
@@ -933,6 +950,32 @@ function MessageBubble({ msg, conversationId }) {
                     {/* TEXT / fallback */}
                     {!templateComponents && (mediaType === 'text' || (!['image','video','audio','document','location','contacts','interactive','template','poll','event','unsupported'].includes(mediaType))) && (
                         <WaText text={msg.body || '(media)'} />
+                    )}
+
+                    {/* Email attachments. Always a download link — the server
+                        streams them with an attachment disposition, never inline. */}
+                    {msg.channel === 'email' && p.attachments?.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                            {p.attachments.map((file, i) => (
+                                file.path ? (
+                                    <a
+                                        key={i}
+                                        href={route('client.email.attachment', { conversation: conversationId, message: msg.id, index: i })}
+                                        className="flex items-center gap-2 rounded-lg bg-black/[0.04] px-2.5 py-1.5 text-xs transition hover:bg-black/[0.07] dark:bg-white/10 dark:hover:bg-white/15"
+                                    >
+                                        <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                                        <span className="shrink-0 tabular-nums opacity-60">{formatBytes(file.size)}</span>
+                                    </a>
+                                ) : (
+                                    <p key={i} className="flex items-center gap-2 rounded-lg bg-black/[0.03] px-2.5 py-1.5 text-xs opacity-60 dark:bg-white/5">
+                                        <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                                        <span className="shrink-0">{t('inbox.attachment_too_large')}</span>
+                                    </p>
+                                )
+                            ))}
+                        </div>
                     )}
 
                     {/* Caption below media */}
@@ -1428,6 +1471,16 @@ export default function InboxShow({
         ?? 'whatsapp';
     const isWindowOpen = conversation.is_whatsapp_window_open ?? (channel !== 'whatsapp');
     const isWhatsApp = channel === 'whatsapp';
+    const isEmail = channel === 'email';
+
+    // Left empty, the reply keeps the thread's own subject with a Re: in front —
+    // show that, so nobody wonders what the customer will see.
+    const lastInboundSubject = [...(initialMessages ?? [])]
+        .reverse()
+        .find(m => m.direction === 'in' && m.payload?.subject)?.payload?.subject ?? '';
+    const emailSubjectPlaceholder = lastInboundSubject
+        ? (/^(re:|răspuns:)/i.test(lastInboundSubject) ? lastInboundSubject : `Re: ${lastInboundSubject}`)
+        : t('inbox.subject_placeholder');
 
     const [messages, setMessages]           = useState(initialMessages ?? []);
     const [viewers, setViewers]             = useState([]);
@@ -1481,7 +1534,7 @@ export default function InboxShow({
     const fileRef = useRef(null);
     const bottomRef = useRef(null);
 
-    const { data, setData, reset } = useForm({ body: '', type: 'text', payload: null });
+    const { data, setData, reset } = useForm({ body: '', type: 'text', payload: null, subject: '' });
 
     const scrollToBottom = useCallback(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1696,6 +1749,9 @@ export default function InboxShow({
                 body: data.body,
                 type: 'text',
                 payload: null,
+                // Only email has one; blank means "keep the thread's subject",
+                // which the driver prefixes with Re: for us.
+                subject: isEmail ? data.subject : undefined,
             }, config)
                 .then(onDone)
                 .catch(onErr)
@@ -2109,6 +2165,15 @@ export default function InboxShow({
                             )}
 
                             <form onSubmit={handleSend} className="rounded-2xl border border-neutral-300 bg-white transition focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/20 dark:border-neutral-600 dark:bg-neutral-800">
+                                {isEmail && (
+                                    <input
+                                        value={data.subject}
+                                        onChange={e => setData('subject', e.target.value)}
+                                        placeholder={emailSubjectPlaceholder}
+                                        className="w-full border-0 border-b border-neutral-200 bg-transparent px-4 pb-2 pt-3 text-sm font-medium placeholder-neutral-400 focus:outline-none focus:ring-0 dark:border-neutral-700"
+                                    />
+                                )}
+
                                 {/* Text first, tools underneath — one field rather than a
                                     toolbar floating above a separate box. */}
                                 <textarea

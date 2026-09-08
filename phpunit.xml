@@ -18,6 +18,11 @@
         </include>
     </source>
     <php>
+        <!-- The whole suite runs in one process, and the invoice tests render a
+             real PDF through dompdf, which alone needs more than PHP's default
+             128M. Without this the run dies mid-suite with "Allowed memory size
+             exhausted" instead of reporting failures. -->
+        <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_INSTALLED" value="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import ClientLayout from '@/Layouts/ClientLayout';
 import { Badge, Card } from '@/Components/ui';
 import {
+    Inbox,
     Building2, Users, CreditCard, Layers, SlidersHorizontal, Bell, UserCircle,
     MessageSquare, Share2, Smartphone, Mail, ShoppingBag, Package, Bot,
     Zap, FileText, Tag, MessageCircle, Code2, ScrollText, Download, ExternalLink,
@@ -128,6 +129,12 @@ export default function SettingsHub({ isAdmin = false, status = {} }) {
                         title={t('settings_hub.sms')} description={t('settings_hub.sms_desc')} chip={yesNo(status.sms)} />
                     <Row icon={Mail} href={safeRoute('client.email-server.index')}
                         title={t('settings_hub.email')} description={t('settings_hub.email_desc')} chip={yesNo(status.email)} />
+                    {/* The conversational mailbox, distinct from the campaign
+                        sender above: a firm mails its newsletter from marketing@
+                        and answers customers from office@. */}
+                    <Row icon={Inbox} href={safeRoute('client.mailbox.index')}
+                        title={t('settings_hub.mailbox')} description={t('settings_hub.mailbox_desc')}
+                        chip={yesNo(status.mailbox)} />
                 </Section>
 
                 <Section title={t('settings_hub.shop')}>

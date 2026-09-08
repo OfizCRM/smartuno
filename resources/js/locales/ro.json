@@ -65,7 +65,9 @@
         "data_export": "Exportă datele mele",
         "data_export_desc": "Descarcă tot ce ai aici",
         "docs": "Ghiduri și documentație",
-        "docs_desc": "Ghiduri și răspunsuri la întrebări frecvente"
+        "docs_desc": "Ghiduri și răspunsuri la întrebări frecvente",
+        "mailbox": "Cutia poștală",
+        "mailbox_desc": "Adresa pe care îți scriu clienții — primești și răspunzi din inbox."
     },
     "company": {
         "section_logo": "Logoul firmei",
@@ -3327,7 +3329,9 @@
         "chip_unread": "Necitite",
         "chip_pending": "În așteptare",
         "unknown_contact": "Contact necunoscut",
-        "media_placeholder": "(fișier)"
+        "media_placeholder": "(fișier)",
+        "subject_placeholder": "Subiect",
+        "attachment_too_large": "prea mare, nu a fost păstrat"
     },
     "notifications": {
         "col_event": "Eveniment",
@@ -4561,5 +4565,39 @@
         "unread_other": "{{count}} de necitite",
         "all_read": "Ai citit tot.",
         "delete": "Șterge notificarea"
+    },
+    "mailbox": {
+        "title": "Cutia poștală",
+        "subtitle": "Adresa pe care îți scriu clienții. Primești mesajele în inbox și le răspunzi de pe aceeași adresă.",
+        "address": "Adresa de email",
+        "from_name": "Numele expeditorului",
+        "autofill": "Completează automat serverele",
+        "imap_title": "Primire (IMAP)",
+        "imap_hint": "De aici citim mesajele primite. Nu ștergem și nu mutăm nimic din cutia ta.",
+        "smtp_title": "Trimitere (SMTP)",
+        "smtp_hint": "Pe aici pleacă răspunsurile tale, de la aceeași adresă.",
+        "imap_short": "Primire",
+        "smtp_short": "Trimitere",
+        "host": "Server",
+        "port": "Port",
+        "encryption": "Criptare",
+        "encryption_ssl": "SSL/TLS",
+        "encryption_tls": "STARTTLS",
+        "encryption_none": "Fără",
+        "username": "Utilizator",
+        "password": "Parolă",
+        "password_stored": "Parola e salvată — lasă gol ca s-o păstrezi",
+        "poll_minutes": "Verifică mesajele noi",
+        "every_minutes_one": "la fiecare minut",
+        "every_minutes_few": "la fiecare {{count}} minute",
+        "every_minutes_other": "la fiecare {{count}} de minute",
+        "initial_days": "Câte zile în urmă import la început",
+        "initial_days_hint": "Doar la prima conectare. 0 înseamnă doar mesajele care vin de acum înainte.",
+        "save": "Salvează cutia poștală",
+        "test": "Testează conexiunea",
+        "test_failed": "Testul nu a putut rula.",
+        "remove": "Șterge cutia poștală",
+        "remove_confirm": "Ștergi cutia poștală? Conversațiile rămân, dar nu mai primești și nu mai poți răspunde pe email.",
+        "stopped_working": "Cutia poștală nu mai răspunde:"
     }
 }

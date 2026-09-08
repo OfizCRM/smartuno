@@ -445,18 +445,6 @@ parameters:
 			path: app/Http/Controllers/Admin/LandingPageController.php
 
 		-
-			message: '#^Property App\\Http\\Controllers\\Admin\\LandingPageController\:\:\$defaults type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Admin/LandingPageController.php
-
-		-
-			message: '#^Property App\\Http\\Controllers\\Admin\\LandingPageController\:\:\$sections type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/Admin/LandingPageController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1081,12 +1069,6 @@ parameters:
 			path: app/Http/Controllers/Auth/TwoFactorController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\CheckoutController\:\:store\(\) should return Illuminate\\Http\\RedirectResponse\|Illuminate\\Http\\Response but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/CheckoutController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1292,12 +1274,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Client/Reports/ExportController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$channel\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Client/Reports/ExportController.php
@@ -1611,12 +1587,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\AdminUser\|App\\Models\\User\:\:\$current_workspace_id\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Http/Middleware/EnforceLimit.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:activePlan\(\)\.$#'
-			identifier: method.notFound
 			count: 1
 			path: app/Http/Middleware/EnforceLimit.php
 
@@ -2126,12 +2096,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/AutoReplyListener.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$body\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Listeners/AutoReplyListener.php
@@ -3445,12 +3409,6 @@ parameters:
 			path: app/Modules/Automation/Services/AutomationEngine.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\ChannelAccount\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Automation/Services/AutomationEngine.php
-
-		-
 			message: '#^Method App\\Modules\\Automation\\Services\\AutomationEngine\:\:executeAddToCampaign\(\) has parameter \$data with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -4069,12 +4027,6 @@ parameters:
 			path: app/Modules/Inbox/Http/Controllers/CannedReplyController.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\ChannelAccount\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Modules\\Shared\\Models\\ChannelAccount\>\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$first_response_at\.$#'
 			identifier: property.notFound
 			count: 1
@@ -4111,52 +4063,10 @@ parameters:
 			path: app/Modules/Inbox/Http/Controllers/InboxController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
 			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\|null given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>channel" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
-			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\ChannelAccount\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxSetupController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\ChannelAccount\:\:\$display_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxSetupController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\ChannelAccount\:\:\$phone_number_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxSetupController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\ChannelAccount\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxSetupController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\ChannelAccount\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Inbox/Http/Controllers/InboxSetupController.php
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Whatsapp\\Models\\WhatsappBusinessAccount\:\:\$waba_id\.$#'
@@ -4167,18 +4077,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Modules\\Whatsapp\\Models\\WhatsappBusinessAccount\:\:\$webhook_verify_token\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxSetupController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Modules\\Shared\\Models\\ChannelAccount\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxSetupController.php
-
-		-
-			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Modules\\Shared\\Models\\ChannelAccount\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: method.unresolvableReturnType
 			count: 1
 			path: app/Modules/Inbox/Http/Controllers/InboxSetupController.php
 
@@ -4237,12 +4135,6 @@ parameters:
 			path: app/Modules/Inbox/Models/InboxLabel.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\ChannelAccount\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Services/InstagramDriver.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$unread_count\.$#'
 			identifier: property.notFound
 			count: 1
@@ -4297,18 +4189,6 @@ parameters:
 			path: app/Modules/Inbox/Services/InstagramDriver.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>workspace_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Inbox/Services/InstagramDriver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\ChannelAccount\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Services/MessengerDriver.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$unread_count\.$#'
 			identifier: property.notFound
 			count: 1
@@ -4358,12 +4238,6 @@ parameters:
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>credentials" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Inbox/Services/MessengerDriver.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>workspace_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Modules/Inbox/Services/MessengerDriver.php
@@ -4503,18 +4377,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$workspace_id\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Modules/Shared/Models/Conversation.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Shared/Models/Conversation.php
-
-		-
-			message: '#^Method App\\Modules\\Shared\\Models\\Conversation\:\:channelAccount\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
-			identifier: missingType.generics
 			count: 1
 			path: app/Modules/Shared/Models/Conversation.php
 
@@ -5149,12 +5011,6 @@ parameters:
 			path: app/Modules/Whatsapp/Http/Controllers/WhatsappSetupController.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Whatsapp\\Models\\WhatsappBusinessAccount\:\:\$webhook_verify_token\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Whatsapp/Http/Controllers/WhatsappSetupController.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Whatsapp\\Models\\WhatsappBusinessAccount\:\:\$workspace_id\.$#'
 			identifier: property.notFound
 			count: 3
@@ -5221,27 +5077,9 @@ parameters:
 			path: app/Modules/Whatsapp/Http/Controllers/WhatsappTemplateController.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Whatsapp\\Models\\WhatsappBusinessAccount\:\:\$webhook_verify_token\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Whatsapp/Http/Controllers/WhatsappWebhookController.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Whatsapp\\Models\\WhatsappBusinessAccount\:\:\$workspace_id\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Modules/Whatsapp/Http/Controllers/WhatsappWebhookController.php
-
-		-
-			message: '#^Unable to resolve the template type TFlatMapKey in call to method Illuminate\\Support\\Collection\<\(int\|string\),mixed\>\:\:flatMap\(\)$#'
-			identifier: argument.templateType
-			count: 2
-			path: app/Modules/Whatsapp/Http/Controllers/WhatsappWebhookController.php
-
-		-
-			message: '#^Unable to resolve the template type TFlatMapValue in call to method Illuminate\\Support\\Collection\<\(int\|string\),mixed\>\:\:flatMap\(\)$#'
-			identifier: argument.templateType
-			count: 2
 			path: app/Modules/Whatsapp/Http/Controllers/WhatsappWebhookController.php
 
 		-
@@ -5329,12 +5167,6 @@ parameters:
 			path: app/Modules/Whatsapp/Models/WhatsappPhoneNumber.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone_number_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Whatsapp/Services/CloudApiClient.php
-
-		-
 			message: '#^Method App\\Modules\\Whatsapp\\Services\\CloudApiClient\:\:checkContacts\(\) has parameter \$phones with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -5389,12 +5221,6 @@ parameters:
 			path: app/Modules/Whatsapp/Services/CloudApiClient.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>phone_number_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Whatsapp/Services/CloudApiClient.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Broadcasting\\Models\\CampaignRecipient\:\:\$delivered_at\.$#'
 			identifier: property.notFound
 			count: 2
@@ -5414,12 +5240,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Broadcasting\\Models\\CampaignRecipient\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\ChannelAccount\:\:\$workspace_id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
@@ -5870,12 +5690,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Models\\AdminUser\|App\\Models\\User\:\:\$current_workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Providers/AppServiceProvider.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$activePlan\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Providers/AppServiceProvider.php
@@ -6472,18 +6286,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Services/Billing/StripeGateway.php
-
-		-
-			message: '#^Access to an undefined property Stripe\\Invoice\:\:\$subscription\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Billing/StripeGateway.php
-
-		-
-			message: '#^Access to an undefined property Stripe\\Subscription\:\:\$current_period_end\.$#'
-			identifier: property.notFound
-			count: 2
 			path: app/Services/Billing/StripeGateway.php
 
 		-

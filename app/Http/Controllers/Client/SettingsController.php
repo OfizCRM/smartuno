@@ -74,6 +74,13 @@ class SettingsController extends Controller
                 'stores' => EcommerceStore::where('workspace_id', $workspaceId)->count(),
                 'sms' => SmsProviderConfig::where('workspace_id', $workspaceId)->exists(),
                 'email' => WorkspaceSmtpConfig::where('workspace_id', $workspaceId)->where('is_active', true)->exists(),
+                // The conversational mailbox is a separate row: 'active' rather
+                // than merely present, so a mailbox that has stopped answering
+                // shows as not configured instead of quietly claiming to work.
+                'mailbox' => ChannelAccount::where('workspace_id', $workspaceId)
+                    ->where('channel', 'email')
+                    ->where('status', 'active')
+                    ->exists(),
             ],
         ]);
     }

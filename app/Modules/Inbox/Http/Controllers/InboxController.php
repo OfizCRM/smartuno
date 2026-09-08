@@ -7,6 +7,7 @@ use App\Events\MessageSent;
 use App\Events\TypingChanged;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Modules\Email\Services\AttachmentStore;
 use App\Modules\Inbox\Models\InboxLabel;
 use App\Modules\Shared\Models\ChannelAccount;
 use App\Modules\Shared\Models\Contact;
@@ -219,6 +220,9 @@ class InboxController extends Controller
             'body' => ['nullable', 'string', 'max:4096'],
             'type' => ['nullable', 'in:text,template,image,document,video,audio'],
             'payload' => ['nullable', 'array'],
+            // Email only. It belongs to the message rather than the thread: a
+            // correspondent can rename a subject halfway through.
+            'subject' => ['nullable', 'string', 'max:255'],
             // Allow-list of messaging media types (no HTML/SVG/executables).
             'attachment' => [
                 'nullable', 'file', 'max:20480',
@@ -229,8 +233,23 @@ class InboxController extends Controller
         $msgType = $validated['type'] ?? 'text';
         $msgPayload = $validated['payload'] ?? null;
 
-        // Handle direct file attachment (image / document sent from compose bar)
-        if ($request->hasFile('attachment')) {
+        // Email keeps its files on our own disk; the WhatsApp path below uploads
+        // to Meta's Media API first, which an email has no use for.
+        if ($request->hasFile('attachment') && $conversation->resolvedChannel() === 'email') {
+            $file = $request->file('attachment');
+            $entry = app(AttachmentStore::class)->put(
+                (string) $file->getClientOriginalName(),
+                (string) ($file->getMimeType() ?: 'application/octet-stream'),
+                (string) file_get_contents($file->getRealPath()),
+            );
+
+            if (! $entry['stored']) {
+                return response()->json(['error' => __('That file is too large to send by email.')], 422);
+            }
+
+            $msgPayload = array_merge($msgPayload ?? [], ['attachments' => [$entry]]);
+            $validated['body'] = $validated['body'] ?: $entry['name'];
+        } elseif ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
             $mimeType = $file->getMimeType() ?? 'application/octet-stream';
 
@@ -272,6 +291,10 @@ class InboxController extends Controller
             && ! $conversation->isWhatsappWindowOpen()
             && $msgType !== 'template') {
             return back()->with('error', __('WhatsApp 24-hour session is closed. Use an approved template to re-engage this contact.'));
+        }
+
+        if (! empty($validated['subject'])) {
+            $msgPayload = array_merge($msgPayload ?? [], ['subject' => $validated['subject']]);
         }
 
         $message = Message::create([

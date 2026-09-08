@@ -54,15 +54,8 @@ class StoreUrlGuard
         }
 
         // Resolve all A/AAAA records; reject if any resolves to a non-public range.
-        $ips = self::resolveHost($host);
-        if ($ips === []) {
-            return __('Store URL host could not be resolved.');
-        }
-
-        foreach ($ips as $ip) {
-            if (! self::isPublicIp($ip)) {
-                return __('Store URL must point to a public host (private/internal addresses are blocked).');
-            }
+        if (self::guardHost($host) !== null) {
+            return __('Store URL must point to a public host (private/internal addresses are blocked).');
         }
 
         return null;
@@ -71,6 +64,38 @@ class StoreUrlGuard
     /**
      * @return array<int, string>
      */
+    /**
+     * Reject a bare hostname that resolves anywhere but the public internet.
+     *
+     * Split out of validateWoo so the mail module can reuse it: an IMAP or SMTP
+     * host is a free-text field the tenant fills in, and without this the app
+     * will happily open a socket to 127.0.0.1:6379 — the Redis holding every
+     * other tenant's queue — and report what it finds.
+     *
+     * Returns null when the host is safe, or a message when it is not.
+     */
+    public static function guardHost(string $host): ?string
+    {
+        $host = trim($host);
+        if ($host === '') {
+            return __('Host is required.');
+        }
+
+        $ips = self::resolveHost($host);
+        if ($ips === []) {
+            return __('Host could not be resolved.');
+        }
+
+        foreach ($ips as $ip) {
+            if (! self::isPublicIp($ip)) {
+                return __('Host must be a public address (private and internal addresses are blocked).');
+            }
+        }
+
+        return null;
+    }
+
+    /** @return array<int, string> */
     private static function resolveHost(string $host): array
     {
         // Host given as a literal IP.

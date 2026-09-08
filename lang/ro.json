@@ -359,5 +359,9 @@
     "Your subscription has ended. You can still see everything, but you cannot send messages or make changes. Reactivate it from Pricing.": "Abonamentul s-a încheiat. Poți vedea tot în continuare, dar nu mai poți trimite mesaje sau face modificări. Reactivează-l din Prețuri.",
     "immediately": "imediat",
     "not set yet": "nu este stabilită încă",
-    "This conversation is not attached to a channel.": "Această conversație nu e legată de niciun canal."
+    "This conversation is not attached to a channel.": "Această conversație nu e legată de niciun canal.",
+    "This conversation is not attached to a mailbox.": "Această conversație nu e legată de nicio cutie poștală.",
+    "This contact has no email address.": "Acest contact nu are adresă de email.",
+    "Message from :name": "Mesaj de la :name",
+    "That file is too large to send by email.": "Fișierul e prea mare pentru a fi trimis pe email."
 }

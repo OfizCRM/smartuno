@@ -44,7 +44,7 @@ class BrandPalette
      * ("fara culori neon"). Anchors we ship with are therefore tuned by hand and
      * kept in sync with the :root defaults in resources/css/app.css.
      *
-     * @var array<string, array<string, string>>
+     * @var array<string, array<int, string>>
      */
     private const HAND_TUNED = [
         // "Velvet Sage" — the current brand. 500 is #047857; 300 is #7ce3b1, the
@@ -82,8 +82,8 @@ class BrandPalette
     /**
      * Build the ramp for a hex colour.
      *
-     * @param  array<string, float>  $curve
-     * @return array<string, string> stop => "R G B"
+     * @param  array<int, float>  $curve
+     * @return array<int, string> stop => "R G B"
      */
     public static function ramp(string $hex, array $curve = self::CURVE): array
     {

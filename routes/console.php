@@ -58,6 +58,15 @@ Schedule::call(function () {
     UsageMeter::where('period', '<', (int) now()->subMonths(2)->format('Ym'))->delete();
 })->monthlyOn(1, '00:05')->name('reset-usage-meters');
 
+// Read new mail for every connected mailbox. Runs every minute and decides per
+// mailbox, because each tenant picks their own interval — onOneServer so two app
+// servers cannot read the same mailbox twice and file every message twice.
+Schedule::command('email:poll-mailboxes')
+    ->everyMinute()
+    ->name('email-poll-mailboxes')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Cancel automation runs parked on an "Ask question" node whose contact never
 // replied, so abandoned conversations do not accumulate as "waiting" forever.
 Schedule::command('automation:prune-stale-runs')

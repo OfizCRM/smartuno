@@ -105,6 +105,7 @@ class Conversation extends Model
         return $this->belongsTo(Contact::class);
     }
 
+    /** @return BelongsTo<ChannelAccount, $this> */
     public function channelAccount(): BelongsTo
     {
         return $this->belongsTo(ChannelAccount::class);
@@ -276,9 +277,10 @@ class Conversation extends Model
             return $fromAccount;
         }
 
-        return $this->relationLoaded('lastMessage')
-            ? $this->lastMessage?->channel
-            : $this->messages()->latest('sent_at')->value('channel');
+        // A scalar straight from the query rather than a property read on the
+        // relation: it costs nothing on the common path (a conversation with an
+        // account never gets here) and keeps the channel in one shape.
+        return $this->messages()->latest('sent_at')->value('channel');
     }
 
     /**

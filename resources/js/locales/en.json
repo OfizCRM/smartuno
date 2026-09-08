@@ -65,7 +65,9 @@
         "data_export": "Export my data",
         "data_export_desc": "Download everything you have here",
         "docs": "Help and documentation",
-        "docs_desc": "Guides and answers to common questions"
+        "docs_desc": "Guides and answers to common questions",
+        "mailbox": "Mailbox",
+        "mailbox_desc": "The address customers write to — receive and reply from the inbox."
     },
     "company": {
         "section_logo": "Company logo",
@@ -3295,7 +3297,9 @@
         "chip_unread": "Unread",
         "chip_pending": "Pending",
         "unknown_contact": "Unknown contact",
-        "media_placeholder": "(media)"
+        "media_placeholder": "(media)",
+        "subject_placeholder": "Subject",
+        "attachment_too_large": "too large, not kept"
     },
     "notifications": {
         "col_event": "Event",
@@ -4561,5 +4565,39 @@
         "unread_other": "{{count}} unread",
         "all_read": "You are all caught up.",
         "delete": "Delete notification"
+    },
+    "mailbox": {
+        "title": "Mailbox",
+        "subtitle": "The address your customers write to. Their messages arrive in the inbox and you reply from the same address.",
+        "address": "Email address",
+        "from_name": "Sender name",
+        "autofill": "Fill in the servers",
+        "imap_title": "Receiving (IMAP)",
+        "imap_hint": "We read incoming mail from here. Nothing is deleted or moved in your mailbox.",
+        "smtp_title": "Sending (SMTP)",
+        "smtp_hint": "Your replies go out through this, from the same address.",
+        "imap_short": "Receiving",
+        "smtp_short": "Sending",
+        "host": "Server",
+        "port": "Port",
+        "encryption": "Encryption",
+        "encryption_ssl": "SSL/TLS",
+        "encryption_tls": "STARTTLS",
+        "encryption_none": "None",
+        "username": "Username",
+        "password": "Password",
+        "password_stored": "A password is saved — leave empty to keep it",
+        "poll_minutes": "Check for new mail",
+        "every_minutes_one": "every minute",
+        "every_minutes_few": "every {{count}} minutes",
+        "every_minutes_other": "every {{count}} minutes",
+        "initial_days": "Days of history to import at first",
+        "initial_days_hint": "Only on first connection. 0 means only mail that arrives from now on.",
+        "save": "Save mailbox",
+        "test": "Test the connection",
+        "test_failed": "The test could not run.",
+        "remove": "Remove mailbox",
+        "remove_confirm": "Remove the mailbox? Conversations stay, but you will no longer receive or reply by email.",
+        "stopped_working": "The mailbox is not answering:"
     }
 }
