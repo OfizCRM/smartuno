@@ -2631,16 +2631,7 @@
         "col_in_app": "În aplicație",
         "col_email": "Email",
         "no_notifications": "Nicio notificare încă.",
-        "event_subscription_created": "Abonament început",
-        "event_subscription_cancelled": "Abonament anulat",
-        "event_subscription_renewed": "Abonament reînnoit",
-        "event_payment_succeeded": "Plata a reușit",
-        "event_payment_failed": "Plata a eșuat",
-        "event_team_invite_accepted": "Un membru s-a alăturat echipei",
-        "unread_count": "{{count}} necitite",
-        "mark_all_read": "Marchează tot ca citit",
-        "preferences": "Preferințe",
-        "mark_as_read": "Marchează ca citit"
+        "mark_all_read": "Marchează tot ca citit"
     },
     "onboarding": {
         "title": "Primii pași",
@@ -2923,14 +2914,6 @@
         "usage_banner": "Ai folosit {{percent}}% din cota de {{label}} ({{current}}/{{limit}}).",
         "usage_banner_upgrade": "Fă upgrade la plan",
         "usage_banner_suffix": "pentru a evita întreruperile.",
-        "notif_new": "Notificare nouă",
-        "notif_new_message": "Mesaj nou",
-        "notif_mention": "@ Ai fost menționat",
-        "notif_conversation_assigned": "Conversație atribuită",
-        "notif_campaign_completed": "Campanie finalizată",
-        "notif_automation_failed": "Automatizarea a eșuat",
-        "notif_billing_failed": "Plata a eșuat",
-        "notif_default": "Notificare",
         "onboarding_progress": "{{done}} din {{total}} finalizate",
         "no_recent_notifications": "Nicio notificare recentă",
         "view_all_notifications": "Vezi toate notificările",
@@ -3275,12 +3258,8 @@
         }
     },
     "notifications": {
-        "preferences_title": "Preferințe notificări",
         "col_event": "Eveniment",
-        "col_in_app": "În aplicație",
-        "col_email": "Email",
-        "title": "Notificări",
-        "no_notifications": "Nicio notificare încă"
+        "title": "Notificări"
     },
     "webpush": {
         "vapid_public_key": "Cheie publică VAPID"
@@ -4587,5 +4566,53 @@
     "Back to pricing": "Înapoi la prețuri",
     "v20": [
         "0"
-    ]
+    ],
+    "notif": {
+        "new_message_title": "Mesaj nou",
+        "mention_title": "Ai fost menționat",
+        "conversation_assigned_title": "Conversație atribuită",
+        "conversation_assigned_body": "{{by}} ți-a atribuit conversația cu {{contact}}.",
+        "handover_title": "Preluare de la asistent",
+        "handover_body": "Asistentul a predat unui coleg conversația cu {{contact}}.",
+        "campaign_completed_title": "Campanie finalizată",
+        "campaign_completed_body": "{{name}} — {{sent}} trimise, {{failed}} eșuate.",
+        "automation_failed_title": "Automatizare eșuată",
+        "subscription_started_title": "Abonament activat",
+        "subscription_started_body": "Abonamentul {{plan}} este activ.",
+        "subscription_renewed_title": "Abonament reînnoit",
+        "subscription_renewed_body": "Abonamentul {{plan}} a fost reînnoit.",
+        "subscription_renewed_body_amount": "Abonamentul {{plan}} a fost reînnoit — {{amount}}.",
+        "subscription_cancelled_title": "Abonament anulat",
+        "subscription_cancelled_body": "Abonamentul {{plan}} a fost anulat.",
+        "subscription_expired_title": "Abonament expirat",
+        "subscription_expired_body": "Abonamentul {{plan}} a expirat.",
+        "trial_ending_title": "Perioada de probă se încheie",
+        "trial_ending_body_one": "Mai ai o zi din perioada de probă {{plan}}.",
+        "trial_ending_body_few": "Mai ai {{count}} zile din perioada de probă {{plan}}.",
+        "trial_ending_body_other": "Mai ai {{count}} de zile din perioada de probă {{plan}}.",
+        "plan_changed_title": "Plan schimbat",
+        "plan_changed_body": "Ai trecut de la {{from}} la {{to}}.",
+        "billing_failed_title": "Plata a eșuat",
+        "billing_failed_body": "Nu am putut încasa {{amount}}. Verifică datele cardului.",
+        "user_welcome_title": "Bine ai venit!",
+        "user_welcome_body": "Contul tău este gata de folosit.",
+        "workspace_export_ready_title": "Exportul este gata",
+        "workspace_export_ready_body": "Datele tale pot fi descărcate.",
+        "generic_title": "Notificare",
+        "someone": "Cineva",
+        "unknown_contact": "un contact",
+        "group_today": "Astăzi",
+        "group_yesterday": "Ieri",
+        "group_earlier": "Mai devreme",
+        "mark_read": "Marchează ca citit",
+        "open": "Deschide",
+        "empty_title": "Nicio notificare",
+        "empty_desc": "Aici vei vedea mesajele noi, campaniile finalizate și noutățile despre abonament.",
+        "manage_preferences": "Preferințe notificări",
+        "unread_one": "{{count}} necitită",
+        "unread_few": "{{count}} necitite",
+        "unread_other": "{{count}} de necitite",
+        "all_read": "Ai citit tot.",
+        "delete": "Șterge notificarea"
+    }
 }

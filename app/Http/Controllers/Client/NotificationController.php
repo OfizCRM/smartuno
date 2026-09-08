@@ -13,7 +13,7 @@ use Inertia\Response;
 class NotificationController extends Controller
 {
     /**
-     * List unread notifications + preferences page.
+     * The notification feed. Preferences live on Settings/Notifications.
      */
     public function index(Request $request): Response
     {
@@ -27,11 +27,10 @@ class NotificationController extends Controller
             'created_at' => $n->created_at->toIso8601String(),
         ]);
 
-        $preferences = $user->notificationPreferences->groupBy('event')->map(fn ($group) => $group->mapWithKeys(fn ($p) => [$p->channel => $p->enabled]));
-
+        // No preferences prop: the feed links to Settings/Notifications, which is
+        // the one screen that actually reads and writes them.
         return Inertia::render('client/Notifications/Index', [
             'notifications' => $notifications,
-            'preferences' => $preferences,
         ]);
     }
 

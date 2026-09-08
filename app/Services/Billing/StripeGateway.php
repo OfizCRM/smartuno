@@ -700,6 +700,14 @@ class StripeGateway implements BillingGatewayInterface
     /** Deliver the payment-failed email through the configured SMTP transport. */
     private function sendPaymentFailedEmail(User $user, string $amount, string $currency): void
     {
+        // The notification-settings screen offers an email toggle for this event.
+        // It was written to the preferences table and read by nobody, because the
+        // mail for a failed payment is sent from here rather than through the
+        // notification's own mail channel — so the switch did nothing.
+        if (! $user->wantsNotification('billing_failed', 'mail')) {
+            return;
+        }
+
         try {
             app(MailService::class)->sendWithTemplate('payment_failed', $user->email, [
                 'app_name' => config('app.name'),

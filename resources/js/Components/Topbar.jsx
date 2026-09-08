@@ -6,6 +6,7 @@ import { Dropdown } from '@/Components/ui';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocale } from '@/hooks/useLocale';
 import { Bell, X, CheckCheck, ExternalLink } from 'lucide-react';
+import NotificationItem from '@/Components/NotificationItem';
 import GlobalSearch from '@/Components/GlobalSearch';
 import axios from 'axios';
 
@@ -58,6 +59,21 @@ export default function Topbar({
 
     const markAllRead = () => {
         router.post(route('client.notifications.read-all'), {}, { preserveScroll: true, onSuccess: () => setNotifOpen(false) });
+    };
+
+    // Marking one read is a fire-and-forget POST: the row is already updated in
+    // place, and the badge count comes back on the next Inertia visit. Reloading
+    // the whole page to grey out one line would be worse than a stale count.
+    const markOneRead = (id) => {
+        setRecentNotifs(list => list.map(n => (
+            n.id === id ? { ...n, read_at: new Date().toISOString() } : n
+        )));
+        axios.post(route('client.notifications.read', id)).catch(() => {});
+    };
+
+    const openNotification = (url) => {
+        setNotifOpen(false);
+        router.visit(url);
     };
 
     // Close on outside click
@@ -155,14 +171,14 @@ export default function Topbar({
                         >
                             <Bell className="h-5 w-5" />
                             {unreadCount > 0 && (
-                                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                                <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-coral-500 text-[10px] font-bold text-white">
                                     {unreadCount > 9 ? '9+' : unreadCount}
                                 </span>
                             )}
                         </button>
 
                         {notifOpen && (
-                            <div className="absolute right-0 mt-1 w-80 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-lg z-50 overflow-hidden">
+                            <div className="absolute right-0 z-50 mt-1 w-[22rem] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
                                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100 dark:border-neutral-800">
                                     <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">{t('ui.notifications')}</span>
                                     <div className="flex items-center gap-2">
@@ -176,14 +192,21 @@ export default function Topbar({
                                         </button>
                                     </div>
                                 </div>
-                                <div className="divide-y divide-neutral-100 dark:divide-neutral-800 max-h-80 overflow-y-auto">
+                                <div className="max-h-96 divide-y divide-neutral-100 overflow-y-auto dark:divide-neutral-800">
                                     {recentNotifs.length === 0 ? (
-                                        <p className="text-sm text-neutral-400 text-center py-6">{t('ui.no_recent_notifications')}</p>
-                                    ) : recentNotifs.map(n => (
-                                        <div key={n.id} className={`px-4 py-3 text-sm ${n.read_at ? 'opacity-60' : 'bg-brand-50/40 dark:bg-brand-900/10'}`}>
-                                            <p className="font-medium text-neutral-800 dark:text-neutral-200">{n.data?.type?.replace('_', ' ')}</p>
-                                            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{n.data?.snippet ?? n.data?.name ?? n.data?.automation ?? ''}</p>
+                                        <div className="px-4 py-10 text-center">
+                                            <Bell className="mx-auto mb-2 h-7 w-7 text-neutral-300 dark:text-neutral-600" />
+                                            <p className="text-sm text-neutral-400">{t('ui.no_recent_notifications')}</p>
                                         </div>
+                                    ) : recentNotifs.map(n => (
+                                        <NotificationItem
+                                            key={n.id}
+                                            notification={n}
+                                            dense
+                                            timezone={page.props.timezone ?? 'Europe/Bucharest'}
+                                            onMarkRead={markOneRead}
+                                            onOpen={openNotification}
+                                        />
                                     ))}
                                 </div>
                                 <div className="border-t border-neutral-100 dark:border-neutral-800 px-4 py-2 text-center">

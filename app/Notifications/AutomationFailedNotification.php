@@ -37,11 +37,16 @@ class AutomationFailedNotification extends Notification implements ShouldQueue
 
     public function toArray(object $notifiable): array
     {
+        // Resolved once: the payload needs both the name and the link, and the
+        // relation is a query the second and third read would repeat.
+        $automation = $this->run->automation;
+
         return [
             'type' => 'automation_failed',
             'run_id' => $this->run->id,
-            'automation' => $this->run->automation?->name,
+            'automation' => $automation?->name,
             'error' => $this->errorMessage,
+            'url' => $automation ? route('client.automations.runs', $automation) : null,
         ];
     }
 

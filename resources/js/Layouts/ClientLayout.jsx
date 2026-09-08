@@ -8,6 +8,7 @@ import Sidebar from '@/Components/Sidebar';
 import UpgradeModal from '@/Components/UpgradeModal';
 import SubscriptionBanner from '@/Components/SubscriptionBanner';
 import useClientNav from '@/Layouts/useClientNav';
+import { describeNotification } from '@/Utils/notificationDescriptor';
 
 function safeRoute(name, ...args) {
     try { return route(name, ...args); } catch { return '#'; }
@@ -63,7 +64,7 @@ function ClientLayoutFooter() {
 }
 
 export default function ClientLayout({ header, children, title }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { auth, impersonation, current_workspace_usage, unreadNotificationsCount, branding, onesignal } = usePage().props;
     const logoUrl = branding?.logo_url;
@@ -85,15 +86,10 @@ export default function ClientLayout({ header, children, title }) {
         window.Echo.private(`App.Models.User.${auth.user.id}`)
             .notification((notification) => {
                 setUnreadCount(prev => prev + 1);
-                const msg = notification.snippet ?? notification.name ?? notification.automation ?? notification.error ?? t('ui.notif_new');
-                const title = {
-                    new_message:          t('ui.notif_new_message'),
-                    mention:              t('ui.notif_mention'),
-                    conversation_assigned:t('ui.notif_conversation_assigned'),
-                    campaign_completed:   t('ui.notif_campaign_completed'),
-                    automation_failed:    t('ui.notif_automation_failed'),
-                    billing_failed:       t('ui.notif_billing_failed'),
-                }[notification.type] ?? t('ui.notif_default');
+                // Same descriptor the bell dropdown and the notifications page use,
+                // so a type never reads one way live and another way in the list.
+                const { title, body } = describeNotification(notification, t, i18n.language);
+                const msg = body || undefined;
 
                 toast(title, {
                     description: msg,
