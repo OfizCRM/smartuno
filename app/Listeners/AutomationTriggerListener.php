@@ -6,8 +6,6 @@ use App\Events\AutomationWebhookReceived;
 use App\Events\CampaignCompleted;
 use App\Events\CommerceEventReceived;
 use App\Events\ContactCreated;
-use App\Events\LeadQualified;
-use App\Events\LeadStageChanged;
 use App\Events\MessageReceived;
 use App\Modules\Automation\Jobs\ExecuteAutomationRunJob;
 use App\Modules\Automation\Models\Automation;
@@ -97,46 +95,6 @@ class AutomationTriggerListener
         }
 
         $this->fire($event->eventType, $event->workspaceId, $event->contactId, $event->context);
-    }
-
-    public function handleLeadStageChanged(LeadStageChanged $event): void
-    {
-        // A lead only has a contact once it has been pushed to contacts. Without
-        // one there is nobody for the automation's send/tag actions to act on.
-        if (! $event->contactId) {
-            return;
-        }
-
-        // Checked once here rather than inside fire(), which this handler calls
-        // up to three times for a single stage change.
-        if ($this->isReadonly($event->workspaceId, 'lead.stage_changed')) {
-            return;
-        }
-
-        $this->fire('lead.stage_changed', $event->workspaceId, $event->contactId, $event->context());
-
-        // Reaching a terminal stage is its own trigger, so a tenant can wire
-        // "won" or "lost" follow-up without a condition node on the stage name.
-        if ($event->isWon) {
-            $this->fire('lead.won', $event->workspaceId, $event->contactId, $event->context());
-        }
-
-        if ($event->isLost) {
-            $this->fire('lead.lost', $event->workspaceId, $event->contactId, $event->context());
-        }
-    }
-
-    public function handleLeadQualified(LeadQualified $event): void
-    {
-        if (! $event->contactId) {
-            return;
-        }
-
-        if ($this->isReadonly($event->workspaceId, 'lead.qualified')) {
-            return;
-        }
-
-        $this->fire('lead.qualified', $event->workspaceId, $event->contactId, $event->context());
     }
 
     public function handleAutomationWebhookReceived(AutomationWebhookReceived $event): void

@@ -1177,24 +1177,6 @@ parameters:
 			path: app/Http/Controllers/Client/InvitationController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Client/NotificationController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$enabled\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Client/NotificationController.php
-
-		-
-			message: '#^Unable to resolve the template type TMapWithKeysValue in call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:mapWithKeys\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: app/Http/Controllers/Client/NotificationController.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiRun\:\:\$chatbot_id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -4393,96 +4375,6 @@ parameters:
 			path: app/Modules/Inbox/Services/MessengerDriver.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$enabled\.$#'
-			identifier: property.notFound
-			count: 8
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$is_default\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$last_test_message\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$last_test_status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$last_tested_at\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$mode\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$provider\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Http\\Controllers\\IntegrationConfigController\:\:auditLog\(\) has parameter \$changedKeys with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Offset ''google_places''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_linkedin''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: ''Meta App \(WhatsApp …'', oauth_linkedin\: ''LinkedIn OAuth'', oauth_twitter\: ''Twitter / X OAuth'', oauth_youtube\: ''YouTube / Google…'', oauth_tiktok\: ''TikTok OAuth'', llm_openai_default\: ''OpenAI \(Default\)'', llm_anthropic_default\: ''Anthropic Claude …'', llm_gemini_default\: ''Google Gemini …'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 4
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Offset ''google_places''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_linkedin''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: ''Meta'', oauth_linkedin\: ''Social OAuth'', oauth_twitter\: ''Social OAuth'', oauth_youtube\: ''Social OAuth'', oauth_tiktok\: ''Social OAuth'', llm_openai_default\: ''AI / LLM'', llm_anthropic_default\: ''AI / LLM'', llm_gemini_default\: ''AI / LLM'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 2
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Offset ''google_places''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_linkedin''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: array\{array\{key\: ''app_id'', label\: ''App ID'', type\: ''text'', required\: true\}, array\{key\: ''app_secret'', label\: ''App Secret'', type\: ''password'', required\: true\}, array\{key\: ''system_user_token'', label\: ''System User Access…'', type\: ''password'', required\: false\}, array\{key\: ''verify_token'', label\: ''Webhook Verify Token'', type\: ''text'', required\: false\}, array\{key\: ''config_id_whatsapp'', label\: ''Embedded Signup…'', type\: ''text'', required\: false, hint\: ''From Meta App…''\}, array\{key\: ''config_id_social'', label\: ''Embedded Signup…'', type\: ''text'', required\: false, hint\: ''From Meta App…''\}\}, oauth_linkedin\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_twitter\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_youtube\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_tiktok\: array\{array\{key\: ''client_key'', label\: ''Client Key'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, llm_openai_default\: array\{array\{key\: ''api_key'', label\: ''API Key'', type\: ''password'', required\: true\}, array\{key\: ''organization_id'', label\: ''Organization ID'', type\: ''text'', required\: false\}\}, llm_anthropic_default\: array\{array\{key\: ''api_key'', label\: ''API Key'', type\: ''password'', required\: true\}\}, llm_gemini_default\: array\{array\{key\: ''api_key'', label\: ''API Key'', type\: ''password'', required\: true\}\}, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 2
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>is_default" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>last_test_status" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>mode" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
-
-		-
 			message: '#^Method App\\Modules\\Integrations\\Models\\IntegrationAuditLog\:\:admin\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
 			identifier: missingType.generics
 			count: 1
@@ -4519,132 +4411,6 @@ parameters:
 			path: app/Modules/Integrations/Models/IntegrationConfig.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$provider\.$#'
-			identifier: property.notFound
-			count: 8
-			path: app/Modules/Integrations/Services/ConnectionTester.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:test\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Services/ConnectionTester.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testGooglePlaces\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Services/ConnectionTester.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testLlm\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Services/ConnectionTester.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testMeta\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Services/ConnectionTester.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testOAuth\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Services/ConnectionTester.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testQdrant\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Services/ConnectionTester.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testSms\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Services/ConnectionTester.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testStorage\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Services/ConnectionTester.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiProviderConfig\:\:\$credentials\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Broadcasting\\Models\\SmsProviderConfig\:\:\$credentials\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$enabled\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:googlePlaces\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\GenericCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:llm\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\LlmCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:meta\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\MetaCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:oauth\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\OAuthClientCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:qdrant\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\GenericCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:sms\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\SmsCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:workspaceLlmConfig\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:workspaceSmsConfig\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
-			message: '#^Unsafe usage of new static\(\)\.$#'
-			identifier: new.static
-			count: 2
-			path: app/Modules/Integrations/Services/CredentialResolver.php
-
-		-
 			message: '#^Method App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\:\:__construct\(\) has parameter \$data with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -4655,90 +4421,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Modules/Integrations/Services/Credentials/CredentialValueObject.php
-
-		-
-			message: '#^Offset ''google_places''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_linkedin''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: ''Meta App \(WhatsApp …'', oauth_linkedin\: ''LinkedIn OAuth'', oauth_twitter\: ''Twitter / X OAuth'', oauth_youtube\: ''YouTube / Google…'', oauth_tiktok\: ''TikTok OAuth'', llm_openai_default\: ''OpenAI \(Default\)'', llm_anthropic_default\: ''Anthropic Claude …'', llm_gemini_default\: ''Google Gemini …'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Modules/Integrations/database/seeders/IntegrationConfigSeeder.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Leads\\Models\\Lead\:\:\$email\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Leads/Http/Controllers/LeadController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Leads\\Models\\Lead\:\:\$phone\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Leads/Http/Controllers/LeadController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Leads\\Models\\Lead\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Leads/Http/Controllers/LeadController.php
-
-		-
-			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Modules/Leads/Http/Controllers/LeadController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Leads\\Models\\LeadScrapeJob\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Leads/Jobs/ScrapeLeadsJob.php
-
-		-
-			message: '#^Class App\\Modules\\Leads\\Models\\Lead uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Modules/Leads/Models/Lead.php
-
-		-
-			message: '#^Method App\\Modules\\Leads\\Models\\Lead\:\:newFactory\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: app/Modules/Leads/Models/Lead.php
-
-		-
-			message: '#^Method App\\Modules\\Leads\\Models\\Lead\:\:scrapeJob\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: app/Modules/Leads/Models/Lead.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Leads\\Models\\LeadScrapeJob\:\:\$keyword\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Leads/Services/GooglePlacesScraper.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Leads\\Models\\LeadScrapeJob\:\:\$location\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Leads/Services/GooglePlacesScraper.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Leads\\Models\\LeadScrapeJob\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Leads/Services/GooglePlacesScraper.php
-
-		-
-			message: '#^Call to an undefined method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:generic\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Modules/Leads/Services/GooglePlacesScraper.php
-
-		-
-			message: '#^Method App\\Modules\\Leads\\Services\\GooglePlacesScraper\:\:upsertPlace\(\) has parameter \$place with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/Leads/Services/GooglePlacesScraper.php
 
 		-
 			message: '#^Method App\\Modules\\Shared\\Contracts\\ChannelDriverInterface\:\:receiveWebhook\(\) return type has no value type specified in iterable type array\.$#'
@@ -7223,3 +6905,225 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Support/ApiAbilities.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$enabled\.$#'
+			identifier: property.notFound
+			count: 8
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$is_default\.$#'
+			identifier: property.notFound
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$last_test_message\.$#'
+			identifier: property.notFound
+			count: 2
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$last_test_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$last_tested_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$mode\.$#'
+			identifier: property.notFound
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$provider\.$#'
+			identifier: property.notFound
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Http\\Controllers\\IntegrationConfigController\:\:auditLog\(\) has parameter \$changedKeys with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Offset ''google_workspace''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_bigcommerce''\|''oauth_linkedin''\|''oauth_shopify''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: ''Meta App \(WhatsApp …'', oauth_linkedin\: ''LinkedIn OAuth'', oauth_twitter\: ''Twitter / X OAuth'', oauth_youtube\: ''YouTube / Google…'', oauth_tiktok\: ''TikTok OAuth'', oauth_shopify\: ''Shopify App \(OAuth\)'', oauth_bigcommerce\: ''BigCommerce App …'', llm_openai_default\: ''OpenAI \(Default\)'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 4
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Offset ''google_workspace''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_bigcommerce''\|''oauth_linkedin''\|''oauth_shopify''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: ''Meta'', oauth_linkedin\: ''Social OAuth'', oauth_twitter\: ''Social OAuth'', oauth_youtube\: ''Social OAuth'', oauth_tiktok\: ''Social OAuth'', oauth_shopify\: ''E\-Commerce OAuth'', oauth_bigcommerce\: ''E\-Commerce OAuth'', llm_openai_default\: ''AI / LLM'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Offset ''google_workspace''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_bigcommerce''\|''oauth_linkedin''\|''oauth_shopify''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: array\{array\{key\: ''app_id'', label\: ''App ID'', type\: ''text'', required\: true\}, array\{key\: ''app_secret'', label\: ''App Secret'', type\: ''password'', required\: true\}, array\{key\: ''system_user_token'', label\: ''System User Access…'', type\: ''password'', required\: false\}, array\{key\: ''verify_token'', label\: ''Webhook Verify Token'', type\: ''text'', required\: false\}, array\{key\: ''config_id_whatsapp'', label\: ''Embedded Signup…'', type\: ''text'', required\: false, hint\: ''From Meta App…''\}, array\{key\: ''config_id_social'', label\: ''Embedded Signup…'', type\: ''text'', required\: false, hint\: ''From Meta App…''\}\}, oauth_linkedin\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_twitter\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_youtube\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_tiktok\: array\{array\{key\: ''client_key'', label\: ''Client Key'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_shopify\: array\{array\{key\: ''client_id'', label\: ''API Key \(Client ID\)'', type\: ''text'', required\: true, hint\: ''From your Shopify…''\}, array\{key\: ''client_secret'', label\: ''API Secret Key …'', type\: ''password'', required\: true\}\}, oauth_bigcommerce\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true, hint\: ''From your…''\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, llm_openai_default\: array\{array\{key\: ''api_key'', label\: ''API Key'', type\: ''password'', required\: true\}, array\{key\: ''organization_id'', label\: ''Organization ID'', type\: ''text'', required\: false\}\}, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>is_default" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>last_test_status" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>mode" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$provider\.$#'
+			identifier: property.notFound
+			count: 8
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/ConnectionTester.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:test\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/ConnectionTester.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testGoogleWorkspace\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/ConnectionTester.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testLlm\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/ConnectionTester.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testMeta\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/ConnectionTester.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testOAuth\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/ConnectionTester.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testQdrant\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/ConnectionTester.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testSms\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/ConnectionTester.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\ConnectionTester\:\:testStorage\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/ConnectionTester.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiProviderConfig\:\:\$credentials\.$#'
+			identifier: property.notFound
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Broadcasting\\Models\\SmsProviderConfig\:\:\$credentials\.$#'
+			identifier: property.notFound
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\Integrations\\Models\\IntegrationConfig\:\:\$enabled\.$#'
+			identifier: property.notFound
+			count: 2
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:google\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\GenericCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:llm\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\LlmCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:meta\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\MetaCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:oauth\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\OAuthClientCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:qdrant\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\GenericCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:sms\(\) should return App\\Modules\\Integrations\\Services\\Credentials\\SmsCredentials\|null but returns App\\Modules\\Integrations\\Services\\Credentials\\CredentialValueObject\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:workspaceLlmConfig\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Method App\\Modules\\Integrations\\Services\\CredentialResolver\:\:workspaceSmsConfig\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
+
+		-
+			message: '#^Offset ''google_workspace''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_bigcommerce''\|''oauth_linkedin''\|''oauth_shopify''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: ''Meta App \(WhatsApp …'', oauth_linkedin\: ''LinkedIn OAuth'', oauth_twitter\: ''Twitter / X OAuth'', oauth_youtube\: ''YouTube / Google…'', oauth_tiktok\: ''TikTok OAuth'', oauth_shopify\: ''Shopify App \(OAuth\)'', oauth_bigcommerce\: ''BigCommerce App …'', llm_openai_default\: ''OpenAI \(Default\)'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/database/seeders/IntegrationConfigSeeder.php

@@ -16,7 +16,6 @@ const LIMIT_KEYS = [
     'chatbots',
     'social_accounts',
     'social_posts_per_month',
-    'lead_credits_per_month',
     'automations',
 ];
 
@@ -35,7 +34,6 @@ const LABELS = {
     chatbots: 'Chatbots',
     social_accounts: 'Social Accounts',
     social_posts_per_month: 'Social Posts / mo',
-    lead_credits_per_month: 'Lead Credits / mo',
     automations: 'Automations',
 };
 

@@ -18,7 +18,6 @@ class ConnectionTester
                 str_starts_with($config->provider, 'oauth_') => $this->testOAuth($config),
                 str_starts_with($config->provider, 'llm_') => $this->testLlm($config),
                 str_starts_with($config->provider, 'sms_') => $this->testSms($config),
-                $config->provider === 'google_places' => $this->testGooglePlaces($config),
                 $config->provider === 'google_workspace' => $this->testGoogleWorkspace($config),
                 $config->provider === 'qdrant' => $this->testQdrant($config),
                 str_starts_with($config->provider, 'storage_') => $this->testStorage($config),
@@ -164,25 +163,6 @@ class ConnectionTester
         return empty($key)
             ? ['ok' => false, 'message' => 'API key is required.']
             : ['ok' => true,  'message' => 'Credentials are present. Live test requires sending a message.'];
-    }
-
-    private function testGooglePlaces(IntegrationConfig $config): array
-    {
-        $creds = $config->credentials ?? [];
-        $key = $creds['api_key'] ?? '';
-        if (empty($key)) {
-            return ['ok' => false, 'message' => 'API Key is required.'];
-        }
-        $resp = HttpFacade::timeout(10)->get('https://maps.googleapis.com/maps/api/place/textsearch/json', [
-            'query' => 'restaurants in New York',
-            'key' => $key,
-            'maxResultCount' => 1,
-        ]);
-        $status = $resp->json()['status'] ?? '';
-
-        return in_array($status, ['OK', 'ZERO_RESULTS'])
-            ? ['ok' => true,  'message' => 'Google Places API connected.']
-            : ['ok' => false, 'message' => $resp->json()['error_message'] ?? 'Places API error: '.$status];
     }
 
     private function testGoogleWorkspace(IntegrationConfig $config): array

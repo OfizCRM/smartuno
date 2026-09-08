@@ -45,8 +45,6 @@ use App\Modules\Inbox\Models\CannedReply;
 use App\Modules\Inbox\Models\InboxLabel;
 use App\Modules\Integrations\Models\IntegrationAuditLog;
 use App\Modules\Integrations\Models\IntegrationConfig;
-use App\Modules\Leads\Models\Lead;
-use App\Modules\Leads\Models\LeadScrapeJob;
 use App\Modules\Shared\Models\ChannelAccount;
 use App\Modules\Shared\Models\Contact;
 use App\Modules\Shared\Models\ContactTag;
@@ -115,7 +113,6 @@ class DemoSeeder extends Seeder
         $this->seedAi();
         $this->seedAutomations();
         $this->seedBroadcasting();
-        $this->seedLeads();
         $this->seedSocial();
         $this->seedEcommerce();
         $this->seedSupport();
@@ -1131,7 +1128,7 @@ class DemoSeeder extends Seeder
 
         // Usage meters for the current month period (YYYYMM).
         $period = (int) Carbon::now()->format('Ym');
-        $meters = ['whatsapp_messages' => 3720, 'sms_sent' => 1284, 'emails_sent' => 4960, 'ai_tokens' => 642800, 'campaigns_sent' => 18, 'lead_credits' => 690];
+        $meters = ['whatsapp_messages' => 3720, 'sms_sent' => 1284, 'emails_sent' => 4960, 'ai_tokens' => 642800, 'campaigns_sent' => 18];
         foreach ($meters as $metric => $value) {
             UsageMeter::updateOrCreate(
                 ['workspace_id' => $this->workspaceId, 'metric' => $metric, 'period' => $period],
@@ -1227,67 +1224,6 @@ class DemoSeeder extends Seeder
                     'sent' => $sent, 'delivered' => $delivered, 'read' => $read,
                     'failed' => $failed, 'clicked' => $clicked, 'opted_out' => $optedOut,
                 ]]);
-            }
-        }
-    }
-
-    /* ─────────────────────────────── leads ───────────────────────────── */
-
-    private function seedLeads(): void
-    {
-        if (LeadScrapeJob::where('workspace_id', $this->workspaceId)->count() === 0) {
-            $jobs = [
-                ['keyword' => 'day spa', 'location' => 'Austin, TX', 'status' => 'done', 'leads_found' => 18, 'daysAgo' => 9],
-                ['keyword' => 'wellness center', 'location' => 'Dallas, TX', 'status' => 'done', 'leads_found' => 14, 'daysAgo' => 5],
-                ['keyword' => 'massage therapy', 'location' => 'Houston, TX', 'status' => 'running', 'leads_found' => 0, 'daysAgo' => 0],
-                ['keyword' => 'beauty salon', 'location' => 'San Diego, CA', 'status' => 'failed', 'leads_found' => 0, 'daysAgo' => 2],
-                ['keyword' => 'facial spa', 'location' => 'Phoenix, AZ', 'status' => 'done', 'leads_found' => 16, 'daysAgo' => 7],
-                ['keyword' => 'med spa', 'location' => 'San Antonio, TX', 'status' => 'done', 'leads_found' => 8, 'daysAgo' => 3],
-            ];
-            foreach ($jobs as $j) {
-                $startedAt = $this->days($j['daysAgo'])->setTime(rand(9, 16), rand(0, 59));
-                $job = LeadScrapeJob::create([
-                    'workspace_id' => $this->workspaceId,
-                    'keyword' => $j['keyword'],
-                    'location' => $j['location'],
-                    'radius_meters' => 5000,
-                    'status' => $j['status'],
-                    'leads_found' => $j['leads_found'],
-                    'error' => $j['status'] === 'failed' ? 'Google Places API quota exceeded for today.' : null,
-                    'started_at' => $startedAt,
-                    'completed_at' => in_array($j['status'], ['done', 'failed']) ? $startedAt->copy()->addMinutes(rand(2, 20)) : null,
-                ]);
-                $this->bk($job, $startedAt);
-            }
-        }
-
-        if (Lead::where('workspace_id', $this->workspaceId)->count() === 0) {
-            $cities = [['Austin', 'TX', 30.2672, -97.7431], ['Dallas', 'TX', 32.7767, -96.7970], ['Houston', 'TX', 29.7604, -95.3698], ['San Diego', 'CA', 32.7157, -117.1611]];
-            $categories = ['Day spa', 'Wellness center', 'Massage therapist', 'Beauty salon', 'Facial spa'];
-            $prefixes = ['Serenity', 'Tranquil', 'Bliss', 'Lotus', 'Harmony', 'Pure', 'Oasis', 'Radiance', 'Calm', 'Verde', 'Aura', 'Nirvana'];
-            $suffixes = ['Spa', 'Wellness', 'Retreat', 'Day Spa', 'Spa & Salon', 'Beauty Bar'];
-            for ($i = 0; $i < 56; $i++) {
-                [$city, $state, $lat, $lng] = $cities[$i % count($cities)];
-                $name = Arr::random($prefixes).' '.Arr::random($suffixes);
-                $lead = Lead::create([
-                    'workspace_id' => $this->workspaceId,
-                    'name' => $name,
-                    'phone' => '+1'.rand(200, 989).rand(2000000, 9999999),
-                    'email' => 'info@'.Str::slug($name, '').'.com',
-                    'website' => 'https://'.Str::slug($name, '').'.com',
-                    'address' => rand(100, 9999).' '.Arr::random(['Main St', 'Oak Ave', 'Congress Ave', 'Elm St', 'Sunset Blvd']),
-                    'city' => $city,
-                    'country' => 'US',
-                    'lat' => $lat + (rand(-50, 50) / 1000),
-                    'lng' => $lng + (rand(-50, 50) / 1000),
-                    'category' => Arr::random($categories),
-                    'rating' => round(rand(35, 50) / 10, 1),
-                    'review_count' => rand(8, 740),
-                    'google_place_id' => 'ChIJ'.Str::random(23),
-                    'whatsapp_status' => Arr::random(['unknown', 'valid', 'valid', 'invalid']),
-                    'pushed_to_contacts' => $i < 4,
-                ]);
-                $this->bk($lead, $this->days(rand(0, 9)));
             }
         }
     }

@@ -188,7 +188,6 @@ class HandleInertiaRequests extends Middleware
             'campaigns_per_month' => 'campaigns',
             'whatsapp_messages_per_month' => 'whatsapp_messages',
             'social_posts_per_month' => 'social_posts',
-            'lead_credits_per_month' => 'lead_credits',
         ];
 
         $usage = [];

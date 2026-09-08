@@ -39,25 +39,4 @@ class PlanLimitTest extends TestCase
         $response->assertRedirect('/billing');
         $response->assertSessionHas('upgrade_required');
     }
-
-    public function test_lead_scrape_returns_redirect_when_limit_exhausted(): void
-    {
-        Queue::fake();
-
-        $data = $this->createWorkspaceContext();
-        $user = $data['user'];
-        $workspace = $data['workspace'];
-        $client = $data['client'];
-
-        $plan = Plan::factory()->create(['limits' => ['lead_credits_per_month' => 0]]);
-        $this->attachPlanToClient($client, $plan);
-
-        $response = $this->actingAs($user)->post('/app/leads/scrape', [
-            'query' => 'restaurants',
-            'location' => 'Dhaka',
-        ]);
-
-        $response->assertRedirect('/billing');
-        $response->assertSessionHas('upgrade_required');
-    }
 }

@@ -18,7 +18,6 @@ class IntegrationConfig extends Model
         'llm_openai_default',
         'llm_anthropic_default',
         'llm_gemini_default',
-        'google_places',
         'google_workspace',
         'qdrant',
         'storage_local',
@@ -50,7 +49,6 @@ class IntegrationConfig extends Model
         'llm_openai_default' => 'OpenAI (Default)',
         'llm_anthropic_default' => 'Anthropic Claude (Default)',
         'llm_gemini_default' => 'Google Gemini (Default)',
-        'google_places' => 'Google Places API',
         'google_workspace' => 'Google Workspace (Sheets / Docs / Calendar / Meet)',
         'qdrant' => 'Qdrant Vector Store',
         'storage_local' => 'Local Storage (server disk)',
@@ -71,7 +69,6 @@ class IntegrationConfig extends Model
         'llm_openai_default' => 'AI / LLM',
         'llm_anthropic_default' => 'AI / LLM',
         'llm_gemini_default' => 'AI / LLM',
-        'google_places' => 'Maps',
         'google_workspace' => 'Google Workspace',
         'qdrant' => 'Vector Store',
         'storage_local' => 'Storage',
@@ -122,9 +119,6 @@ class IntegrationConfig extends Model
             ['key' => 'api_key', 'label' => 'API Key', 'type' => 'password', 'required' => true],
         ],
         'llm_gemini_default' => [
-            ['key' => 'api_key', 'label' => 'API Key', 'type' => 'password', 'required' => true],
-        ],
-        'google_places' => [
             ['key' => 'api_key', 'label' => 'API Key', 'type' => 'password', 'required' => true],
         ],
         'google_workspace' => [

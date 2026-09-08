@@ -98,11 +98,6 @@ class CredentialResolver
         return $this->resolve('sms_'.$provider.'_default', SmsCredentials::class);
     }
 
-    public function googlePlaces(): ?GenericCredentials
-    {
-        return $this->resolve('google_places', GenericCredentials::class);
-    }
-
     /** Google Workspace OAuth creds (Sheets / Docs / Calendar / Meet). */
     public function google(): ?GenericCredentials
     {

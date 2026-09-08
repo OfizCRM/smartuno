@@ -31,7 +31,6 @@ class SearchController extends Controller
             ['label' => 'Dashboard', 'href' => route('client.dashboard'), 'icon' => 'LayoutDashboard'],
             ['label' => 'Inbox', 'href' => route('client.inbox.index'), 'icon' => 'Inbox'],
             ['label' => 'Contacts', 'href' => route('client.contacts.index'), 'icon' => 'Users'],
-            ['label' => 'Pipeline', 'href' => route('client.leads.pipeline.index'), 'icon' => 'KanbanSquare'],
             ['label' => 'Campaigns', 'href' => route('client.campaigns.index'), 'icon' => 'Radio'],
             ['label' => 'Social media', 'href' => route('client.social.posts.index'), 'icon' => 'Share2'],
             ['label' => 'Automations', 'href' => route('client.automations.index'), 'icon' => 'Zap'],

@@ -285,18 +285,6 @@ const SETUP_GUIDES = {
         link: 'https://aistudio.google.com/app/apikey',
         linkLabel: 'Open Google AI Studio',
     },
-    google_places: {
-        title: 'Google Places API Setup',
-        steps: [
-            'Go to console.cloud.google.com and create or select a project.',
-            'Navigate to APIs & Services → Library → search "Places API" → Enable.',
-            'Go to APIs & Services → Credentials → Create Credentials → API Key.',
-            'Optionally restrict the key to Places API only for security.',
-            'Copy the API key and paste it below.',
-        ],
-        link: 'https://console.cloud.google.com/apis/library/places-backend.googleapis.com',
-        linkLabel: 'Open Google Cloud Console',
-    },
     qdrant: {
         title: 'Qdrant Vector Store Setup',
         steps: [
@@ -451,7 +439,6 @@ const BRAND = {
     llm_openai_default:     { bg: null, color: '#10a37f', logo: 'openai' },
     llm_anthropic_default:  { bg: null, color: '#d4793b', logo: 'anthropic' },
     llm_gemini_default:     { bg: null, color: '#4285F4', logo: 'googlegemini' },
-    google_places:   { bg: null, color: '#34A853', logo: 'googlemaps' },
     qdrant:          { bg: null, color: '#DC143C', logo: 'qdrant' },
 };
 

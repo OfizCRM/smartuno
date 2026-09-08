@@ -330,17 +330,6 @@ const SETUP_GUIDES = {
         link: 'https://dashboard.messagebird.com/en/developers/access',
         linkLabel: 'Open MessageBird Dashboard',
     },
-    google_places: {
-        title: 'Google Places API Setup',
-        steps: [
-            'Go to console.cloud.google.com and create or select a project.',
-            'Navigate to APIs & Services → Library → search "Places API" → Enable.',
-            'Go to APIs & Services → Credentials → Create Credentials → API Key.',
-            'Optionally restrict the key to Places API only for security.',
-        ],
-        link: 'https://console.cloud.google.com/apis/library/places-backend.googleapis.com',
-        linkLabel: 'Open Google Cloud Console',
-    },
     qdrant: {
         title: 'Qdrant Vector Store Setup',
         steps: [
@@ -518,7 +507,6 @@ const BRAND = {
     sms_messagebird_default: { bg: 'bg-blue-100 dark:bg-blue-900/30', color: '#2481CC', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M18 9c0-3.31-3.58-6-8-6S2 5.69 2 9c0 2.12 1.32 4 3.38 5.14-.1.48-.46 1.74-.88 2.36 0 0 2.04-.42 3.52-1.56.64.1 1.3.16 1.98.16 4.42 0 8-2.69 8-6zM6 8.5a1 1 0 110 2 1 1 0 010-2zm4 0a1 1 0 110 2 1 1 0 010-2zm4 0a1 1 0 110 2 1 1 0 010-2z" /></svg> },
     sms_smsbd_default:       { bg: 'bg-teal-100 dark:bg-teal-900/30', color: '#0d9488', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M3 5a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V5zm2 1.5v5h2.5c1.1 0 2-.9 2-2v-1c0-1.1-.9-2-2-2H5zm5 0v5h2.5c.83 0 1.5-.67 1.5-1.5v-2c0-.83-.67-1.5-1.5-1.5H10zm-3.5 1.5h1c.28 0 .5.22.5.5v1c0 .28-.22.5-.5.5h-1v-2zm5 0h1c.28 0 .5.22.5.5v2c0 .28-.22.5-.5.5h-1V8z" /></svg> },
     sms_reve_default:        { bg: 'bg-indigo-100 dark:bg-indigo-900/30', color: '#4f46e5', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M3 5a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V5zm2 1.5v5h1.5v-2h1l1 2H10l-1.1-2.1c.67-.26 1.1-.9 1.1-1.65 0-1-.8-1.75-1.75-1.75H5zm5 0L12.5 11 15 6.5h-1.7L12 9.3l-1.3-2.8H10zm-3.5 1.4h.75c.28 0 .5.22.5.5s-.22.5-.5.5H6.5V7.9z" /></svg> },
-    google_places:           { bg: 'bg-red-100 dark:bg-red-900/30', color: '#EA4335', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M10 2a6 6 0 016 6c0 4.5-6 11-6 11S4 12.5 4 8a6 6 0 016-6zm0 3.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z" /></svg> },
     qdrant:                  { bg: 'bg-rose-100 dark:bg-rose-900/30', color: '#DC143C', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M10 2l5 3v3.5L10 11.5 5 8.5V5l5-3zm0 11L5 10v3l5 5 5-5v-3l-5 3zm-4.5-4.7L10 11l4.5-2.7V5.7L10 3 5.5 5.7v2.6z" /></svg> },
 };
 

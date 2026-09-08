@@ -8,8 +8,6 @@ use App\Events\CampaignCompleted;
 use App\Events\CommerceEventReceived;
 use App\Events\ContactCreated;
 use App\Events\ConversationAssigned;
-use App\Events\LeadQualified;
-use App\Events\LeadStageChanged;
 use App\Events\MessageReceived;
 use App\Events\PlanChanged;
 use App\Events\SubscriptionCancelled;
@@ -103,8 +101,6 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(ContactCreated::class, [AutomationTriggerListener::class, 'handleContactCreated']);
         Event::listen(AutomationWebhookReceived::class, [AutomationTriggerListener::class, 'handleAutomationWebhookReceived']);
         Event::listen(CommerceEventReceived::class, [AutomationTriggerListener::class, 'handleCommerceEvent']);
-        Event::listen(LeadStageChanged::class, [AutomationTriggerListener::class, 'handleLeadStageChanged']);
-        Event::listen(LeadQualified::class, [AutomationTriggerListener::class, 'handleLeadQualified']);
 
         // ── Outbound webhook event delivery ─────────────────────────────────
         Event::listen(ContactCreated::class, [DispatchOutboundWebhookListener::class, 'handleContactCreated']);

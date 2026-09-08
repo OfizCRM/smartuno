@@ -42,7 +42,6 @@ class PlanSeeder extends Seeder
                     'social_accounts' => 2,
                     'social_posts_per_month' => 30,
                     // Leads
-                    'lead_credits_per_month' => 200,
                     // Automations
                     'automations' => 3,
                 ],
@@ -78,7 +77,6 @@ class PlanSeeder extends Seeder
                     'chatbots' => 5,
                     'social_accounts' => 10,
                     'social_posts_per_month' => 200,
-                    'lead_credits_per_month' => 2000,
                     'automations' => 20,
                 ],
                 'white_label_enabled' => false,
@@ -113,7 +111,6 @@ class PlanSeeder extends Seeder
                     'chatbots' => null,
                     'social_accounts' => null,
                     'social_posts_per_month' => null,
-                    'lead_credits_per_month' => null,
                     'automations' => null,
                 ],
                 'white_label_enabled' => true,
