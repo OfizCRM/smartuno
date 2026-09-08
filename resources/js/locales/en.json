@@ -2599,16 +2599,7 @@
         "col_in_app": "In-app",
         "col_email": "Email",
         "no_notifications": "No notifications yet.",
-        "event_subscription_created": "Subscription started",
-        "event_subscription_cancelled": "Subscription cancelled",
-        "event_subscription_renewed": "Subscription renewed",
-        "event_payment_succeeded": "Payment succeeded",
-        "event_payment_failed": "Payment failed",
-        "event_team_invite_accepted": "Team member joined",
-        "unread_count": "{{count}} unread",
-        "mark_all_read": "Mark all read",
-        "preferences": "Preferences",
-        "mark_as_read": "Mark as read"
+        "mark_all_read": "Mark all read"
     },
     "onboarding": {
         "title": "Getting Started",
@@ -2891,14 +2882,6 @@
         "usage_banner": "You've used {{percent}}% of your {{label}} quota ({{current}}\/{{limit}}).",
         "usage_banner_upgrade": "Upgrade your plan",
         "usage_banner_suffix": "to avoid interruptions.",
-        "notif_new": "New notification",
-        "notif_new_message": "New message",
-        "notif_mention": "@ You were mentioned",
-        "notif_conversation_assigned": "Conversation assigned",
-        "notif_campaign_completed": "Campaign completed",
-        "notif_automation_failed": "Automation failed",
-        "notif_billing_failed": "Payment failed",
-        "notif_default": "Notification",
         "onboarding_progress": "{{done}} of {{total}} completed",
         "no_recent_notifications": "No recent notifications",
         "view_all_notifications": "View all notifications",
@@ -3243,12 +3226,8 @@
         }
     },
     "notifications": {
-        "preferences_title": "Notification Preferences",
         "col_event": "Event",
-        "col_in_app": "In-App",
-        "col_email": "Email",
-        "title": "Notifications",
-        "no_notifications": "No notifications yet"
+        "title": "Notifications"
     },
     "webpush": {
         "vapid_public_key": "Vapid Public Key"
@@ -4587,5 +4566,53 @@
                 "1": "1"
             }
         ]
-    ]
+    ],
+    "notif": {
+        "new_message_title": "New message",
+        "mention_title": "You were mentioned",
+        "conversation_assigned_title": "Conversation assigned",
+        "conversation_assigned_body": "{{by}} assigned you the conversation with {{contact}}.",
+        "handover_title": "Handed over by the assistant",
+        "handover_body": "The assistant handed the conversation with {{contact}} to a colleague.",
+        "campaign_completed_title": "Campaign finished",
+        "campaign_completed_body": "{{name}} — {{sent}} sent, {{failed}} failed.",
+        "automation_failed_title": "Automation failed",
+        "subscription_started_title": "Subscription active",
+        "subscription_started_body": "Your {{plan}} subscription is active.",
+        "subscription_renewed_title": "Subscription renewed",
+        "subscription_renewed_body": "Your {{plan}} subscription has been renewed.",
+        "subscription_renewed_body_amount": "Your {{plan}} subscription has been renewed — {{amount}}.",
+        "subscription_cancelled_title": "Subscription cancelled",
+        "subscription_cancelled_body": "Your {{plan}} subscription has been cancelled.",
+        "subscription_expired_title": "Subscription expired",
+        "subscription_expired_body": "Your {{plan}} subscription has expired.",
+        "trial_ending_title": "Trial ending",
+        "trial_ending_body_one": "One day left on your {{plan}} trial.",
+        "trial_ending_body_few": "{{count}} days left on your {{plan}} trial.",
+        "trial_ending_body_other": "{{count}} days left on your {{plan}} trial.",
+        "plan_changed_title": "Plan changed",
+        "plan_changed_body": "You moved from {{from}} to {{to}}.",
+        "billing_failed_title": "Payment failed",
+        "billing_failed_body": "We could not charge {{amount}}. Please check your card details.",
+        "user_welcome_title": "Welcome!",
+        "user_welcome_body": "Your account is ready to use.",
+        "workspace_export_ready_title": "Your export is ready",
+        "workspace_export_ready_body": "Your data is ready to download.",
+        "generic_title": "Notification",
+        "someone": "Someone",
+        "unknown_contact": "a contact",
+        "group_today": "Today",
+        "group_yesterday": "Yesterday",
+        "group_earlier": "Earlier",
+        "mark_read": "Mark as read",
+        "open": "Open",
+        "empty_title": "No notifications",
+        "empty_desc": "New messages, finished campaigns and subscription news will show up here.",
+        "manage_preferences": "Notification preferences",
+        "unread_one": "{{count}} unread",
+        "unread_few": "{{count}} unread",
+        "unread_other": "{{count}} unread",
+        "all_read": "You are all caught up.",
+        "delete": "Delete notification"
+    }
 }

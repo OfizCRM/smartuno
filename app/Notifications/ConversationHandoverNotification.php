@@ -33,6 +33,7 @@ class ConversationHandoverNotification extends Notification
             'contact_name' => $name ?: ($contact?->phone_e164 ?? 'Unknown'),
             'reason' => $this->reason,
             'message' => "AI handed over conversation with {$name} to a human agent.",
+            'url' => route('client.inbox.show', $this->conversation),
         ];
     }
 

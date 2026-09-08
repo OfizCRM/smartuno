@@ -40,6 +40,7 @@ class CampaignCompletedNotification extends Notification implements ShouldQueue
             'name' => $this->campaign->name,
             'sent' => $this->campaign->sent_count ?? 0,
             'failed' => $this->campaign->failed_count ?? 0,
+            'url' => route('client.campaigns.show', $this->campaign),
         ];
     }
 
