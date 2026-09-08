@@ -14,7 +14,7 @@ class QueueController extends Controller
         $tab = $request->get('tab', 'failed');
 
         $failedJobs = collect();
-        $batchRows  = collect();
+        $batchRows = collect();
 
         if ($tab === 'failed') {
             try {
@@ -22,12 +22,12 @@ class QueueController extends Controller
                     ->orderByDesc('failed_at')
                     ->paginate(20)
                     ->through(fn ($job) => [
-                        'id'         => $job->id,
-                        'uuid'       => $job->uuid ?? null,
-                        'queue'      => $job->queue,
-                        'class'      => $this->extractClass($job->payload),
-                        'exception'  => mb_substr($job->exception ?? '', 0, 300),
-                        'failed_at'  => $job->failed_at,
+                        'id' => $job->id,
+                        'uuid' => $job->uuid ?? null,
+                        'queue' => $job->queue,
+                        'class' => $this->extractClass($job->payload),
+                        'exception' => mb_substr($job->exception ?? '', 0, 300),
+                        'failed_at' => $job->failed_at,
                     ]);
             } catch (\Throwable) {
                 // Table may not exist yet
@@ -40,24 +40,24 @@ class QueueController extends Controller
                     ->orderByDesc('created_at')
                     ->paginate(20)
                     ->through(fn ($b) => [
-                        'id'              => $b->id,
-                        'name'            => $b->name,
-                        'total_jobs'      => $b->total_jobs,
-                        'pending_jobs'    => $b->pending_jobs,
-                        'failed_jobs'     => $b->failed_jobs,
-                        'failed_job_ids'  => $b->failed_job_ids,
-                        'created_at'      => $b->created_at,
-                        'cancelled_at'    => $b->cancelled_at,
-                        'finished_at'     => $b->finished_at,
+                        'id' => $b->id,
+                        'name' => $b->name,
+                        'total_jobs' => $b->total_jobs,
+                        'pending_jobs' => $b->pending_jobs,
+                        'failed_jobs' => $b->failed_jobs,
+                        'failed_job_ids' => $b->failed_job_ids,
+                        'created_at' => $b->created_at,
+                        'cancelled_at' => $b->cancelled_at,
+                        'finished_at' => $b->finished_at,
                     ]);
             } catch (\Throwable) {
             }
         }
 
         return Inertia::render('Admin/Queue/Index', [
-            'tab'        => $tab,
+            'tab' => $tab,
             'failedJobs' => $failedJobs,
-            'batches'    => $batchRows,
+            'batches' => $batchRows,
         ]);
     }
 
@@ -65,7 +65,8 @@ class QueueController extends Controller
     {
         try {
             \Artisan::call('queue:retry', ['id' => [$id]]);
-            return back()->with('success', 'Job queued for retry.');
+
+            return back()->with('success', __('Job queued for retry.'));
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -75,7 +76,8 @@ class QueueController extends Controller
     {
         try {
             DB::table('failed_jobs')->where('id', $id)->delete();
-            return back()->with('success', 'Failed job deleted.');
+
+            return back()->with('success', __('Failed job deleted.'));
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -85,7 +87,8 @@ class QueueController extends Controller
     {
         try {
             \Artisan::call('queue:retry', ['id' => ['all']]);
-            return back()->with('success', 'All failed jobs queued for retry.');
+
+            return back()->with('success', __('All failed jobs queued for retry.'));
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -95,7 +98,8 @@ class QueueController extends Controller
     {
         try {
             \Artisan::call('queue:flush');
-            return back()->with('success', 'All failed jobs deleted.');
+
+            return back()->with('success', __('All failed jobs deleted.'));
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -105,6 +109,7 @@ class QueueController extends Controller
     {
         try {
             $decoded = json_decode($payload, true);
+
             return $decoded['displayName'] ?? $decoded['job'] ?? 'Unknown';
         } catch (\Throwable) {
             return 'Unknown';

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\SmtpConfiguration;
 use App\Models\Template;
 use App\Services\Mail\MailService;
+use App\Support\Romania;
+use App\Support\TicketLabels;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,13 +37,13 @@ class EmailSystemController extends Controller
         ]);
 
         $emailTemplates = Template::where('type', 'email')->orderBy('name')->get()->map(fn (Template $t) => [
-            'id'           => $t->id,
-            'name'         => $t->name,
-            'slug'         => $t->slug,
-            'subject'      => $t->subject,
-            'content'      => $t->content,
-            'enabled'      => $t->enabled,
-            'description'  => $t->meta['description'] ?? null,
+            'id' => $t->id,
+            'name' => $t->name,
+            'slug' => $t->slug,
+            'subject' => $t->subject,
+            'content' => $t->content,
+            'enabled' => $t->enabled,
+            'description' => $t->meta['description'] ?? null,
             'placeholders' => $t->meta['placeholders'] ?? [],
         ]);
 
@@ -133,6 +135,7 @@ class EmailSystemController extends Controller
     public function destroySmtp(SmtpConfiguration $smtpConfiguration): RedirectResponse
     {
         $smtpConfiguration->delete();
+
         return redirect()->route('admin.email-system.index')->with('success', __('SMTP configuration removed.'));
     }
 
@@ -140,6 +143,7 @@ class EmailSystemController extends Controller
     {
         SmtpConfiguration::query()->update(['is_active' => false]);
         $smtpConfiguration->update(['is_active' => true]);
+
         return redirect()->route('admin.email-system.index')->with('success', __('SMTP configuration activated.'));
     }
 
@@ -158,15 +162,83 @@ class EmailSystemController extends Controller
         }
 
         try {
-            $subject = '[Test] ' . ($template->subject ?? $template->name);
-            $content = $template->content ?? '<p>No content.</p>';
+            // Render exactly what a customer would get — layout, sample placeholder
+            // values and all. A test send that delivered the bare prose row would
+            // preview something nobody ever receives.
+            $rendered = $this->mailService->renderTemplate($template, $this->sampleReplacements($template));
 
-            $this->mailService->sendRaw($smtp, $validated['email'], $subject, $content);
+            $this->mailService->sendRaw($smtp, $validated['email'], '[Test] '.$rendered['subject'], $rendered['html']);
 
             return response()->json(['message' => __('Test email sent successfully.')]);
         } catch (\Throwable $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Stand-in values for a test send, keyed by the placeholders the template declares.
+     *
+     * Every value is produced by the same helper the real call site uses — Romania for the
+     * dates, TicketLabels for the two ticket enums, greetingName for the name after
+     * "Salut," — so this screen previews the email a customer actually receives. It matters
+     * more here than it looks: the admin reads the row's own `description` on the same
+     * page, and that documentation says the dates and the enums arrive in Romanian.
+     *
+     * @return array<string, string>
+     */
+    private function sampleReplacements(Template $template): array
+    {
+        // {{user_name}} greets the recipient in most templates and identifies the customer
+        // to an admin in these two, which is the same split the call sites make.
+        $identifiesACustomer = in_array($template->slug, ['support_ticket_admin_new', 'support_ticket_reply_admin'], true);
+
+        $known = [
+            'app_name' => config('saas.app_name') ?: config('app.name'),
+            'user_name' => $identifiesACustomer ? 'Ana Popescu' : Romania::greetingName('Ana Popescu'),
+            'user_email' => 'ana.popescu@example.com',
+            'staff_name' => 'Mihai Ionescu',
+            'inviter_name' => 'Ana Popescu',
+            'organization_name' => 'Cabinet Dentar Sanident',
+            'plan_name' => 'Pro',
+            'old_plan' => 'Start',
+            'new_plan' => 'Pro',
+            'billing_cycle' => 'month',
+            'amount' => '129,00',
+            'currency' => 'RON',
+            'starts_at' => Romania::longDate(now()),
+            'ends_at' => Romania::longDate(now()->addMonth()),
+            'next_renewal' => Romania::longDate(now()->addMonth()),
+            'trial_ends_at' => Romania::longDate(now()->addDays(3)),
+            'days_remaining' => '3',
+            'expires_minutes' => '15',
+            'expires_days' => '7',
+            'ticket_id' => '1042',
+            'ticket_subject' => 'Nu pot conecta numărul de WhatsApp',
+            'ticket_priority' => TicketLabels::priority('high'),
+            'ticket_message' => "Bună ziua,\n\nAm încercat să conectez numărul, dar primesc o eroare.",
+            'reply_message' => "Bună ziua,\n\nAm verificat contul și am reactivat conexiunea.",
+            'new_status' => TicketLabels::status('in_progress'),
+        ];
+
+        $placeholders = $this->mailService->templateMeta($template)['placeholders'] ?? [];
+        if (! is_array($placeholders)) {
+            $placeholders = [];
+        }
+
+        $replacements = [];
+        foreach ($placeholders as $placeholder) {
+            if (! is_string($placeholder) || $placeholder === '') {
+                continue;
+            }
+
+            $replacements[$placeholder] = match (true) {
+                isset($known[$placeholder]) => (string) $known[$placeholder],
+                str_ends_with($placeholder, '_url') => url('/'),
+                default => '['.$placeholder.']',
+            };
+        }
+
+        return $replacements;
     }
 
     /**
@@ -197,6 +269,7 @@ class EmailSystemController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['message' => __('Test email sent successfully.')]);
             }
+
             return redirect()->route('admin.email-system.index')->with('success', __('Test email sent.'));
         } catch (\Throwable $e) {
             if ($request->wantsJson()) {

@@ -110,22 +110,22 @@ class OrderController extends Controller
         $this->authorizeOrder($request, $order);
         $store = EcommerceStore::find($order->store_id);
         if (! $store) {
-            return back()->with('error', 'Store not found.');
+            return back()->with('error', __('Store not found.'));
         }
 
         try {
             $raw = StoreClientFactory::for($store)->fetchOrder($order->external_order_id);
         } catch (\Throwable $e) {
-            return back()->with('error', 'Refresh failed: '.$e->getMessage());
+            return back()->with('error', __('Refresh failed: :error', ['error' => $e->getMessage()]));
         }
 
         if (! $raw) {
-            return back()->with('error', 'Order no longer found at the store.');
+            return back()->with('error', __('Order no longer found at the store.'));
         }
 
         $event = $normalizer->normalize($store->platform, self::REFRESH_TOPIC[$store->platform], $raw, (string) $store->name);
         if ($event === null || $event['order'] === null) {
-            return back()->with('error', 'Could not parse the order from the store.');
+            return back()->with('error', __('Could not parse the order from the store.'));
         }
 
         $contact = null;
@@ -148,7 +148,7 @@ class OrderController extends Controller
             $enricher->enrich($contact, $store);
         }
 
-        return back()->with('success', 'Order refreshed from '.$store->name.'.');
+        return back()->with('success', __('Order refreshed from :store.', ['store' => $store->name]));
     }
 
     public function fulfill(Request $request, EcommerceOrder $order): RedirectResponse
@@ -161,7 +161,7 @@ class OrderController extends Controller
 
         $store = EcommerceStore::find($order->store_id);
         if (! $store) {
-            return back()->with('error', 'Store not found.');
+            return back()->with('error', __('Store not found.'));
         }
 
         try {
@@ -171,13 +171,13 @@ class OrderController extends Controller
                 $validated['tracking_url'] ?? null,
             );
         } catch (\Throwable $e) {
-            return back()->with('error', 'Fulfillment failed: '.$e->getMessage());
+            return back()->with('error', __('Fulfillment failed: :error', ['error' => $e->getMessage()]));
         }
 
         // Only reflect locally if the store accepted the change, so the dashboard
         // never shows "fulfilled" for an order the platform actually rejected.
         if (! $result['ok']) {
-            return back()->with('error', 'The store rejected the fulfillment: '.$result['message']);
+            return back()->with('error', __('The store rejected the fulfillment: :message', ['message' => $result['message']]));
         }
 
         $order->update([
@@ -186,7 +186,7 @@ class OrderController extends Controller
             'tracking_url' => $validated['tracking_url'] ?? $order->tracking_url,
         ]);
 
-        return back()->with('success', 'Order marked as fulfilled at '.$store->name.'.');
+        return back()->with('success', __('Order marked as fulfilled at :store.', ['store' => $store->name]));
     }
 
     private function authorizeOrder(Request $request, EcommerceOrder $order): void

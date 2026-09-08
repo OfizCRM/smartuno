@@ -9,6 +9,17 @@ use App\Services\WebhookDispatchService;
 
 /**
  * Fan-out platform events to registered outbound webhook endpoints.
+ *
+ * NOT entitlement-gated, deliberately and pending a decision. The other two
+ * listeners on MessageReceived (AutomationTriggerListener, AutoReplyListener)
+ * stop for a read-only client, so do not read this file as "MessageReceived is
+ * gated" — it is not. The owner's decision named four things to stop (the
+ * chatbot auto-reply, the automation triggers, scheduled campaigns, scheduled
+ * posts) and outbound webhooks were not among them, and gating them would cut
+ * the tenant's own integrations off from data they are still allowed to read.
+ * The counter-argument is that this ships message bodies and contact PII to a
+ * tenant-controlled URL — one that does not go through StoreUrlGuard — for an
+ * account whose every HTTP write is refused.
  */
 class DispatchOutboundWebhookListener
 {

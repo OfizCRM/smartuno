@@ -227,12 +227,12 @@ class ContactController extends Controller
         fclose($handle);
 
         if ($headers === null || empty($data)) {
-            return back()->withErrors(['file' => 'The CSV file appears to be empty or has no valid rows.']);
+            return back()->withErrors(['file' => __('The CSV file appears to be empty or has no valid rows.')]);
         }
 
         $stats = $this->contactService->bulkImport($workspaceId, $data);
 
-        return back()->with('success', "Imported: {$stats['created']} created, {$stats['updated']} updated, {$stats['skipped']} skipped.");
+        return back()->with('success', __('Imported: :created created, :updated updated, :skipped skipped.', ['created' => $stats['created'], 'updated' => $stats['updated'], 'skipped' => $stats['skipped']]));
     }
 
     /**
@@ -291,7 +291,7 @@ class ContactController extends Controller
 
         if ($rows === []) {
             throw ValidationException::withMessages([
-                'rows' => 'Add at least one row with a phone number in international format (e.g. +1…).',
+                'rows' => __('Add at least one row with a phone number in international format (e.g. +1…).'),
             ]);
         }
 
@@ -299,7 +299,11 @@ class ContactController extends Controller
 
         $request->session()->flash(
             'success',
-            "Bulk import finished: {$stats['created']} created, {$stats['updated']} updated, {$stats['skipped']} skipped."
+            __('Bulk import finished: :created created, :updated updated, :skipped skipped.', [
+                'created' => $stats['created'],
+                'updated' => $stats['updated'],
+                'skipped' => $stats['skipped'],
+            ])
         );
 
         return Inertia::render('Contacts/BulkImport', $this->bulkImportProps($request));
@@ -353,7 +357,7 @@ class ContactController extends Controller
                 ->delete();
         }
 
-        return back()->with('success', "Tags updated for {$contactIds->count()} contact(s).");
+        return back()->with('success', trans_choice('Tags updated for :count contact(s).', $contactIds->count()));
     }
 
     public function bulkSegments(Request $request): RedirectResponse
@@ -405,7 +409,7 @@ class ContactController extends Controller
 
         Segment::whereIn('id', $segmentIds)->each(fn ($s) => $s->update(['contact_count' => $s->contacts()->count()]));
 
-        return back()->with('success', "Segments updated for {$contactIds->count()} contact(s).");
+        return back()->with('success', trans_choice('Segments updated for :count contact(s).', $contactIds->count()));
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -420,7 +424,7 @@ class ContactController extends Controller
             ->whereIn('uuid', $validated['uuids'])
             ->delete();
 
-        return back()->with('success', "{$deleted} contact(s) deleted.");
+        return back()->with('success', trans_choice(':count contact(s) deleted.', $deleted));
     }
 
     public function export(Request $request): HttpResponse

@@ -2329,30 +2329,6 @@ parameters:
 			path: app/Listeners/SendNewMessageNotification.php
 
 		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Listeners/SendSubscriptionCancelledNotification.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Listeners/SendSubscriptionRenewedNotification.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Listeners/SendSubscriptionStartedNotification.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Listeners/SendTrialEndingNotification.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$email\.$#'
 			identifier: property.notFound
 			count: 1
@@ -7149,12 +7125,6 @@ parameters:
 		-
 			message: '#^Call to function method_exists\(\) with Illuminate\\Mail\\MailManager and ''purge'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Services/Mail/MailService.php
-
-		-
-			message: '#^Method App\\Services\\Mail\\MailService\:\:replacePlaceholders\(\) has parameter \$replacements with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
 			count: 1
 			path: app/Services/Mail/MailService.php
 

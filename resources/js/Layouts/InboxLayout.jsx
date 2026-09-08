@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Toaster, toast } from 'sonner';
 import Sidebar from '@/Components/Sidebar';
 import UpgradeModal from '@/Components/UpgradeModal';
+import SubscriptionBanner from '@/Components/SubscriptionBanner';
 import useClientNav from '@/Layouts/useClientNav';
 
 export default function InboxLayout({ children }) {
@@ -54,6 +55,12 @@ export default function InboxLayout({ children }) {
                     </button>
                 </div>
             )}
+
+            {/* The inbox is the one client surface that does not use ClientLayout,
+                and the one a blocked customer is most likely to be sitting in when
+                they discover it. Same position as the impersonation bar: a shrink-0
+                child of the outer column, above the sidebar/content row. */}
+            <SubscriptionBanner />
 
             <div className="flex flex-1 overflow-hidden">
                 <Sidebar

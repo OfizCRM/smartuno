@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Notifications\UserWelcomeNotification;
 use App\Services\Mail\MailService;
+use App\Support\Romania;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Log;
 
@@ -15,8 +16,8 @@ class SendWelcomeNotification
 
         try {
             app(MailService::class)->sendWithTemplate('welcome', $user->email, [
-                'app_name'  => config('app.name'),
-                'user_name' => $user->name,
+                'app_name' => config('app.name'),
+                'user_name' => Romania::greetingName($user->name),
                 'login_url' => route('login'),
             ]);
         } catch (\Throwable $e) {

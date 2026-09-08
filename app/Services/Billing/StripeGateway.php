@@ -16,6 +16,7 @@ use App\Models\Workspace;
 use App\Notifications\BillingPaymentFailedNotification;
 use App\Services\Mail\MailService;
 use App\Services\WebhookIdempotencyService;
+use App\Support\Romania;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -332,7 +333,9 @@ class StripeGateway implements BillingGatewayInterface
         }
 
         $invoiceId = $invoice->id ?? 'unknown';
-        $amount = number_format(($invoice->amount_due ?? 0) / 100, 2);
+        // Romanian separators — this string is only ever displayed, in the email and
+        // in the in-app notification, never parsed back into a number.
+        $amount = number_format(($invoice->amount_due ?? 0) / 100, 2, ',', '.');
         $currency = strtoupper($invoice->currency ?? 'USD');
 
         // Mark the subscription as past_due if the gateway hasn't already, so the
@@ -700,7 +703,7 @@ class StripeGateway implements BillingGatewayInterface
         try {
             app(MailService::class)->sendWithTemplate('payment_failed', $user->email, [
                 'app_name' => config('app.name'),
-                'user_name' => $user->name,
+                'user_name' => Romania::greetingName($user->name),
                 'amount' => $amount,
                 'currency' => $currency,
                 'billing_url' => route('client.billing.index'),

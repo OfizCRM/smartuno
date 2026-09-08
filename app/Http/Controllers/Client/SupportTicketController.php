@@ -7,6 +7,8 @@ use App\Models\AdminUser;
 use App\Models\SupportReply;
 use App\Models\SupportTicket;
 use App\Services\Mail\MailService;
+use App\Support\Romania;
+use App\Support\TicketLabels;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -25,15 +27,15 @@ class SupportTicketController extends Controller
             ->paginate(15);
 
         $stats = [
-            'total'       => SupportTicket::where('user_id', $userId)->count(),
-            'open'        => SupportTicket::where('user_id', $userId)->where('status', 'open')->count(),
+            'total' => SupportTicket::where('user_id', $userId)->count(),
+            'open' => SupportTicket::where('user_id', $userId)->where('status', 'open')->count(),
             'in_progress' => SupportTicket::where('user_id', $userId)->where('status', 'in_progress')->count(),
-            'closed'      => SupportTicket::where('user_id', $userId)->where('status', 'closed')->count(),
+            'closed' => SupportTicket::where('user_id', $userId)->where('status', 'closed')->count(),
         ];
 
         return Inertia::render('client/Support/Index', [
             'tickets' => $tickets,
-            'stats'   => $stats,
+            'stats' => $stats,
         ]);
     }
 
@@ -69,12 +71,12 @@ class SupportTicketController extends Controller
 
         try {
             $mailer->sendWithTemplate('support_ticket_created', $user->email, [
-                'app_name'        => $appName,
-                'user_name'       => $user->name,
-                'ticket_id'       => $ticket->id,
-                'ticket_subject'  => $ticket->subject,
-                'ticket_priority' => ucfirst($ticket->priority),
-                'ticket_url'      => $ticketUrl,
+                'app_name' => $appName,
+                'user_name' => Romania::greetingName($user->name),
+                'ticket_id' => $ticket->id,
+                'ticket_subject' => $ticket->subject,
+                'ticket_priority' => TicketLabels::priority($ticket->priority),
+                'ticket_url' => $ticketUrl,
             ]);
         } catch (\Throwable $e) {
             Log::error('Failed to send support_ticket_created email', ['error' => $e->getMessage()]);
@@ -84,13 +86,13 @@ class SupportTicketController extends Controller
             $admins = AdminUser::where('status', AdminUser::STATUS_ACTIVE)->get();
             foreach ($admins as $admin) {
                 $mailer->sendWithTemplate('support_ticket_admin_new', $admin->email, [
-                    'ticket_id'       => $ticket->id,
-                    'user_name'       => $user->name,
-                    'user_email'      => $user->email,
-                    'ticket_subject'  => $ticket->subject,
-                    'ticket_priority' => ucfirst($ticket->priority),
-                    'ticket_message'  => $ticket->message,
-                    'ticket_url'      => $adminTicketUrl,
+                    'ticket_id' => $ticket->id,
+                    'user_name' => $user->name,
+                    'user_email' => $user->email,
+                    'ticket_subject' => $ticket->subject,
+                    'ticket_priority' => TicketLabels::priority($ticket->priority),
+                    'ticket_message' => $ticket->message,
+                    'ticket_url' => $adminTicketUrl,
                 ]);
             }
         } catch (\Throwable $e) {
@@ -137,12 +139,12 @@ class SupportTicketController extends Controller
             $admins = AdminUser::where('status', AdminUser::STATUS_ACTIVE)->get();
             foreach ($admins as $admin) {
                 $mailer->sendWithTemplate('support_ticket_reply_admin', $admin->email, [
-                    'ticket_id'      => $supportTicket->id,
-                    'user_name'      => $user->name,
-                    'user_email'     => $user->email,
+                    'ticket_id' => $supportTicket->id,
+                    'user_name' => $user->name,
+                    'user_email' => $user->email,
                     'ticket_subject' => $supportTicket->subject,
-                    'reply_message'  => $validated['message'],
-                    'ticket_url'     => $adminTicketUrl,
+                    'reply_message' => $validated['message'],
+                    'ticket_url' => $adminTicketUrl,
                 ]);
             }
         } catch (\Throwable $e) {

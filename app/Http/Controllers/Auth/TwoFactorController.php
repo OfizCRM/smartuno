@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -57,7 +58,7 @@ class TwoFactorController extends Controller
         $secret = $request->session()->get('2fa_secret');
 
         if (! $secret || ! $this->google2fa->verifyKey($secret, $request->input('code'))) {
-            return back()->withErrors(['code' => 'Invalid verification code.']);
+            return back()->withErrors(['code' => __('Invalid verification code.')]);
         }
 
         $user->update([
@@ -123,7 +124,7 @@ class TwoFactorController extends Controller
         ]);
 
         $userId = $request->session()->get('2fa_user_id');
-        $user = \App\Models\User::findOrFail($userId);
+        $user = User::findOrFail($userId);
         $code = $request->input('code');
 
         $valid = false;
@@ -142,7 +143,7 @@ class TwoFactorController extends Controller
         }
 
         if (! $valid) {
-            return back()->withErrors(['code' => 'Invalid code.']);
+            return back()->withErrors(['code' => __('Invalid code.')]);
         }
 
         auth()->login($user);

@@ -124,7 +124,7 @@ class IntegrationConfigController extends Controller
             app(StorageManager::class)->clearCache();
         }
 
-        return back()->with('success', 'Integration saved.');
+        return back()->with('success', __('Integration saved.'));
     }
 
     public function test(Request $request, string $provider): RedirectResponse|JsonResponse
@@ -133,7 +133,7 @@ class IntegrationConfigController extends Controller
 
         $config = IntegrationConfig::forProvider($provider);
         if (! $config) {
-            return response()->json(['ok' => false, 'message' => 'Not configured yet.']);
+            return response()->json(['ok' => false, 'message' => __('Not configured yet.')]);
         }
 
         $result = app(ConnectionTester::class)->test($config);
@@ -152,7 +152,7 @@ class IntegrationConfigController extends Controller
 
         $config = IntegrationConfig::forProvider($provider);
         if (! $config) {
-            return back()->with('error', 'Configure credentials before enabling.');
+            return back()->with('error', __('Configure credentials before enabling.'));
         }
 
         $updates = ['enabled' => ! $config->enabled];
@@ -167,7 +167,7 @@ class IntegrationConfigController extends Controller
             app(StorageManager::class)->clearCache();
         }
 
-        return back()->with('success', 'Integration '.($config->enabled ? 'enabled' : 'disabled').'.');
+        return back()->with('success', $config->enabled ? __('Integration enabled.') : __('Integration disabled.'));
     }
 
     public function setDefault(Request $request, string $provider): RedirectResponse
@@ -176,7 +176,7 @@ class IntegrationConfigController extends Controller
 
         $config = IntegrationConfig::forProvider($provider);
         if (! $config || ! $config->enabled) {
-            return back()->with('error', 'Only an enabled storage provider can be set as default.');
+            return back()->with('error', __('Only an enabled storage provider can be set as default.'));
         }
 
         // Clear is_default on all other storage providers
@@ -189,7 +189,7 @@ class IntegrationConfigController extends Controller
 
         app(StorageManager::class)->clearCache();
 
-        return back()->with('success', IntegrationConfig::LABELS[$provider].' set as default storage.');
+        return back()->with('success', __(':provider set as default storage.', ['provider' => IntegrationConfig::LABELS[$provider]]));
     }
 
     public function rotate(Request $request, string $provider): RedirectResponse
@@ -198,14 +198,14 @@ class IntegrationConfigController extends Controller
 
         $config = IntegrationConfig::forProvider($provider);
         if (! $config) {
-            return back()->with('error', 'Not configured.');
+            return back()->with('error', __('Not configured.'));
         }
 
         $secret = bin2hex(random_bytes(32));
         $config->update(['webhook_secret' => $secret, 'updated_by_admin_id' => auth('admin')->id()]);
         $this->auditLog($request, $config, 'rotate', ['webhook_secret']);
 
-        return back()->with('success', 'Webhook secret rotated.');
+        return back()->with('success', __('Webhook secret rotated.'));
     }
 
     public function auditLogIndex(Request $request): Response

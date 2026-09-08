@@ -62,7 +62,7 @@ class SocialAccountController extends Controller
             $authUrl = $this->oauth->getAuthUrl($network, $this->workspaceId($request), $callbackUrl);
         } catch (\RuntimeException $e) {
             return redirect()->route('client.social.accounts.index')
-                ->with('error', "OAuth for {$network} is not configured. Please contact your administrator.");
+                ->with('error', __('OAuth for :network is not configured. Please contact your administrator.', ['network' => $network]));
         }
 
         return redirect($authUrl);
@@ -81,12 +81,12 @@ class SocialAccountController extends Controller
         $isMetaPage = in_array($network, ['facebook', 'instagram'], true);
 
         $validated = $request->validate([
-            'access_token'  => ['required', 'string', 'max:2048'],
+            'access_token' => ['required', 'string', 'max:2048'],
             'refresh_token' => ['nullable', 'string', 'max:2048'],
-            'page_id'       => [$isMetaPage ? 'required' : 'nullable', 'string', 'max:64'],
+            'page_id' => [$isMetaPage ? 'required' : 'nullable', 'string', 'max:64'],
         ]);
 
-        $wid   = $this->workspaceId($request);
+        $wid = $this->workspaceId($request);
         $token = trim($validated['access_token']);
 
         if ($isMetaPage) {
@@ -97,15 +97,15 @@ class SocialAccountController extends Controller
             $info = $this->drivers[$network]->fetchAccountInfo($token);
         } catch (\Throwable $e) {
             Log::warning('Social manual connect: account info fetch threw', [
-                'network'      => $network,
+                'network' => $network,
                 'workspace_id' => $wid,
-                'error'        => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             $info = ['account_id' => ''];
         }
 
         if (empty($info['account_id'])) {
-            return back()->with('error', ucfirst($network).' rejected the token — could not fetch your account. Check that the token is valid and has the required scopes.');
+            return back()->with('error', __(':network rejected the token — could not fetch your account. Check that the token is valid and has the required scopes.', ['network' => ucfirst($network)]));
         }
 
         $existing = SocialAccount::where('workspace_id', $wid)
@@ -115,7 +115,7 @@ class SocialAccountController extends Controller
 
         // Keep a previously stored refresh token on re-connect when none is pasted.
         $pastedRefresh = trim((string) ($validated['refresh_token'] ?? ''));
-        $refreshToken  = $pastedRefresh !== '' ? $pastedRefresh : $existing?->refresh_token;
+        $refreshToken = $pastedRefresh !== '' ? $pastedRefresh : $existing?->refresh_token;
 
         // With a refresh token, attempt an immediate refresh: success proves the
         // platform OAuth client can renew this token and yields the real expiry,
@@ -127,17 +127,17 @@ class SocialAccountController extends Controller
             try {
                 $refreshed = $this->oauth->refresh($network, $refreshToken);
                 if (! empty($refreshed['access_token'])) {
-                    $token        = $refreshed['access_token'];
+                    $token = $refreshed['access_token'];
                     $refreshToken = $refreshed['refresh_token'] ?? $refreshToken;
-                    $expiresAt    = isset($refreshed['expires_in'])
+                    $expiresAt = isset($refreshed['expires_in'])
                         ? now()->addSeconds((int) $refreshed['expires_in'])
                         : null;
                 }
             } catch (\Throwable $e) {
                 Log::info('Social manual connect: immediate token refresh unavailable — storing pasted token without expiry', [
-                    'network'      => $network,
+                    'network' => $network,
                     'workspace_id' => $wid,
-                    'error'        => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
@@ -145,17 +145,17 @@ class SocialAccountController extends Controller
         SocialAccount::updateOrCreate(
             ['workspace_id' => $wid, 'network' => $network, 'account_id' => $info['account_id']],
             [
-                'name'             => $info['name'] !== '' ? $info['name'] : $info['account_id'],
-                'picture_url'      => $info['picture_url'] ?? null,
-                'access_token'     => $token,
-                'refresh_token'    => $refreshToken,
+                'name' => $info['name'] !== '' ? $info['name'] : $info['account_id'],
+                'picture_url' => $info['picture_url'] ?? null,
+                'access_token' => $token,
+                'refresh_token' => $refreshToken,
                 'token_expires_at' => $expiresAt,
-                'active'           => true,
+                'active' => true,
             ]
         );
 
         return redirect()->route('client.social.accounts.index')
-            ->with('success', ucfirst($network).' account connected.');
+            ->with('success', __(':network account connected.', ['network' => ucfirst($network)]));
     }
 
     /**
@@ -172,21 +172,20 @@ class SocialAccountController extends Controller
 
         $res = Http::get("https://graph.facebook.com/v19.0/{$pageId}", [
             'access_token' => $token,
-            'fields'       => $fields,
+            'fields' => $fields,
         ])->json();
 
         if (isset($res['error']) || empty($res['id'])) {
             $msg = $res['error']['message'] ?? 'Unknown Graph API error.';
 
             Log::warning('Social manual connect: page fetch failed', [
-                'network'      => $network,
+                'network' => $network,
                 'workspace_id' => $wid,
-                'page_id'      => $pageId,
-                'response'     => $res,
+                'page_id' => $pageId,
+                'response' => $res,
             ]);
 
-            return back()->with('error', 'Could not fetch the Facebook Page: '.$msg
-                .' Check the Page ID and that the token has the required permissions.');
+            return back()->with('error', __('Could not fetch the Facebook Page: :error Check the Page ID and that the token has the required permissions.', ['error' => $msg]));
         }
 
         // Prefer the page's own token (returned when the pasted token can manage
@@ -197,7 +196,7 @@ class SocialAccountController extends Controller
             $ig = $res['instagram_business_account'] ?? null;
 
             if (! $ig || empty($ig['id'])) {
-                return back()->with('error', 'No Instagram Business account is linked to this Facebook Page. Link your Instagram professional account to the Page in Meta Business Suite → Linked Accounts, then try again.');
+                return back()->with('error', __('No Instagram Business account is linked to this Facebook Page. Link your Instagram professional account to the Page in Meta Business Suite → Linked Accounts, then try again.'));
             }
 
             $igName = ! empty($ig['username'])
@@ -207,33 +206,33 @@ class SocialAccountController extends Controller
             SocialAccount::updateOrCreate(
                 ['workspace_id' => $wid, 'network' => 'instagram', 'account_id' => $ig['id']],
                 [
-                    'name'             => $igName,
-                    'picture_url'      => $ig['profile_picture_url'] ?? ($res['picture']['data']['url'] ?? null),
-                    'access_token'     => $pageToken,
-                    'refresh_token'    => null,
+                    'name' => $igName,
+                    'picture_url' => $ig['profile_picture_url'] ?? ($res['picture']['data']['url'] ?? null),
+                    'access_token' => $pageToken,
+                    'refresh_token' => null,
                     'token_expires_at' => null,
-                    'active'           => true,
+                    'active' => true,
                 ]
             );
 
             return redirect()->route('client.social.accounts.index')
-                ->with('success', 'Instagram account '.$igName.' connected.');
+                ->with('success', __('Instagram account :name connected.', ['name' => $igName]));
         }
 
         SocialAccount::updateOrCreate(
             ['workspace_id' => $wid, 'network' => 'facebook', 'account_id' => (string) $res['id']],
             [
-                'name'             => $res['name'] ?? $pageId,
-                'picture_url'      => $res['picture']['data']['url'] ?? null,
-                'access_token'     => $pageToken,
-                'refresh_token'    => null,
+                'name' => $res['name'] ?? $pageId,
+                'picture_url' => $res['picture']['data']['url'] ?? null,
+                'access_token' => $pageToken,
+                'refresh_token' => null,
                 'token_expires_at' => null,
-                'active'           => true,
+                'active' => true,
             ]
         );
 
         return redirect()->route('client.social.accounts.index')
-            ->with('success', 'Facebook Page '.($res['name'] ?? $pageId).' connected.');
+            ->with('success', __('Facebook Page :name connected.', ['name' => $res['name'] ?? $pageId]));
     }
 
     public function callback(Request $request, string $network): RedirectResponse
@@ -245,19 +244,19 @@ class SocialAccountController extends Controller
         $stored = Session::pull('social_oauth_state', []);
 
         if ($error || ! $code) {
-            return redirect()->route('client.social.accounts.index')->with('error', 'OAuth failed: '.($error ?? 'No code received'));
+            return redirect()->route('client.social.accounts.index')->with('error', __('OAuth failed: :error', ['error' => $error ?? __('No code received')]));
         }
 
         // Verify state to prevent OAuth CSRF / account-linking hijack
         if (empty($stored['state']) || ! hash_equals($stored['state'], (string) $state)) {
-            return redirect()->route('client.social.accounts.index')->with('error', 'Invalid OAuth state. Please try connecting again.');
+            return redirect()->route('client.social.accounts.index')->with('error', __('Invalid OAuth state. Please try connecting again.'));
         }
 
         $callbackUrl = route('client.social.oauth.callback', $network);
         $tokens = $this->oauth->exchangeCode($network, $code, $callbackUrl, $stored);
 
         if (empty($tokens['access_token'])) {
-            return redirect()->route('client.social.accounts.index')->with('error', 'Failed to obtain access token.');
+            return redirect()->route('client.social.accounts.index')->with('error', __('Failed to obtain access token.'));
         }
 
         $driver = $this->drivers[$network] ?? null;
@@ -296,7 +295,7 @@ class SocialAccountController extends Controller
                     ]);
 
                     return redirect()->route('client.social.accounts.index')
-                        ->with('error', 'Could not fetch your '.ucfirst($network).' pages: '.$msg);
+                        ->with('error', __('Could not fetch your :network pages: :error', ['network' => ucfirst($network), 'error' => $msg]));
                 }
 
                 $pages = array_merge($pages, $pagesResp['data'] ?? []);
@@ -353,11 +352,11 @@ class SocialAccountController extends Controller
 
             if ($connected === 0 && $network === 'instagram') {
                 return redirect()->route('client.social.accounts.index')
-                    ->with('error', 'No Instagram Business accounts were found linked to your Facebook Pages. Make sure your Instagram account is set to Business type and connected to a Facebook Page.');
+                    ->with('error', __('No Instagram Business accounts were found linked to your Facebook Pages. Make sure your Instagram account is set to Business type and connected to a Facebook Page.'));
             }
 
             return redirect()->route('client.social.accounts.index')
-                ->with('success', $connected.' '.ucfirst($network).' account(s) connected.');
+                ->with('success', trans_choice(':count :network account(s) connected.', $connected, ['network' => ucfirst($network)]));
         }
 
         SocialAccount::updateOrCreate(
@@ -372,7 +371,7 @@ class SocialAccountController extends Controller
             ]
         );
 
-        return redirect()->route('client.social.accounts.index')->with('success', ucfirst($network).' account connected.');
+        return redirect()->route('client.social.accounts.index')->with('success', __(':network account connected.', ['network' => ucfirst($network)]));
     }
 
     /**
@@ -401,18 +400,10 @@ class SocialAccountController extends Controller
         ]);
 
         if ($missing) {
-            return 'Facebook did not grant the required permission(s): '.implode(', ', $missing)
-                .'. This usually means your Meta App does not have Advanced Access for them '
-                .'(request it under App Review → Permissions and Features), your Facebook Login '
-                .'for Business configuration is missing them, or they were unchecked during login. '
-                .'Please reconnect and keep all requested permissions selected.';
+            return __('Facebook did not grant the required permission(s): :permissions. This usually means your Meta App does not have Advanced Access for them (request it under App Review → Permissions and Features), your Facebook Login for Business configuration is missing them, or they were unchecked during login. Please reconnect and keep all requested permissions selected.', ['permissions' => implode(', ', $missing)]);
         }
 
-        return 'Facebook granted the permissions but returned no Pages. During login, on the '
-            .'"What Pages do you want to use?" screen, make sure at least one Page is selected '
-            .'(use "Edit access" to pick Pages), and that your account has full admin access to it. '
-            .'If the problem persists, remove the app under Facebook Settings → Business integrations '
-            .'and connect again.';
+        return __('Facebook granted the permissions but returned no Pages. During login, on the “What Pages do you want to use?” screen, make sure at least one Page is selected (use “Edit access” to pick Pages), and that your account has full admin access to it. If the problem persists, remove the app under Facebook Settings → Business integrations and connect again.');
     }
 
     public function disconnect(Request $request, SocialAccount $account): RedirectResponse
@@ -420,6 +411,6 @@ class SocialAccountController extends Controller
         abort_unless((int) $account->workspace_id === $this->workspaceId($request), 403);
         $account->delete();
 
-        return back()->with('success', 'Account disconnected.');
+        return back()->with('success', __('Account disconnected.'));
     }
 }

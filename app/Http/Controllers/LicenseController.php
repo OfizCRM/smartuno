@@ -65,6 +65,6 @@ class LicenseController extends Controller
             throw ValidationException::withMessages(['license_code' => $verification['message']]);
         }
 
-        return redirect()->route('admin.login')->with('status', 'License activated — thank you!');
+        return redirect()->route('admin.login')->with('status', __('License activated — thank you!'));
     }
 }

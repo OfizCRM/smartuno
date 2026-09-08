@@ -28,7 +28,7 @@ class PusherSettingsController extends Controller
         $configured = ! empty(SystemSetting::get('pusher_app_key')) && ! empty(SystemSetting::get('pusher_app_secret'));
 
         return Inertia::render('Admin/PusherSettings/Index', [
-            'settings'   => $settings,
+            'settings' => $settings,
             'configured' => $configured,
         ]);
     }
@@ -36,11 +36,11 @@ class PusherSettingsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'pusher_app_id'      => ['nullable', 'string', 'max:64'],
-            'pusher_app_key'     => ['nullable', 'string', 'max:128'],
-            'pusher_app_secret'  => ['nullable', 'string', 'max:255'],
+            'pusher_app_id' => ['nullable', 'string', 'max:64'],
+            'pusher_app_key' => ['nullable', 'string', 'max:128'],
+            'pusher_app_secret' => ['nullable', 'string', 'max:255'],
             'pusher_app_cluster' => ['nullable', 'string', 'max:32'],
-            'pusher_enabled'     => ['nullable', 'string', 'in:true,false'],
+            'pusher_enabled' => ['nullable', 'string', 'in:true,false'],
         ]);
 
         $secrets = ['pusher_app_secret'];
@@ -57,32 +57,32 @@ class PusherSettingsController extends Controller
             SystemSetting::set($key, $value, $isSecret, 'pusher');
         }
 
-        return back()->with('success', 'Pusher settings saved.');
+        return back()->with('success', __('Pusher settings saved.'));
     }
 
     public function test(Request $request)
     {
-        $key     = SystemSetting::get('pusher_app_key');
-        $secret  = SystemSetting::get('pusher_app_secret');
-        $appId   = SystemSetting::get('pusher_app_id');
+        $key = SystemSetting::get('pusher_app_key');
+        $secret = SystemSetting::get('pusher_app_secret');
+        $appId = SystemSetting::get('pusher_app_id');
         $cluster = SystemSetting::get('pusher_app_cluster', 'mt1');
 
         if (! $key || ! $secret || ! $appId) {
-            return response()->json(['success' => false, 'message' => 'Pusher credentials not configured.'], 422);
+            return response()->json(['success' => false, 'message' => __('Pusher credentials not configured.')], 422);
         }
 
         try {
             $pusher = new Pusher($key, $secret, $appId, [
                 'cluster' => $cluster,
-                'useTLS'  => true,
+                'useTLS' => true,
             ]);
 
             // Trigger a test event on a private channel to verify credentials
             $pusher->trigger('test-channel', 'test-event', ['message' => 'Connection test']);
 
-            return response()->json(['success' => true, 'message' => 'Pusher connection successful.']);
+            return response()->json(['success' => true, 'message' => __('Pusher connection successful.')]);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => 'Connection failed: '.$e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => __('Connection failed: :error', ['error' => $e->getMessage()])], 422);
         }
     }
 }

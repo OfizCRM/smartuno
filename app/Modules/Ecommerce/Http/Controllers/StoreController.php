@@ -12,6 +12,7 @@ use App\Modules\Ecommerce\Services\StoreConnector;
 use App\Modules\Integrations\Models\IntegrationConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -104,8 +105,8 @@ class StoreController extends Controller
         );
 
         return $result['ok']
-            ? back()->with('success', self::LABELS[$validated['platform']].' connected. '.$result['message'])
-            : back()->with('error', 'Could not connect: '.$result['message']);
+            ? back()->with('success', __(':platform connected. :message', ['platform' => self::LABELS[$validated['platform']], 'message' => $result['message']]))
+            : back()->with('error', __('Could not connect: :message', ['message' => $result['message']]));
     }
 
     public function test(Request $request, EcommerceStore $store): RedirectResponse
@@ -122,7 +123,7 @@ class StoreController extends Controller
         SyncStoreCustomersJob::dispatch($store->id);
         SyncStoreProductsJob::dispatch($store->id);
 
-        return back()->with('success', 'Customer & product sync started.');
+        return back()->with('success', __('Customer & product sync started.'));
     }
 
     public function destroy(Request $request, EcommerceStore $store): RedirectResponse
@@ -133,14 +134,14 @@ class StoreController extends Controller
         try {
             StoreClientFactory::for($store)->deregisterWebhooks(EcommerceStore::webhookUrlFor($store));
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('ecommerce.webhook.deregister_failed', [
+            Log::warning('ecommerce.webhook.deregister_failed', [
                 'store' => $store->id, 'message' => $e->getMessage(),
             ]);
         }
 
         $store->delete();
 
-        return back()->with('success', 'Store disconnected.');
+        return back()->with('success', __('Store disconnected.'));
     }
 
     private function authorizeStore(Request $request, EcommerceStore $store): void

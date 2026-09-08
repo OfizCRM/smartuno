@@ -36,7 +36,7 @@ class LicenseController extends Controller
     public function checkUpdate(): JsonResponse
     {
         if (! $this->license->enabled()) {
-            return response()->json(['ok' => false, 'update_available' => false, 'message' => 'Vendor updates are disabled.'], 403);
+            return response()->json(['ok' => false, 'update_available' => false, 'message' => __('Vendor updates are disabled.')], 403);
         }
 
         return response()->json($this->license->checkUpdate());
@@ -46,7 +46,7 @@ class LicenseController extends Controller
     public function applyUpdate(Updater $updater): JsonResponse
     {
         if (! $this->license->enabled()) {
-            return response()->json(['ok' => false, 'message' => 'Vendor updates are disabled.'], 403);
+            return response()->json(['ok' => false, 'message' => __('Vendor updates are disabled.')], 403);
         }
 
         return response()->json($updater->apply());

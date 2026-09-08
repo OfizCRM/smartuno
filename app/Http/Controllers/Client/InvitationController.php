@@ -37,7 +37,7 @@ class InvitationController extends Controller
             ->first();
 
         if ($existing) {
-            return back()->withErrors(['email' => 'An invitation has already been sent to this email.']);
+            return back()->withErrors(['email' => __('An invitation has already been sent to this email.')]);
         }
 
         $invitation = Invitation::create([

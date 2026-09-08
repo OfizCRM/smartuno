@@ -96,7 +96,7 @@ class InboxSetupController extends Controller
         $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
 
         if (! CredentialResolver::system()->meta()?->appId()) {
-            return response()->json(['message' => 'Meta App credentials are not configured. Please ask your administrator to configure them in Admin → Integrations → Meta App.'], 422);
+            return response()->json(['message' => __('Meta App credentials are not configured. Please ask your administrator to configure them in Admin → Integrations → Meta App.')], 422);
         }
 
         // Ensure the Meta App delivers `instagram` webhook events to our endpoint.
@@ -105,12 +105,12 @@ class InboxSetupController extends Controller
         $warnings = [];
         $appSub = $this->webhooks->registerAppWebhook('instagram');
         if (! $appSub['ok']) {
-            $warnings[] = 'Webhook registration with Meta failed — inbound messages will NOT arrive until it succeeds: '.$appSub['error'];
+            $warnings[] = __('Webhook registration with Meta failed — inbound messages will NOT arrive until it succeeds: :error', ['error' => $appSub['error']]);
         }
 
         $accessToken = $this->exchangeCodeForToken($validated['code']);
         if (! $accessToken) {
-            return response()->json(['message' => 'Failed to exchange authorization code with Meta.'], 422);
+            return response()->json(['message' => __('Failed to exchange authorization code with Meta.')], 422);
         }
 
         $longToken = $this->exchangeForLongLivedToken($accessToken);
@@ -128,7 +128,7 @@ class InboxSetupController extends Controller
                 'response' => $pagesRes->json(),
             ]);
 
-            return response()->json(['message' => 'Could not fetch your Facebook pages: '.($pagesRes->json('error.message') ?? 'unknown error')], 422);
+            return response()->json(['message' => __('Could not fetch your Facebook pages: :error', ['error' => $pagesRes->json('error.message') ?? 'unknown error'])], 422);
         }
 
         $pages = $pagesRes->json('data', []);
@@ -159,7 +159,7 @@ class InboxSetupController extends Controller
             // never delivers inbound Instagram messages to our /webhooks/meta endpoint.
             $pageSub = $this->webhooks->subscribePage($pageId, $pageToken, 'instagram');
             if (! $pageSub['ok']) {
-                $warnings[] = "Page {$pageId} could not be subscribed to messaging webhooks — inbound messages for it will NOT arrive: ".$pageSub['error'];
+                $warnings[] = __('Page :page could not be subscribed to messaging webhooks — inbound messages for it will NOT arrive: :error', ['page' => $pageId, 'error' => $pageSub['error']]);
             }
 
             // Persisted shape mirrors InboxDemoSeeder + what InstagramDriver expects:
@@ -216,8 +216,8 @@ class InboxSetupController extends Controller
         if ($connected === 0) {
             $pageCount = count($pages);
             $message = $pageCount === 0
-                ? 'No Facebook Pages were returned. Make sure you granted page access during authorization and your Meta App has the pages_show_list permission in its Social config.'
-                : 'No Instagram Business accounts were found on your '.$pageCount.' authorized page(s). To fix this: (1) Go to Meta Business Suite → your Facebook Page → Linked Accounts → link your Instagram account. (2) Make sure your Instagram is a Professional (Business or Creator) account. (3) Ensure your Social Embedded Signup config includes the instagram_basic permission.';
+                ? __('No Facebook Pages were returned. Make sure you granted page access during authorization and your Meta App has the pages_show_list permission in its Social config.')
+                : __('No Instagram Business accounts were found on your :count authorized page(s). To fix this: (1) Go to Meta Business Suite → your Facebook Page → Linked Accounts → link your Instagram account. (2) Make sure your Instagram is a Professional (Business or Creator) account. (3) Ensure your Social Embedded Signup config includes the instagram_basic permission.', ['count' => $pageCount]);
 
             return response()->json(['message' => $message], 422);
         }
@@ -234,7 +234,7 @@ class InboxSetupController extends Controller
         $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
 
         if (! CredentialResolver::system()->meta()?->appId()) {
-            return response()->json(['message' => 'Meta App credentials are not configured. Please ask your administrator to configure them in Admin → Integrations → Meta App.'], 422);
+            return response()->json(['message' => __('Meta App credentials are not configured. Please ask your administrator to configure them in Admin → Integrations → Meta App.')], 422);
         }
 
         // Ensure the Meta App delivers `page` (Messenger) webhook events to our
@@ -243,12 +243,12 @@ class InboxSetupController extends Controller
         $warnings = [];
         $appSub = $this->webhooks->registerAppWebhook('page');
         if (! $appSub['ok']) {
-            $warnings[] = 'Webhook registration with Meta failed — inbound messages will NOT arrive until it succeeds: '.$appSub['error'];
+            $warnings[] = __('Webhook registration with Meta failed — inbound messages will NOT arrive until it succeeds: :error', ['error' => $appSub['error']]);
         }
 
         $accessToken = $this->exchangeCodeForToken($validated['code']);
         if (! $accessToken) {
-            return response()->json(['message' => 'Failed to exchange authorization code with Meta.'], 422);
+            return response()->json(['message' => __('Failed to exchange authorization code with Meta.')], 422);
         }
 
         $longToken = $this->exchangeForLongLivedToken($accessToken);
@@ -265,7 +265,7 @@ class InboxSetupController extends Controller
                 'response' => $pagesRes->json(),
             ]);
 
-            return response()->json(['message' => 'Could not fetch your Facebook pages: '.($pagesRes->json('error.message') ?? 'unknown error')], 422);
+            return response()->json(['message' => __('Could not fetch your Facebook pages: :error', ['error' => $pagesRes->json('error.message') ?? 'unknown error'])], 422);
         }
 
         $pages = $pagesRes->json('data', []);
@@ -312,7 +312,7 @@ class InboxSetupController extends Controller
             // Subscribe the page to Messenger webhooks
             $pageSub = $this->webhooks->subscribePage($pageId, $pageToken, 'page');
             if (! $pageSub['ok']) {
-                $warnings[] = "Page {$pageId} ({$pageName}) could not be subscribed to messaging webhooks — inbound messages for it will NOT arrive: ".$pageSub['error'];
+                $warnings[] = __('Page :page (:name) could not be subscribed to messaging webhooks — inbound messages for it will NOT arrive: :error', ['page' => $pageId, 'name' => $pageName, 'error' => $pageSub['error']]);
             }
 
             $existing = ChannelAccount::where('workspace_id', $workspaceId)
@@ -355,7 +355,7 @@ class InboxSetupController extends Controller
 
         if ($connected === 0) {
             return response()->json([
-                'message' => 'No Facebook Pages found on your account. Make sure you manage at least one Facebook Page.',
+                'message' => __('No Facebook Pages found on your account. Make sure you manage at least one Facebook Page.'),
             ], 422);
         }
 
@@ -391,7 +391,7 @@ class InboxSetupController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Could not fetch the Facebook Page: '.($pageRes->json('error.message') ?? 'unknown error')
+                'message' => __('Could not fetch the Facebook Page: :error', ['error' => $pageRes->json('error.message') ?? 'unknown error'])
                     .' — check the Page ID and that the token has the pages_show_list, instagram_basic and instagram_manage_messages permissions.',
             ], 422);
         }
@@ -401,7 +401,7 @@ class InboxSetupController extends Controller
 
         if (! $igAccount || empty($igAccount['id'])) {
             return response()->json([
-                'message' => 'No Instagram Business account is linked to this Facebook Page. Link your Instagram professional account to the Page in Meta Business Suite → Linked Accounts, then try again.',
+                'message' => __('No Instagram Business account is linked to this Facebook Page. Link your Instagram professional account to the Page in Meta Business Suite → Linked Accounts, then try again.'),
             ], 422);
         }
 
@@ -414,11 +414,11 @@ class InboxSetupController extends Controller
         $warnings = [];
         $appSub = $this->webhooks->registerAppWebhook('instagram');
         if (! $appSub['ok']) {
-            $warnings[] = 'Webhook registration with Meta failed — inbound messages will NOT arrive until it succeeds: '.$appSub['error'];
+            $warnings[] = __('Webhook registration with Meta failed — inbound messages will NOT arrive until it succeeds: :error', ['error' => $appSub['error']]);
         }
         $pageSub = $this->webhooks->subscribePage($pageId, $pageToken, 'instagram');
         if (! $pageSub['ok']) {
-            $warnings[] = "Page {$pageId} could not be subscribed to messaging webhooks — inbound messages for it will NOT arrive: ".$pageSub['error'];
+            $warnings[] = __('Page :page could not be subscribed to messaging webhooks — inbound messages for it will NOT arrive: :error', ['page' => $pageId, 'error' => $pageSub['error']]);
         }
 
         $credentials = ['access_token' => $pageToken, 'instagram_account_id' => $igId];
@@ -490,7 +490,7 @@ class InboxSetupController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Could not fetch the Facebook Page: '.($pageRes->json('error.message') ?? 'unknown error')
+                'message' => __('Could not fetch the Facebook Page: :error', ['error' => $pageRes->json('error.message') ?? 'unknown error'])
                     .' — check the Page ID and that the token has the pages_show_list and pages_messaging permissions.',
             ], 422);
         }
@@ -512,7 +512,7 @@ class InboxSetupController extends Controller
 
         if (! $pageToken) {
             return response()->json([
-                'message' => 'The token provided is not a Page Access Token for this Page and no Page token could be derived from it. Generate a Page Access Token for this Page and try again.',
+                'message' => __('The token provided is not a Page Access Token for this Page and no Page token could be derived from it. Generate a Page Access Token for this Page and try again.'),
             ], 422);
         }
 
@@ -521,11 +521,11 @@ class InboxSetupController extends Controller
         $warnings = [];
         $appSub = $this->webhooks->registerAppWebhook('page');
         if (! $appSub['ok']) {
-            $warnings[] = 'Webhook registration with Meta failed — inbound messages will NOT arrive until it succeeds: '.$appSub['error'];
+            $warnings[] = __('Webhook registration with Meta failed — inbound messages will NOT arrive until it succeeds: :error', ['error' => $appSub['error']]);
         }
         $pageSub = $this->webhooks->subscribePage($pageId, $pageToken, 'page');
         if (! $pageSub['ok']) {
-            $warnings[] = "Page {$pageId} could not be subscribed to messaging webhooks — inbound messages for it will NOT arrive: ".$pageSub['error'];
+            $warnings[] = __('Page :page could not be subscribed to messaging webhooks — inbound messages for it will NOT arrive: :error', ['page' => $pageId, 'error' => $pageSub['error']]);
         }
 
         $existing = ChannelAccount::where('workspace_id', $workspaceId)
@@ -647,7 +647,7 @@ class InboxSetupController extends Controller
                 ->where('workspace_id', $workspaceId)
                 ->where('enabled', true)
                 ->exists();
-            abort_unless($exists, 422, 'Chatbot not found or not enabled.');
+            abort_unless($exists, 422, __('Chatbot not found or not enabled.'));
         }
 
         $meta = $channelAccount->meta_json ?? [];
@@ -658,7 +658,7 @@ class InboxSetupController extends Controller
         }
         $channelAccount->update(['meta_json' => $meta]);
 
-        $label = $chatbotId ? 'Chatbot assigned.' : 'Chatbot removed.';
+        $label = $chatbotId ? __('Chatbot assigned.') : __('Chatbot removed.');
 
         return back()->with('success', $label);
     }
@@ -672,6 +672,6 @@ class InboxSetupController extends Controller
 
         $channelAccount->delete();
 
-        return back()->with('success', 'Account disconnected.');
+        return back()->with('success', __('Account disconnected.'));
     }
 }

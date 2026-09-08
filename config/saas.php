@@ -10,11 +10,35 @@ return [
     | Override these values in config/app.php (app.name) or via .env APP_NAME.
     */
     'app_name' => env('APP_NAME', 'App'),
-    'tagline' => env('SAAS_TAGLINE', 'Customer messaging on WhatsApp'),
+    'tagline' => env('SAAS_TAGLINE', 'Toate mesajele clienților, într-un singur loc'),
     'support_email' => env('SAAS_SUPPORT_EMAIL', env('MAIL_FROM_ADDRESS', 'support@example.com')),
     // External help/documentation URL shown in the client "Help & Docs" nav
     // item. Leave blank to hide the link. Configure in the admin panel or .env.
     'docs_url' => env('SAAS_DOCS_URL', ''),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Grace period
+    |--------------------------------------------------------------------------
+    | Days of FULL access a client keeps after a subscription or trial expires.
+    | Once these run out the client area turns read-only (App\Support\Entitlement
+    | and App\Http\Middleware\EnforceSubscriptionAccess): everything stays
+    | visible, nothing is deleted, but writes are refused until they renew.
+    */
+    'grace_days' => (int) env('SAAS_GRACE_DAYS', 7),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Held automation runs
+    |--------------------------------------------------------------------------
+    | An automation run that wakes from a Wait node while its client is
+    | read-only is held and re-queued hourly (App\Modules\Automation\Jobs\
+    | ExecuteAutomationRunJob). That chain needs an end: after this many days a
+    | held run is cancelled instead of re-queued, so a churned tenant's parked
+    | runs stop circulating on the shared 'automation' queue for ever. Counted
+    | from the first hold, not from when the run was parked.
+    */
+    'held_run_max_days' => (int) env('SAAS_HELD_RUN_MAX_DAYS', 30),
 
     /*
     |--------------------------------------------------------------------------

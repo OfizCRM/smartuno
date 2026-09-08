@@ -40,6 +40,12 @@ class BigCommerceClient implements EcommerceClientInterface
             if ($resp->successful() && isset($resp->json()['name'])) {
                 $store = $resp->json();
 
+                // Not translated, deliberately. StoreConnectionTester persists this string into
+                // ecommerce_stores.last_test_message, which the stores page reads back for every
+                // member of the workspace — a translated value would leave the column holding
+                // whichever language the person who last pressed Test happened to be using, and
+                // flip it again on the next test. Driver-level results stay English internal
+                // signals; the same split CampaignController::testSend already makes.
                 return [
                     'ok' => true,
                     'message' => 'Connected to '.($store['name'] ?? $this->storeHash),
@@ -180,8 +186,8 @@ class BigCommerceClient implements EcommerceClientInterface
             $resp = $this->http('v2')->put("/orders/{$externalId}", ['status_id' => 2]);
 
             return $resp->successful()
-                ? ['ok' => true, 'message' => 'Order marked shipped.']
-                : ['ok' => false, 'message' => $resp->json()['title'] ?? 'BigCommerce rejected the update.'];
+                ? ['ok' => true, 'message' => __('Order marked shipped.')]
+                : ['ok' => false, 'message' => $resp->json()['title'] ?? __('BigCommerce rejected the update.')];
         } catch (\Throwable $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
         }
@@ -191,7 +197,7 @@ class BigCommerceClient implements EcommerceClientInterface
      * Hydrate a lightweight BigCommerce webhook into a canonical event + full payload.
      *
      * @param  array<string, mixed>  $data  The webhook's `data` object ({type, id}).
-     * @return array{event: string, payload: array<string, mixed>}|null  Null to ignore.
+     * @return array{event: string, payload: array<string, mixed>}|null Null to ignore.
      */
     public function hydrateWebhook(string $scope, array $data): ?array
     {

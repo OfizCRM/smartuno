@@ -180,12 +180,12 @@ class InstallController extends Controller
         } catch (\Throwable $e) {
             report($e);
             throw ValidationException::withMessages([
-                'install' => 'Installation failed: '.$e->getMessage(),
+                'install' => __('Installation failed: :error', ['error' => $e->getMessage()]),
             ]);
         }
 
         return redirect()->route('admin.login')
-            ->with('status', 'Installation complete — sign in with your new admin account.');
+            ->with('status', __('Installation complete — sign in with your new admin account.'));
     }
 
     /**

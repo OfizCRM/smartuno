@@ -6,6 +6,7 @@ import { Toaster, toast } from 'sonner';
 import Topbar from '@/Components/Topbar';
 import Sidebar from '@/Components/Sidebar';
 import UpgradeModal from '@/Components/UpgradeModal';
+import SubscriptionBanner from '@/Components/SubscriptionBanner';
 import useClientNav from '@/Layouts/useClientNav';
 
 function safeRoute(name, ...args) {
@@ -148,6 +149,11 @@ footer={<ClientLayoutFooter />}
             />
 
             <div className="lg:pl-64 rtl:lg:pl-0 rtl:lg:pr-64">
+                {/* Inside the wrapper, not above it: the sidebar is lg:fixed
+                    lg:inset-y-0 and opaque, so a full-bleed banner would have its
+                    icon and the first words of the sentence painted over on every
+                    desktop screen. */}
+                <SubscriptionBanner />
                 <Topbar
                     showLogo={false}
                     title={title}

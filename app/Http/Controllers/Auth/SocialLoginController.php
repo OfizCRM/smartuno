@@ -36,12 +36,12 @@ class SocialLoginController extends Controller
         try {
             $socialUser = Socialite::driver($provider)->user();
         } catch (\Throwable) {
-            return redirect()->route('login')->withErrors(['email' => 'Social login failed. Please try again.']);
+            return redirect()->route('login')->withErrors(['email' => __('Social login failed. Please try again.')]);
         }
 
         $email = $socialUser->getEmail();
         if (! $email) {
-            return redirect()->route('login')->withErrors(['email' => 'No email address returned by provider.']);
+            return redirect()->route('login')->withErrors(['email' => __('No email address returned by provider.')]);
         }
 
         $existing = SocialAccount::where('provider', $provider)
@@ -63,7 +63,7 @@ class SocialLoginController extends Controller
 
         if (! $user) {
             if (! config('auth.allow_registration', true)) {
-                return redirect()->route('login')->withErrors(['email' => 'No account found. Please register first.']);
+                return redirect()->route('login')->withErrors(['email' => __('No account found. Please register first.')]);
             }
 
             $user = DB::transaction(function () use ($socialUser, $email) {

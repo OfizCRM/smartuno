@@ -42,7 +42,7 @@ class AiChatbotController extends Controller
 
         AiChatbot::create(array_merge($validated, ['workspace_id' => $wid]));
 
-        return back()->with('success', 'Chatbot created.');
+        return back()->with('success', __('Chatbot created.'));
     }
 
     public function update(Request $request, AiChatbot $chatbot): RedirectResponse
@@ -69,7 +69,7 @@ class AiChatbotController extends Controller
 
         $chatbot->update($validated);
 
-        return back()->with('success', 'Chatbot updated.');
+        return back()->with('success', __('Chatbot updated.'));
     }
 
     public function destroy(Request $request, AiChatbot $chatbot): RedirectResponse
@@ -77,7 +77,7 @@ class AiChatbotController extends Controller
         $this->authorise($request, $chatbot);
         $chatbot->delete();
 
-        return back()->with('success', 'Chatbot deleted.');
+        return back()->with('success', __('Chatbot deleted.'));
     }
 
     public function playground(Request $request, AiChatbot $chatbot): JsonResponse

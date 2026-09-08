@@ -90,21 +90,21 @@ class SmsProviderController extends Controller
     ];
 
     public const LABELS = [
-        'twilio'      => 'Twilio',
-        'nexmo'       => 'Vonage / Nexmo',
+        'twilio' => 'Twilio',
+        'nexmo' => 'Vonage / Nexmo',
         'messagebird' => 'MessageBird',
-        'plivo'       => 'Plivo',
-        'telnyx'      => 'Telnyx',
-        'infobip'     => 'Infobip',
-        'clicksend'   => 'ClickSend',
-        'smsbd'       => 'SMSBD',
-        'reve'        => 'REVE SMS',
-        'bulksmsbd'   => 'BulkSMS BD',
-        'sms_dot_bd'  => 'SMS.BD (sms.net.bd)',
-        'mimsms'      => 'MimSMS',
-        'fast2sms'    => 'Fast2SMS',
-        'msg91'       => 'MSG91',
-        'amazon_sns'  => 'Amazon SNS',
+        'plivo' => 'Plivo',
+        'telnyx' => 'Telnyx',
+        'infobip' => 'Infobip',
+        'clicksend' => 'ClickSend',
+        'smsbd' => 'SMSBD',
+        'reve' => 'REVE SMS',
+        'bulksmsbd' => 'BulkSMS BD',
+        'sms_dot_bd' => 'SMS.BD (sms.net.bd)',
+        'mimsms' => 'MimSMS',
+        'fast2sms' => 'Fast2SMS',
+        'msg91' => 'MSG91',
+        'amazon_sns' => 'Amazon SNS',
     ];
 
     public function index(Request $request): Response
@@ -113,13 +113,13 @@ class SmsProviderController extends Controller
         $configs = SmsProviderConfig::where('workspace_id', $workspaceId)->get()->keyBy('provider');
 
         $providers = collect(self::PROVIDERS)->map(fn ($p) => [
-            'provider'   => $p,
-            'label'      => self::LABELS[$p],
-            'fields'     => self::FIELDS[$p],
+            'provider' => $p,
+            'label' => self::LABELS[$p],
+            'fields' => self::FIELDS[$p],
             'configured' => $configs->has($p) && ! empty($configs->get($p)->credentials),
-            'default'    => $configs->get($p)?->default ?? false,
-            'sender_id'  => $configs->get($p)?->sender_id ?? '',
-            'masked'     => $configs->has($p) ? $this->mask($configs->get($p)->credentials ?? []) : [],
+            'default' => $configs->get($p)?->default ?? false,
+            'sender_id' => $configs->get($p)?->sender_id ?? '',
+            'masked' => $configs->has($p) ? $this->mask($configs->get($p)->credentials ?? []) : [],
         ]);
 
         return Inertia::render('Broadcasting/SmsProviders/Index', [
@@ -161,11 +161,11 @@ class SmsProviderController extends Controller
 
         $config->fill([
             'credentials' => $merged,
-            'sender_id'   => $validated['sender_id'] ?? $config->sender_id,
-            'default'     => (bool) ($validated['default'] ?? false),
+            'sender_id' => $validated['sender_id'] ?? $config->sender_id,
+            'default' => (bool) ($validated['default'] ?? false),
         ])->save();
 
-        return back()->with('success', self::LABELS[$provider].' configuration saved.');
+        return back()->with('success', __(':provider configuration saved.', ['provider' => self::LABELS[$provider]]));
     }
 
     public function destroy(Request $request, string $provider): RedirectResponse
@@ -175,7 +175,7 @@ class SmsProviderController extends Controller
         $workspaceId = $this->workspaceId($request);
         SmsProviderConfig::where('workspace_id', $workspaceId)->where('provider', $provider)->delete();
 
-        return back()->with('success', self::LABELS[$provider].' configuration removed.');
+        return back()->with('success', __(':provider configuration removed.', ['provider' => self::LABELS[$provider]]));
     }
 
     private function workspaceId(Request $request): int

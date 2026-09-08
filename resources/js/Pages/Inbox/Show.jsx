@@ -15,6 +15,18 @@ import { playInboundSound, getSoundPrefs, setChannelSoundEnabled, SOUND_CHANNELS
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
+import { toast } from 'sonner';
+
+/**
+ * Surface what the server actually said. These side-panel actions used to end in
+ * `.catch(() => {})`, so under the subscription gate (402) or a demo block (403)
+ * the label simply never appeared and the note stayed in the box with no
+ * explanation at all — a button that does nothing, clicked five times.
+ * <Toaster /> is already mounted by InboxLayout.
+ */
+function reportActionError(err, fallback) {
+    toast.error(err?.response?.data?.message || fallback);
+}
 
 /* ─── helpers ─────────────────────────────────────────── */
 
@@ -1398,7 +1410,7 @@ function AgentDropdown({ teamMembers, currentUserId, conversationId, onAssigned,
         setLoading(true);
         axios.post(route('client.inbox.assign', conversationId), { user_id: userId })
             .then(() => { onAssigned(userId); onClose(); })
-            .catch(() => {})
+            .catch(err => reportActionError(err, t('inbox.action_failed')))
             .finally(() => setLoading(false));
     };
 
@@ -1644,6 +1656,7 @@ export default function InboxShow({
         setNotePosting(true);
         axios.post(route('client.inbox.notes.store', conversation.uuid), { body: noteBody })
             .then(r => { setNotes(prev => [r.data, ...prev]); setNoteBody(''); })
+            .catch(err => reportActionError(err, t('inbox.action_failed')))
             .finally(() => setNotePosting(false));
     };
 
@@ -1664,11 +1677,11 @@ export default function InboxShow({
         if (attached) {
             axios.delete(route('client.inbox.labels.detach', { conversation: conversation.uuid, label: label.id }))
                 .then(() => setConvLabels(prev => prev.filter(l => l.id !== label.id)))
-                .catch(() => {});
+                .catch(err => reportActionError(err, t('inbox.action_failed')));
         } else {
             axios.post(route('client.inbox.labels.attach', conversation.uuid), { label_id: label.id })
                 .then(r => setConvLabels(prev => [...prev, r.data.label]))
-                .catch(() => {});
+                .catch(err => reportActionError(err, t('inbox.action_failed')));
         }
     };
 
@@ -1740,7 +1753,7 @@ export default function InboxShow({
     const switchHandover = (mode) => {
         axios.post(route('client.inbox.handover', conversation.uuid), { mode })
             .then(() => setAssignedTo(mode))
-            .catch(() => {});
+            .catch(err => reportActionError(err, t('inbox.action_failed')));
     };
 
     const handleStatus = (status) => router.post(route('client.inbox.status', conversation.uuid), { status }, { preserveScroll: true });

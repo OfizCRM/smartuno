@@ -178,7 +178,7 @@ class InboxController extends Controller
             // Upload to WhatsApp so we have a media_id for sending
             $client = CloudApiClient::forWorkspace($conversation->workspace_id);
             if (! $client) {
-                return response()->json(['error' => 'No active WhatsApp account.'], 422);
+                return response()->json(['error' => __('No active WhatsApp account.')], 422);
             }
 
             $mediaId = $client->uploadMedia($file->getRealPath(), $mimeType);
@@ -199,14 +199,14 @@ class InboxController extends Controller
 
         // Require body for plain text messages
         if ($msgType === 'text' && empty($validated['body'])) {
-            return back()->withErrors(['body' => 'Message body is required.']);
+            return back()->withErrors(['body' => __('Message body is required.')]);
         }
 
         // Enforce 24h window for WhatsApp — templates bypass the window restriction
         if ($conversation->channelAccount?->channel === 'whatsapp'
             && ! $conversation->isWhatsappWindowOpen()
             && $msgType !== 'template') {
-            return back()->with('error', 'WhatsApp 24-hour session is closed. Use an approved template to re-engage this contact.');
+            return back()->with('error', __('WhatsApp 24-hour session is closed. Use an approved template to re-engage this contact.'));
         }
 
         $message = Message::create([
@@ -261,10 +261,10 @@ class InboxController extends Controller
         }
 
         if ($sendError) {
-            return back()->with('error', 'Message saved but failed to send: '.$sendError);
+            return back()->with('error', __('Message saved but failed to send: :error', ['error' => $sendError]));
         }
 
-        return back()->with('success', 'Message sent.');
+        return back()->with('success', __('Message sent.'));
     }
 
     /**
@@ -293,14 +293,14 @@ class InboxController extends Controller
                 ->first()
             : null;
 
-        abort_unless($product, 404, 'Product not found.');
+        abort_unless($product, 404, __('Product not found.'));
 
         $channel = $conversation->channelAccount?->channel ?? 'whatsapp';
 
         // Free-form messages need an open 24h session on WhatsApp.
         if ($channel === 'whatsapp' && ! $conversation->isWhatsappWindowOpen()) {
             return response()->json([
-                'error' => 'WhatsApp 24-hour session is closed. Use an approved template to re-engage this contact.',
+                'error' => __('WhatsApp 24-hour session is closed. Use an approved template to re-engage this contact.'),
             ], 422);
         }
 
@@ -434,7 +434,7 @@ class InboxController extends Controller
         $conversation->update(['assigned_user_id' => $request->user_id]);
         ConversationAssigned::dispatch($conversation, $assignedTo);
 
-        return back()->with('success', 'Conversation assigned.');
+        return back()->with('success', __('Conversation assigned.'));
     }
 
     public function typing(Request $request, Conversation $conversation): JsonResponse
@@ -458,7 +458,7 @@ class InboxController extends Controller
         }
         $conversation->update($updates);
 
-        return back()->with('success', 'Status updated.');
+        return back()->with('success', __('Status updated.'));
     }
 
     public function handover(Request $request, Conversation $conversation): JsonResponse
@@ -515,14 +515,14 @@ class InboxController extends Controller
         $mediaId = $payload[$type]['id'] ?? $payload['media_id'] ?? null;
 
         if (! $mediaId) {
-            abort(404, 'No media available.');
+            abort(404, __('No media available.'));
         }
 
         $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
         $client = CloudApiClient::forWorkspace($workspaceId);
 
         if (! $client) {
-            abort(503, 'WhatsApp account not configured.');
+            abort(503, __('WhatsApp account not configured.'));
         }
 
         try {
@@ -541,7 +541,7 @@ class InboxController extends Controller
 
             return redirect($previewUrl);
         } catch (\Throwable $e) {
-            abort(502, 'Could not fetch media: '.$e->getMessage());
+            abort(502, __('Could not fetch media: :error', ['error' => $e->getMessage()]));
         }
     }
 
@@ -558,7 +558,7 @@ class InboxController extends Controller
 
         $client = CloudApiClient::forWorkspace($workspaceId);
         if (! $client) {
-            return response()->json(['error' => 'No active WhatsApp account.'], 422);
+            return response()->json(['error' => __('No active WhatsApp account.')], 422);
         }
 
         try {

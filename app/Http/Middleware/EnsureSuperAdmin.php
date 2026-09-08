@@ -14,7 +14,7 @@ class EnsureSuperAdmin
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user()?->isAdmin()) {
-            abort(403, 'Super admin access required.');
+            abort(403, __('Super admin access required.'));
         }
 
         return $next($request);

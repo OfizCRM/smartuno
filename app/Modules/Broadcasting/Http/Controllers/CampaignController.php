@@ -3,10 +3,12 @@
 namespace App\Modules\Broadcasting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\SmtpConfiguration;
 use App\Modules\Broadcasting\Jobs\LaunchCampaignJob;
 use App\Modules\Broadcasting\Models\Campaign;
 use App\Modules\Broadcasting\Models\CampaignRecipient;
 use App\Modules\Broadcasting\Models\UsageMeter;
+use App\Modules\Broadcasting\Models\WorkspaceSmtpConfig;
 use App\Modules\Broadcasting\Services\CampaignPersonalizer;
 use App\Modules\Broadcasting\Services\Sms\SmsDriverManager;
 use App\Modules\Shared\Models\Contact;
@@ -16,9 +18,11 @@ use App\Modules\Shared\Services\SegmentResolver;
 use App\Modules\Whatsapp\Models\WhatsappBusinessAccount;
 use App\Modules\Whatsapp\Models\WhatsappTemplate;
 use App\Modules\Whatsapp\Services\CloudApiClient;
+use App\Services\Mail\MailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -75,28 +79,28 @@ class CampaignController extends Controller
         $workspaceId = $this->workspaceId($request);
 
         $validated = $request->validate([
-            'uuid'                      => ['nullable', 'string', 'uuid'],
-            'name'                      => ['required', 'string', 'max:128'],
-            'channel'                   => ['required', 'in:whatsapp,sms,email'],
-            'whatsapp_phone_number_id'  => ['nullable', 'string'],
-            'audience_type'             => ['nullable', 'in:segment,contact_list,tag,csv'],
-            'audience_ref'              => ['nullable', 'string'],
-            'template_ref'              => ['nullable', 'array'],
-            'payload_json'              => ['nullable', 'array'],
-            'schedule_at'               => ['nullable', 'date'],
-            'timezone'                  => ['nullable', 'string', 'max:64'],
+            'uuid' => ['nullable', 'string', 'uuid'],
+            'name' => ['required', 'string', 'max:128'],
+            'channel' => ['required', 'in:whatsapp,sms,email'],
+            'whatsapp_phone_number_id' => ['nullable', 'string'],
+            'audience_type' => ['nullable', 'in:segment,contact_list,tag,csv'],
+            'audience_ref' => ['nullable', 'string'],
+            'template_ref' => ['nullable', 'array'],
+            'payload_json' => ['nullable', 'array'],
+            'schedule_at' => ['nullable', 'date'],
+            'timezone' => ['nullable', 'string', 'max:64'],
         ]);
 
         $fields = array_filter([
-            'name'                     => $validated['name'],
-            'channel'                  => $validated['channel'],
+            'name' => $validated['name'],
+            'channel' => $validated['channel'],
             'whatsapp_phone_number_id' => $validated['whatsapp_phone_number_id'] ?? null,
-            'audience_type'            => $validated['audience_type'] ?? null,
-            'audience_ref'             => $validated['audience_ref'] ?? null,
-            'template_ref'             => $validated['template_ref'] ?? null,
-            'payload_json'             => $validated['payload_json'] ?? null,
-            'schedule_at'              => $validated['schedule_at'] ?? null,
-            'timezone'                 => $validated['timezone'] ?? null,
+            'audience_type' => $validated['audience_type'] ?? null,
+            'audience_ref' => $validated['audience_ref'] ?? null,
+            'template_ref' => $validated['template_ref'] ?? null,
+            'payload_json' => $validated['payload_json'] ?? null,
+            'schedule_at' => $validated['schedule_at'] ?? null,
+            'timezone' => $validated['timezone'] ?? null,
         ], fn ($v) => $v !== null);
 
         if (! empty($validated['uuid'])) {
@@ -107,15 +111,16 @@ class CampaignController extends Controller
 
             if ($existing) {
                 $existing->update($fields);
+
                 return response()->json(['uuid' => $existing->uuid]);
             }
         }
 
         $campaign = Campaign::create(array_merge($fields, [
-            'workspace_id'  => $workspaceId,
+            'workspace_id' => $workspaceId,
             'audience_type' => $fields['audience_type'] ?? 'segment',
-            'status'        => 'draft',
-            'created_by'    => $request->user()->id,
+            'status' => 'draft',
+            'created_by' => $request->user()->id,
         ]));
 
         return response()->json(['uuid' => $campaign->uuid]);
@@ -124,7 +129,7 @@ class CampaignController extends Controller
     public function edit(Request $request, Campaign $campaign): Response
     {
         $this->authorise($request, $campaign);
-        abort_unless(in_array($campaign->status, ['draft', 'paused'], true), 422, 'Only drafts or paused campaigns can be edited.');
+        abort_unless(in_array($campaign->status, ['draft', 'paused'], true), 422, __('Only drafts or paused campaigns can be edited.'));
 
         return Inertia::render('Broadcasting/Campaigns/Edit', array_merge(
             $this->wizardProps($request),
@@ -138,7 +143,7 @@ class CampaignController extends Controller
     public function update(Request $request, Campaign $campaign): RedirectResponse
     {
         $this->authorise($request, $campaign);
-        abort_unless(in_array($campaign->status, ['draft', 'paused'], true), 422, 'Only drafts or paused campaigns can be edited.');
+        abort_unless(in_array($campaign->status, ['draft', 'paused'], true), 422, __('Only drafts or paused campaigns can be edited.'));
 
         $validated = $this->validateCampaign($request);
         $campaign->update($validated);
@@ -181,7 +186,7 @@ class CampaignController extends Controller
     public function launch(Request $request, Campaign $campaign): RedirectResponse
     {
         $this->authorise($request, $campaign);
-        abort_unless(in_array($campaign->status, ['draft', 'paused'], true), 422, 'Cannot launch this campaign.');
+        abort_unless(in_array($campaign->status, ['draft', 'paused'], true), 422, __('Cannot launch this campaign.'));
 
         $patch = ['status' => 'queued'];
 
@@ -213,7 +218,7 @@ class CampaignController extends Controller
     public function pause(Request $request, Campaign $campaign): RedirectResponse
     {
         $this->authorise($request, $campaign);
-        abort_unless(in_array($campaign->status, ['queued', 'sending'], true), 422, 'Only queued or sending campaigns can be paused.');
+        abort_unless(in_array($campaign->status, ['queued', 'sending'], true), 422, __('Only queued or sending campaigns can be paused.'));
         $campaign->update(['status' => 'paused']);
 
         return back()->with('success', __('Campaign paused.'));
@@ -222,7 +227,7 @@ class CampaignController extends Controller
     public function destroy(Request $request, Campaign $campaign): RedirectResponse
     {
         $this->authorise($request, $campaign);
-        abort_unless($campaign->status === 'draft', 422, 'Only draft campaigns can be deleted.');
+        abort_unless($campaign->status === 'draft', 422, __('Only draft campaigns can be deleted.'));
         $campaign->delete();
 
         return redirect()->route('client.campaigns.index')->with('success', __('Campaign deleted.'));
@@ -297,7 +302,7 @@ class CampaignController extends Controller
         ]);
 
         if (empty($validated['phone_e164']) && empty($validated['email'])) {
-            return response()->json(['error' => 'Provide either a phone or email to test.'], 422);
+            return response()->json(['error' => __('Provide either a phone or email to test.')], 422);
         }
 
         // Strip whitespace/dashes — pass the number through as-is so each SMS
@@ -339,20 +344,24 @@ class CampaignController extends Controller
         } catch (\Throwable $e) {
             // Log full details server-side; return a sanitised message to the client
             // so SMTP credentials, API keys, and internal paths are not disclosed.
-            \Illuminate\Support\Facades\Log::channel('json')->warning('campaign.test_send.failed', [
+            Log::channel('json')->warning('campaign.test_send.failed', [
                 'campaign_id' => $campaign->id,
-                'channel'     => $campaign->channel,
-                'error'       => $e->getMessage(),
+                'channel' => $campaign->channel,
+                'error' => $e->getMessage(),
             ]);
 
+            // The thrown messages stay English on purpose: they are the internal
+            // signal this whitelist matches on. Only the text handed to the user
+            // is translated, so no driver detail leaks and no match breaks.
             $safe = match (true) {
-                str_contains($e->getMessage(), 'No WhatsApp') => $e->getMessage(),
-                str_contains($e->getMessage(), 'Pick a WhatsApp') => $e->getMessage(),
-                str_contains($e->getMessage(), 'Phone is required') => $e->getMessage(),
-                str_contains($e->getMessage(), 'Email is required') => $e->getMessage(),
-                str_contains($e->getMessage(), 'SMS body is empty') => $e->getMessage(),
-                str_contains($e->getMessage(), 'empty after personalization') => $e->getMessage(),
-                default => 'Send failed. Check your channel configuration and try again.',
+                str_contains($e->getMessage(), 'No WhatsApp') => __('No WhatsApp client configured for this workspace.'),
+                str_contains($e->getMessage(), 'Pick a WhatsApp') => __('Pick a WhatsApp template before sending a test.'),
+                str_contains($e->getMessage(), 'Phone is required for a WhatsApp') => __('Phone is required for a WhatsApp test send.'),
+                str_contains($e->getMessage(), 'Phone is required for an SMS') => __('Phone is required for an SMS test send.'),
+                str_contains($e->getMessage(), 'Email is required') => __('Email is required for an email test send.'),
+                str_contains($e->getMessage(), 'SMS body is empty') => __('SMS body is empty after personalization.'),
+                str_contains($e->getMessage(), 'empty after personalization') => __('SMS body is empty after personalization.'),
+                default => __('Send failed. Check your channel configuration and try again.'),
             };
 
             return response()->json(['error' => $safe], 500);
@@ -373,15 +382,15 @@ class CampaignController extends Controller
     private function validateCampaign(Request $request): array
     {
         return $request->validate([
-            'name'                     => ['required', 'string', 'max:128'],
-            'channel'                  => ['required', 'in:whatsapp,sms,email'],
+            'name' => ['required', 'string', 'max:128'],
+            'channel' => ['required', 'in:whatsapp,sms,email'],
             'whatsapp_phone_number_id' => ['nullable', 'string'],
-            'audience_type'            => ['required', 'in:segment,contact_list,tag,csv'],
-            'audience_ref'             => ['nullable', 'string'],
-            'template_ref'             => ['nullable', 'array'],
-            'payload_json'             => ['nullable', 'array'],
-            'schedule_at'              => ['nullable', 'date'],
-            'timezone'                 => ['nullable', 'string', 'max:64'],
+            'audience_type' => ['required', 'in:segment,contact_list,tag,csv'],
+            'audience_ref' => ['nullable', 'string'],
+            'template_ref' => ['nullable', 'array'],
+            'payload_json' => ['nullable', 'array'],
+            'schedule_at' => ['nullable', 'date'],
+            'timezone' => ['nullable', 'string', 'max:64'],
         ]);
     }
 
@@ -395,13 +404,13 @@ class CampaignController extends Controller
             : CloudApiClient::forWorkspace($campaign->workspace_id);
 
         if (! $client) {
-            abort(422, 'WhatsApp is not ready: connect a WABA on Channel Setup and sync at least one phone number.');
+            abort(422, __('WhatsApp is not ready: connect a WABA on Channel Setup and sync at least one phone number.'));
         }
 
         $tpl = $campaign->template_ref ?? [];
         $name = $tpl['name'] ?? '';
         if ($name === '') {
-            abort(422, 'Select an approved WhatsApp template before launching.');
+            abort(422, __('Select an approved WhatsApp template before launching.'));
         }
 
         $approved = WhatsappTemplate::where('workspace_id', $campaign->workspace_id)
@@ -411,7 +420,7 @@ class CampaignController extends Controller
             ->exists();
 
         if (! $approved) {
-            abort(422, 'Template "'.$name.'" is not APPROVED. Sync templates from Meta on the Templates page, then try again.');
+            abort(422, __('Template “:name” is not APPROVED. Sync templates from Meta on the Templates page, then try again.', ['name' => $name]));
         }
     }
 
@@ -445,18 +454,18 @@ class CampaignController extends Controller
             ->get()
             ->flatMap(fn ($waba) => $waba->phoneNumbers->map(fn ($p) => [
                 'phone_number_id' => $p->phone_number_id,
-                'display_phone'   => $p->display_phone,
-                'verified_name'   => $p->verified_name,
-                'waba_id'         => $waba->waba_id,
+                'display_phone' => $p->display_phone,
+                'verified_name' => $p->verified_name,
+                'waba_id' => $waba->waba_id,
             ]))
             ->values();
 
         return [
-            'whatsappTemplates'    => $whatsappTemplates,
+            'whatsappTemplates' => $whatsappTemplates,
             'whatsappPhoneNumbers' => $whatsappPhoneNumbers,
-            'segments'             => $segments,
-            'tags'                 => $tags,
-            'contactTokens'        => CampaignPersonalizer::availableContactTokens(),
+            'segments' => $segments,
+            'tags' => $tags,
+            'contactTokens' => CampaignPersonalizer::availableContactTokens(),
         ];
     }
 
@@ -570,18 +579,18 @@ class CampaignController extends Controller
             throw new \RuntimeException('Email is required for an email test send.');
         }
 
-        $payload   = $campaign->payload_json ?? [];
-        $subject   = $personalizer->renderText('[TEST] '.($payload['subject'] ?? 'No subject'), $contact);
-        $body      = $personalizer->renderText($payload['body'] ?? '', $contact);
+        $payload = $campaign->payload_json ?? [];
+        $subject = $personalizer->renderText('[TEST] '.($payload['subject'] ?? 'No subject'), $contact);
+        $body = $personalizer->renderText($payload['body'] ?? '', $contact);
         $fromEmail = filled($payload['from_email'] ?? '') ? $payload['from_email'] : null;
-        $fromName  = filled($payload['from_name']  ?? '') ? $payload['from_name']  : null;
-        $replyTo   = filled($payload['reply_to']   ?? '') ? $payload['reply_to']   : null;
+        $fromName = filled($payload['from_name'] ?? '') ? $payload['from_name'] : null;
+        $replyTo = filled($payload['reply_to'] ?? '') ? $payload['reply_to'] : null;
 
-        $smtp = \App\Modules\Broadcasting\Models\WorkspaceSmtpConfig::forWorkspace($campaign->workspace_id)
-            ?? \App\Models\SmtpConfiguration::getActive();
+        $smtp = WorkspaceSmtpConfig::forWorkspace($campaign->workspace_id)
+            ?? SmtpConfiguration::getActive();
 
         if ($smtp) {
-            app(\App\Services\Mail\MailService::class)->sendRaw(
+            app(MailService::class)->sendRaw(
                 $smtp, $contact->email, $subject, $body, [], $fromEmail, $fromName, $replyTo
             );
         } else {

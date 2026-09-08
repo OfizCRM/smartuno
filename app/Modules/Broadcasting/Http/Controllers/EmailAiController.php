@@ -21,7 +21,7 @@ class EmailAiController extends Controller
         try {
             $llm = LlmManager::forWorkspace($workspaceId);
         } catch (\RuntimeException $e) {
-            return response()->json(['error' => 'No AI provider configured. Set one up in AI → Providers.'], 422);
+            return response()->json(['error' => __('No AI provider configured. Set one up in AI → Providers.')], 422);
         }
 
         $bodySnippet = '';
@@ -76,12 +76,12 @@ PROMPT;
             $suggestions = $this->parseSubjectSuggestions($content);
 
             if (count($suggestions) === 0) {
-                return response()->json(['error' => 'Could not generate subject lines. Please try again.'], 422);
+                return response()->json(['error' => __('Could not generate subject lines. Please try again.')], 422);
             }
 
             return response()->json(['suggestions' => array_slice($suggestions, 0, 3)]);
         } catch (\Throwable $e) {
-            return response()->json(['error' => 'AI suggestion failed: '.$e->getMessage()], 500);
+            return response()->json(['error' => __('AI suggestion failed: :error', ['error' => $e->getMessage()])], 500);
         }
     }
 
@@ -98,7 +98,7 @@ PROMPT;
         try {
             $llm = LlmManager::forWorkspace($workspaceId);
         } catch (\RuntimeException $e) {
-            return response()->json(['error' => 'No AI provider configured. Set one up in AI → Providers.'], 422);
+            return response()->json(['error' => __('No AI provider configured. Set one up in AI → Providers.')], 422);
         }
 
         $tone = $validated['tone'] ?? 'professional';
@@ -169,12 +169,12 @@ PROMPT;
             }
 
             if (! $parsed) {
-                return response()->json(['error' => 'AI returned an unexpected format. Try rephrasing your prompt.'], 422);
+                return response()->json(['error' => __('AI returned an unexpected format. Try rephrasing your prompt.')], 422);
             }
 
             return response()->json($parsed);
         } catch (\Throwable $e) {
-            return response()->json(['error' => 'AI generation failed: '.$e->getMessage()], 500);
+            return response()->json(['error' => __('AI generation failed: :error', ['error' => $e->getMessage()])], 500);
         }
     }
 

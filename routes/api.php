@@ -37,6 +37,10 @@ Route::prefix('v1/auth')->middleware(['throttle:10,1'])->group(function () {
     Route::post('/login', [MobileAuthController::class, 'login']);
 });
 
+// Deliberately NOT carrying 'subscription.access': this group is logout, a GET,
+// and the user's own name/avatar. Blocking POST /v1/auth/logout would leave a
+// read-only mobile user unable to sign out — `logout` is on the gate's allowlist
+// for exactly that reason, and these API routes have no names for it to match.
 Route::prefix('v1/auth')->middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/logout', [MobileAuthController::class, 'logout']);
     Route::get('/me', [MobileAuthController::class, 'me']);
@@ -46,7 +50,7 @@ Route::prefix('v1/auth')->middleware(['auth:sanctum', 'throttle:api'])->group(fu
 // ─── Mobile Inbox API (agent-facing: full conversation + inbox actions) ───────
 // `demo` blocks writes (POST/PATCH/DELETE) in demo mode while GET reads pass,
 // keeping the mobile app a consistent read-only showcase like the web app.
-Route::prefix('v1/mobile')->middleware(['auth:sanctum', 'throttle:api', 'demo'])->group(function () {
+Route::prefix('v1/mobile')->middleware(['auth:sanctum', 'throttle:api', 'demo', 'subscription.access'])->group(function () {
     // Conversations
     Route::get('/conversations', [MobileConversationController::class, 'index']);
     Route::get('/conversations/{uuid}', [MobileConversationController::class, 'show']);
@@ -77,7 +81,11 @@ Route::prefix('v1/mobile')->middleware(['auth:sanctum', 'throttle:api', 'demo'])
     Route::get('/contacts/{id}', [MobileInboxController::class, 'contact']);
 });
 
-Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api', 'demo'])->group(function () {
+// `subscription.access` mirrors `demo`: writes are refused for a client past the
+// grace period while every GET still answers. Without it the token-authenticated
+// API stays wide open — including the metered WhatsApp sends — for an account the
+// browser UI has already put into read-only.
+Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api', 'demo', 'subscription.access'])->group(function () {
 
     // ─── Account ─────────────────────────────────────────────────────────────
     Route::get('/me', [MeController::class, 'show']);

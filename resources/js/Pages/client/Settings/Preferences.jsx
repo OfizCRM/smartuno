@@ -4,6 +4,7 @@ import ClientLayout from '@/Layouts/ClientLayout';
 import SettingsBackLink from '@/Components/SettingsBackLink';
 import { Button, Card, Select } from '@/Components/ui';
 import TimezonePicker from '@/Components/TimezonePicker';
+import { useTheme } from '@/context/ThemeContext';
 import { browserTz } from '@/Utils/datetime';
 
 /**
@@ -16,6 +17,7 @@ import { browserTz } from '@/Utils/datetime';
 export default function SettingsPreferences({ preferences = {}, supportedLocales = [], supportedCurrencies = [] }) {
     const { t } = useTranslation();
     const { flash = {} } = usePage().props;
+    const { setTheme } = useTheme();
 
     const form = useForm({
         locale: preferences.locale ?? 'en',
@@ -26,7 +28,15 @@ export default function SettingsPreferences({ preferences = {}, supportedLocales
 
     const submit = (e) => {
         e.preventDefault();
-        form.put(route('client.settings.update'), { preserveScroll: true });
+        form.put(route('client.settings.update'), {
+            preserveScroll: true,
+            // Saving the row is not enough: ThemeProvider treats localStorage as
+            // authoritative and explicitly ignores a server theme that disagrees with
+            // it, so without this the choice persists to the database and is never
+            // applied — not even after a reload. setTheme writes both, which is what
+            // the header toggle already does.
+            onSuccess: () => setTheme(form.data.theme),
+        });
     };
 
     return (

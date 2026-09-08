@@ -13,6 +13,7 @@ use App\Modules\Integrations\Services\CredentialResolver;
 use App\Services\I18n\I18nFileService;
 use App\Services\OnboardingService;
 use App\Services\StorageManager;
+use App\Support\Entitlement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -78,6 +79,7 @@ class HandleInertiaRequests extends Middleware
                 'demo_mode' => false,
                 'app_version' => env('APP_VERSION', '1.0.0'),
                 'onboardingSummary' => null,
+                'subscription' => ['state' => Entitlement::ACTIVE, 'days_left' => null, 'grace_ends_at' => null, 'reason' => null],
             ];
         }
 
@@ -359,12 +361,41 @@ class HandleInertiaRequests extends Middleware
             'current_workspace_usage' => $this->workspaceUsage($workspaceId ?? null, $plan ?? null),
             'app_version' => env('APP_VERSION', '1.0.0'),
             'onboardingSummary' => $onboardingSummary,
+            'subscription' => $this->subscriptionShare($user),
             'landingPageEnabled' => SystemSetting::get('landing.page_enabled', '1') === '1',
             'branding' => $this->brandingShare(),
             'pusher' => $this->pusherPublicConfig(),
             'onesignal' => $this->oneSignalPublicConfig(),
             'firebase' => $this->firebasePublicConfig(),
             'metaAppId' => $this->metaAppId(),
+        ];
+    }
+
+    /**
+     * Entitlement summary for the expiry banner. Only a client user can be past
+     * due, so an admin, a guest or a user with no client always reads 'active'
+     * and the banner never appears where it makes no sense. State and dates
+     * only — nothing here identifies anyone.
+     *
+     * @return array{state: string, days_left: int|null, grace_ends_at: string|null, reason: string|null}
+     */
+    private function subscriptionShare(mixed $user): array
+    {
+        if (! $user instanceof User || ! $user->client_id) {
+            return ['state' => Entitlement::ACTIVE, 'days_left' => null, 'grace_ends_at' => null, 'reason' => null];
+        }
+
+        // Client::find rather than the $user->client relation: the relation is
+        // typed as a bare Model, and Entitlement must be handed a real Client.
+        $client = Client::find($user->client_id);
+
+        return [
+            'state' => Entitlement::state($client),
+            'days_left' => Entitlement::daysLeft($client),
+            'grace_ends_at' => Entitlement::graceEndsAt($client)?->toIso8601String(),
+            // 'trial' or 'subscription': the banner must not tell a firm that
+            // never paid a leu that its subscription has ended.
+            'reason' => Entitlement::reason($client),
         ];
     }
 

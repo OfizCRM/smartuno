@@ -7,6 +7,8 @@ use App\Models\SupportReply;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Services\Mail\MailService;
+use App\Support\Romania;
+use App\Support\TicketLabels;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -27,15 +29,15 @@ class SupportTicketController extends Controller
         $tickets = $query->paginate(20)->withQueryString();
 
         $stats = [
-            'total'       => SupportTicket::count(),
-            'open'        => SupportTicket::where('status', 'open')->count(),
+            'total' => SupportTicket::count(),
+            'open' => SupportTicket::where('status', 'open')->count(),
             'in_progress' => SupportTicket::where('status', 'in_progress')->count(),
-            'closed'      => SupportTicket::where('status', 'closed')->count(),
+            'closed' => SupportTicket::where('status', 'closed')->count(),
         ];
 
         return Inertia::render('Admin/Support/Index', [
             'tickets' => $tickets,
-            'stats'   => $stats,
+            'stats' => $stats,
             'filters' => $request->only('status'),
         ]);
     }
@@ -52,41 +54,41 @@ class SupportTicketController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'user_id'  => ['nullable', 'exists:users,id'],
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'max:255'],
-            'subject'  => ['required', 'string', 'max:255'],
-            'message'  => ['required', 'string', 'max:10000'],
+            'user_id' => ['nullable', 'exists:users,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'subject' => ['required', 'string', 'max:255'],
+            'message' => ['required', 'string', 'max:10000'],
             'priority' => ['nullable', 'in:low,normal,high,urgent'],
         ]);
 
         // If linked to a customer, trust the DB record for name/email integrity.
         if (! empty($validated['user_id'])) {
             $customer = User::find($validated['user_id']);
-            $validated['name']  = $customer->name;
+            $validated['name'] = $customer->name;
             $validated['email'] = $customer->email;
         }
 
         $ticket = SupportTicket::create([
-            'user_id'  => $validated['user_id'] ?? null,
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
-            'subject'  => $validated['subject'],
-            'message'  => $validated['message'],
+            'user_id' => $validated['user_id'] ?? null,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'subject' => $validated['subject'],
+            'message' => $validated['message'],
             'priority' => $validated['priority'] ?? 'normal',
-            'status'   => 'open',
+            'status' => 'open',
         ]);
 
         $mailer = app(MailService::class);
 
         try {
             $mailer->sendWithTemplate('support_ticket_created', $ticket->email, [
-                'app_name'        => config('app.name'),
-                'user_name'       => $ticket->name,
-                'ticket_id'       => $ticket->id,
-                'ticket_subject'  => $ticket->subject,
-                'ticket_priority' => ucfirst($ticket->priority),
-                'ticket_url'      => route('client.support.show', $ticket),
+                'app_name' => config('app.name'),
+                'user_name' => Romania::greetingName($ticket->name),
+                'ticket_id' => $ticket->id,
+                'ticket_subject' => $ticket->subject,
+                'ticket_priority' => TicketLabels::priority($ticket->priority),
+                'ticket_url' => route('client.support.show', $ticket),
             ]);
         } catch (\Throwable $e) {
             Log::error('Failed to send support_ticket_created email', ['error' => $e->getMessage()]);
@@ -126,13 +128,13 @@ class SupportTicketController extends Controller
 
         try {
             $mailer->sendWithTemplate('support_ticket_reply_client', $supportTicket->email, [
-                'app_name'       => config('app.name'),
-                'user_name'      => $supportTicket->name,
-                'ticket_id'      => $supportTicket->id,
+                'app_name' => config('app.name'),
+                'user_name' => Romania::greetingName($supportTicket->name),
+                'ticket_id' => $supportTicket->id,
                 'ticket_subject' => $supportTicket->subject,
-                'staff_name'     => $admin->name,
-                'reply_message'  => $validated['message'],
-                'ticket_url'     => $ticketUrl,
+                'staff_name' => $admin->name,
+                'reply_message' => $validated['message'],
+                'ticket_url' => $ticketUrl,
             ]);
         } catch (\Throwable $e) {
             Log::error('Failed to send support_ticket_reply_client email', ['error' => $e->getMessage()]);
@@ -156,12 +158,14 @@ class SupportTicketController extends Controller
 
             try {
                 $mailer->sendWithTemplate('support_ticket_status_changed', $supportTicket->email, [
-                    'app_name'       => config('app.name'),
-                    'user_name'      => $supportTicket->name,
-                    'ticket_id'      => $supportTicket->id,
+                    'app_name' => config('app.name'),
+                    'user_name' => Romania::greetingName($supportTicket->name),
+                    'ticket_id' => $supportTicket->id,
                     'ticket_subject' => $supportTicket->subject,
-                    'new_status'     => ucwords(str_replace('_', ' ', $validated['status'])),
-                    'ticket_url'     => $ticketUrl,
+                    // Display only. The stored value, the Rule::in above and the admin
+                    // status filter all keep the raw enum.
+                    'new_status' => TicketLabels::status($validated['status']),
+                    'ticket_url' => $ticketUrl,
                 ]);
             } catch (\Throwable $e) {
                 Log::error('Failed to send support_ticket_status_changed email', ['error' => $e->getMessage()]);

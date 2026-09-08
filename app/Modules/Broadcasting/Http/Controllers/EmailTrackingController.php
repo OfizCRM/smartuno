@@ -4,7 +4,9 @@ namespace App\Modules\Broadcasting\Http\Controllers;
 
 use App\Modules\Broadcasting\Models\CampaignRecipient;
 use App\Modules\Shared\Models\Contact;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 
@@ -33,13 +35,13 @@ class EmailTrackingController extends Controller
 
     // ── Open tracking ─────────────────────────────────────────────────────────
 
-    public function open(Request $request, string $token): \Illuminate\Http\Response
+    public function open(Request $request, string $token): Response
     {
         if (! $this->isLikelyBot($request->userAgent() ?? '')) {
             $recipient = CampaignRecipient::where('tracking_token', $token)->first();
 
             if ($recipient && ! in_array($recipient->status, ['read', 'failed'], true)) {
-                $now     = now();
+                $now = now();
                 $updates = ['status' => 'read', 'read_at' => $now];
 
                 if (! $recipient->delivered_at) {
@@ -50,27 +52,27 @@ class EmailTrackingController extends Controller
                 $recipient->campaign?->updateTotals();
 
                 Log::channel('json')->info('email.open', [
-                    'campaign_id'  => $recipient->campaign_id,
+                    'campaign_id' => $recipient->campaign_id,
                     'recipient_id' => $recipient->id,
                 ]);
             }
         }
 
         return response(self::PIXEL, 200, [
-            'Content-Type'  => 'image/gif',
+            'Content-Type' => 'image/gif',
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma'        => 'no-cache',
-            'Expires'       => '0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
         ]);
     }
 
     // ── Click tracking ────────────────────────────────────────────────────────
 
-    public function click(Request $request, string $token): \Illuminate\Http\RedirectResponse
+    public function click(Request $request, string $token): RedirectResponse
     {
         // Reject tampered or expired signatures — prevents open-redirect abuse.
         if (! $request->hasValidSignature()) {
-            abort(403, 'Invalid or expired tracking link.');
+            abort(403, __('Invalid or expired tracking link.'));
         }
 
         $url = $request->query('url', '/');
@@ -84,13 +86,13 @@ class EmailTrackingController extends Controller
             $recipient = CampaignRecipient::where('tracking_token', $token)->first();
 
             if ($recipient) {
-                $now     = now();
+                $now = now();
                 $updates = ['clicked_at' => $recipient->clicked_at ?? $now];
 
                 // A click proves the email was opened and delivered.
                 if (! in_array($recipient->status, ['read', 'failed'], true)) {
-                    $updates['status']   = 'read';
-                    $updates['read_at']  = $recipient->read_at ?? $now;
+                    $updates['status'] = 'read';
+                    $updates['read_at'] = $recipient->read_at ?? $now;
                 }
                 if (! $recipient->delivered_at) {
                     $updates['delivered_at'] = $now;
@@ -100,9 +102,9 @@ class EmailTrackingController extends Controller
                 $recipient->campaign?->updateTotals();
 
                 Log::channel('json')->info('email.click', [
-                    'campaign_id'  => $recipient->campaign_id,
+                    'campaign_id' => $recipient->campaign_id,
                     'recipient_id' => $recipient->id,
-                    'url'          => $url,
+                    'url' => $url,
                 ]);
             }
         }
@@ -116,7 +118,7 @@ class EmailTrackingController extends Controller
      * GET  /track/email/{token}/unsubscribe  — confirmation page shown to recipient.
      * POST /track/email/{token}/unsubscribe  — RFC 8058 one-click (mail client / List-Unsubscribe header).
      */
-    public function unsubscribe(Request $request, string $token): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+    public function unsubscribe(Request $request, string $token): Response|RedirectResponse
     {
         $recipient = CampaignRecipient::with('contact')->where('unsubscribe_token', $token)->first();
 
@@ -152,9 +154,9 @@ class EmailTrackingController extends Controller
         }
 
         Log::channel('json')->info('email.unsubscribe', [
-            'campaign_id'  => $recipient->campaign_id,
+            'campaign_id' => $recipient->campaign_id,
             'recipient_id' => $recipient->id,
-            'contact_id'   => $recipient->contact_id,
+            'contact_id' => $recipient->contact_id,
         ]);
     }
 
@@ -178,7 +180,7 @@ class EmailTrackingController extends Controller
     private function unsubscribePage(string $message, bool $success): string
     {
         $color = $success ? '#16a34a' : '#dc2626';
-        $icon  = $success ? '✓' : '✗';
+        $icon = $success ? '✓' : '✗';
 
         return <<<HTML
 <!DOCTYPE html>

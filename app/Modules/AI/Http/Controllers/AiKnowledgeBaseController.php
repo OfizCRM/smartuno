@@ -40,7 +40,7 @@ class AiKnowledgeBaseController extends Controller
         $validated = $request->validate(['name' => ['required', 'string', 'max:128']]);
         AiKnowledgeBase::create(array_merge($validated, ['workspace_id' => $workspaceId]));
 
-        return back()->with('success', 'Knowledge base created.');
+        return back()->with('success', __('Knowledge base created.'));
     }
 
     public function addDocument(Request $request, AiKnowledgeBase $kb): RedirectResponse
@@ -78,7 +78,7 @@ class AiKnowledgeBaseController extends Controller
             return back()->withErrors(['source_type' => $e->getMessage()]);
         }
 
-        return back()->with('success', 'Document queued for indexing.');
+        return back()->with('success', __('Document queued for indexing.'));
     }
 
     public function reindex(Request $request, AiKbDocument $document): RedirectResponse
@@ -93,7 +93,7 @@ class AiKnowledgeBaseController extends Controller
             return back()->withErrors(['document' => $e->getMessage()]);
         }
 
-        return back()->with('success', 'Re-indexing queued.');
+        return back()->with('success', __('Re-indexing queued.'));
     }
 
     public function destroyDocument(Request $request, AiKbDocument $document): RedirectResponse
@@ -103,7 +103,7 @@ class AiKnowledgeBaseController extends Controller
         $document->chunks()->delete();
         $document->delete();
 
-        return back()->with('success', 'Document removed.');
+        return back()->with('success', __('Document removed.'));
     }
 
     private function authorise(Request $request, AiKnowledgeBase $kb): void

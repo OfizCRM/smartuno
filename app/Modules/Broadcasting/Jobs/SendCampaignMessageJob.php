@@ -3,6 +3,7 @@
 namespace App\Modules\Broadcasting\Jobs;
 
 use App\Events\MessageSent;
+use App\Modules\Broadcasting\Jobs\Concerns\HoldsCampaignWhenReadonly;
 use App\Modules\Broadcasting\Models\Campaign;
 use App\Modules\Broadcasting\Models\CampaignRecipient;
 use App\Modules\Broadcasting\Models\UsageMeter;
@@ -30,7 +31,7 @@ use Illuminate\Support\Str;
 
 class SendCampaignMessageJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, HoldsCampaignWhenReadonly, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
 
@@ -52,6 +53,20 @@ class SendCampaignMessageJob implements ShouldQueue
 
         // Soft-stop on paused / cancelled / failed campaigns.
         if (in_array($campaign->status, ['paused', 'failed', 'completed'], true)) {
+            return;
+        }
+
+        // Defence in depth behind DispatchCampaignChunkJob's own check, for the
+        // window that one cannot cover: the sends of the final chunk, already
+        // queued, with no further chunk job left to pause the campaign. Reached
+        // at most once per campaign — the pause it performs makes every other
+        // send return at the status check above, before any of them resolves
+        // entitlement — so the hot path is unchanged for a paying customer's
+        // remaining recipients.
+        //
+        // The recipient is deliberately left 'queued' rather than marked failed:
+        // it is held for the relaunch after they pay, not consumed.
+        if ($this->holdCampaignIfReadonly($campaign)) {
             return;
         }
 

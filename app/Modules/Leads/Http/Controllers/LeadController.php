@@ -55,7 +55,7 @@ class LeadController extends Controller
 
         ScrapeLeadsJob::dispatch($job->id)->onQueue('leads');
 
-        return back()->with('success', 'Scrape job started. Results will appear shortly.');
+        return back()->with('success', __('Scrape job started. Results will appear shortly.'));
     }
 
     public function pushToContacts(Request $request): RedirectResponse
@@ -92,7 +92,7 @@ class LeadController extends Controller
             $this->activity->pushedToContacts($lead, (int) $contact->id);
         }
 
-        return back()->with('success', count($leads).' lead(s) pushed to contacts.');
+        return back()->with('success', trans_choice(':count lead(s) pushed to contacts.', count($leads)));
     }
 
     public function destroy(Request $request, Lead $lead): RedirectResponse
@@ -100,6 +100,6 @@ class LeadController extends Controller
         abort_unless((int) $lead->workspace_id === $this->workspaceId($request), 403);
         $lead->delete();
 
-        return back()->with('success', 'Lead deleted.');
+        return back()->with('success', __('Lead deleted.'));
     }
 }

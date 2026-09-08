@@ -36,6 +36,7 @@ use App\Models\Workspace;
 use App\Modules\Shared\Services\ChannelManager;
 use App\Services\Billing\BillingGatewayRegistry;
 use App\Services\StorageManager;
+use App\Support\Entitlement;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
@@ -47,6 +48,7 @@ use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
@@ -80,6 +82,15 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('viewAdmin', fn ($user) => $user?->isAdmin());
         Gate::define('manageAdminSensitive', fn ($user) => $user?->isAdmin());
+
+        // A web request lives milliseconds and concerns one client, so
+        // Entitlement's memo is safe there. A queue worker lives for hours and
+        // serves every client on the box: without this, the first verdict it
+        // computed would be reused until the process was restarted, and a
+        // customer who paid at 09:00 would keep getting no campaigns, no posts
+        // and no auto-replies. A job boundary is the point at which the answer
+        // can legitimately have changed, so that is where the memo is dropped.
+        Queue::before(fn () => Entitlement::forget());
 
         // Listener auto-discovery is disabled in bootstrap/app.php, so this block is
         // the only place listeners are registered. Each one must appear exactly once;

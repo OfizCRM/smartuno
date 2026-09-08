@@ -16,7 +16,7 @@ namespace App\Modules\Ecommerce\Services;
 class StoreUrlGuard
 {
     /**
-     * @return string|null  An error message if invalid, or null if safe.
+     * @return string|null An error message if invalid, or null if safe.
      */
     public static function validate(string $platform, string $domain): ?string
     {
@@ -24,7 +24,7 @@ class StoreUrlGuard
             'shopify' => self::validateShopify($domain),
             'bigcommerce' => self::validateBigCommerce($domain),
             'woocommerce' => self::validateWoo($domain),
-            default => 'Unsupported platform.',
+            default => __('Unsupported platform.'),
         };
     }
 
@@ -32,36 +32,36 @@ class StoreUrlGuard
     {
         return preg_match('/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/i', $domain) === 1
             ? null
-            : 'Shopify domain must be your store\'s *.myshopify.com address.';
+            : __('Shopify domain must be your store\'s *.myshopify.com address.');
     }
 
     private static function validateBigCommerce(string $hash): ?string
     {
         return preg_match('/^[a-z0-9]+$/i', $hash) === 1
             ? null
-            : 'BigCommerce store hash is invalid (expected the alphanumeric code from your API path).';
+            : __('BigCommerce store hash is invalid (expected the alphanumeric code from your API path).');
     }
 
     private static function validateWoo(string $url): ?string
     {
         if (! preg_match('#^https?://#i', $url)) {
-            return 'Store URL must start with http:// or https://.';
+            return __('Store URL must start with http:// or https://.');
         }
 
         $host = parse_url($url, PHP_URL_HOST);
         if (! $host) {
-            return 'Store URL is not a valid URL.';
+            return __('Store URL is not a valid URL.');
         }
 
         // Resolve all A/AAAA records; reject if any resolves to a non-public range.
         $ips = self::resolveHost($host);
         if ($ips === []) {
-            return 'Store URL host could not be resolved.';
+            return __('Store URL host could not be resolved.');
         }
 
         foreach ($ips as $ip) {
             if (! self::isPublicIp($ip)) {
-                return 'Store URL must point to a public host (private/internal addresses are blocked).';
+                return __('Store URL must point to a public host (private/internal addresses are blocked).');
             }
         }
 

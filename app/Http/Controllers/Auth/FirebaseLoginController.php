@@ -20,7 +20,7 @@ class FirebaseLoginController extends Controller
     public function login(Request $request): JsonResponse|RedirectResponse
     {
         if (SystemSetting::get('firebase_enabled', 'false') !== 'true') {
-            return response()->json(['message' => 'Firebase login is not enabled.'], 403);
+            return response()->json(['message' => __('Firebase login is not enabled.')], 403);
         }
 
         $request->validate([
@@ -29,21 +29,21 @@ class FirebaseLoginController extends Controller
 
         $projectId = SystemSetting::get('firebase_project_id', '');
         if (! $projectId) {
-            return response()->json(['message' => 'Firebase project is not configured.'], 500);
+            return response()->json(['message' => __('Firebase project is not configured.')], 500);
         }
 
         $tokenInfo = $this->verifyIdToken($request->id_token, $projectId);
         if (! $tokenInfo) {
-            return response()->json(['message' => 'Invalid or expired token.'], 422);
+            return response()->json(['message' => __('Invalid or expired token.')], 422);
         }
 
-        $email   = $tokenInfo['email'] ?? null;
-        $uid     = $tokenInfo['sub']   ?? null;
-        $name    = $tokenInfo['name']  ?? $email;
-        $avatar  = $tokenInfo['picture'] ?? null;
+        $email = $tokenInfo['email'] ?? null;
+        $uid = $tokenInfo['sub'] ?? null;
+        $name = $tokenInfo['name'] ?? $email;
+        $avatar = $tokenInfo['picture'] ?? null;
 
         if (! $email || ! $uid) {
-            return response()->json(['message' => 'Could not retrieve email from token.'], 422);
+            return response()->json(['message' => __('Could not retrieve email from token.')], 422);
         }
 
         $existing = SocialAccount::where('provider', 'firebase')
@@ -53,6 +53,7 @@ class FirebaseLoginController extends Controller
 
         if ($existing) {
             Auth::login($existing->user, true);
+
             return response()->json(['redirect' => route('client.dashboard')]);
         }
 
@@ -60,35 +61,35 @@ class FirebaseLoginController extends Controller
 
         if (! $user) {
             if (! config('auth.allow_registration', true)) {
-                return response()->json(['message' => 'No account found. Please register first.'], 403);
+                return response()->json(['message' => __('No account found. Please register first.')], 403);
             }
 
             $user = DB::transaction(function () use ($name, $email) {
                 $client = Client::create([
-                    'name'              => $name,
-                    'email'             => $email,
-                    'status'            => Client::STATUS_ACTIVE,
+                    'name' => $name,
+                    'email' => $email,
+                    'status' => Client::STATUS_ACTIVE,
                     // Currency left null: inherit the platform default currency.
                 ]);
 
                 return User::create([
-                    'name'              => $name,
-                    'email'             => $email,
-                    'password'          => bcrypt(Str::random(32)),
-                    'role'              => User::ROLE_CLIENT,
-                    'status'            => User::STATUS_ACTIVE,
+                    'name' => $name,
+                    'email' => $email,
+                    'password' => bcrypt(Str::random(32)),
+                    'role' => User::ROLE_CLIENT,
+                    'status' => User::STATUS_ACTIVE,
                     'email_verified_at' => now(),
-                    'client_id'         => $client->id,
-                    'client_role'       => User::CLIENT_ROLE_ADMINISTRATOR,
+                    'client_id' => $client->id,
+                    'client_role' => User::CLIENT_ROLE_ADMINISTRATOR,
                 ]);
             });
         }
 
         $user->socialAccounts()->create([
-            'provider'    => 'firebase',
+            'provider' => 'firebase',
             'provider_id' => $uid,
-            'email'       => $email,
-            'avatar_url'  => $avatar,
+            'email' => $email,
+            'avatar_url' => $avatar,
         ]);
 
         Auth::login($user, true);
@@ -114,7 +115,7 @@ class FirebaseLoginController extends Controller
             $iss = $data['iss'] ?? '';
 
             $validAudience = $aud === $projectId || Str::contains($aud, $projectId);
-            $validIssuer   = in_array($iss, [
+            $validIssuer = in_array($iss, [
                 "https://securetoken.google.com/{$projectId}",
                 'https://accounts.google.com',
             ]);

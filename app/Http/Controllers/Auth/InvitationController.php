@@ -23,7 +23,7 @@ class InvitationController extends Controller
         $invitation = Invitation::where('token', $token)->first();
 
         if (! $invitation || ! $invitation->isPending()) {
-            return redirect()->route('login')->withErrors(['invitation' => 'This invitation is invalid or has expired.']);
+            return redirect()->route('login')->withErrors(['invitation' => __('This invitation is invalid or has expired.')]);
         }
 
         return Inertia::render('Auth/AcceptInvitation', [
@@ -41,7 +41,7 @@ class InvitationController extends Controller
         $invitation = Invitation::where('token', $token)->first();
 
         if (! $invitation || ! $invitation->isPending()) {
-            return redirect()->route('login')->withErrors(['invitation' => 'This invitation is invalid or has expired.']);
+            return redirect()->route('login')->withErrors(['invitation' => __('This invitation is invalid or has expired.')]);
         }
 
         $request->validate([
@@ -78,6 +78,6 @@ class InvitationController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('client.dashboard')->with('success', 'Welcome! Your invitation has been accepted.');
+        return redirect()->route('client.dashboard')->with('success', __('Welcome! Your invitation has been accepted.'));
     }
 }

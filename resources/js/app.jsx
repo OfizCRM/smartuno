@@ -37,11 +37,26 @@ router.on('success', (event) => syncCsrfToken(event.detail.page));
 // demo keep every button clickable and all data editable: the attempt is allowed
 // through to the server, quietly blocked there, and the user is simply told why
 // nothing changed. Needs a <Toaster /> in the active layout (Client/Inbox/Admin).
+// The subscription gate (EnforceSubscriptionAccess) answers the same way with a
+// 402 { code: 'subscription_readonly' } once the grace period is over, so it is
+// handled here too: without it a blocked write looks like it succeeded — Inertia
+// reads the redirect it used to send as success, the modal closes, the form
+// clears, and the customer never learns why nothing was saved.
 router.on('invalid', (event) => {
     const response = event.detail?.response;
-    if (response?.status === 403 && response?.data?.code === 'demo_mode') {
+    const code = response?.data?.code;
+
+    const fallback = {
+        demo_mode: () => i18n.t('demo.banner') || 'Demo mode: changes are disabled.',
+        subscription_readonly: () => i18n.t('subscription.readonly_message'),
+    };
+
+    if (
+        (response?.status === 403 && code === 'demo_mode')
+        || (response?.status === 402 && code === 'subscription_readonly')
+    ) {
         event.preventDefault();
-        toast.error(response.data.message || i18n.t('demo.banner') || 'Demo mode: changes are disabled.');
+        toast.error(response.data.message || fallback[code]());
     }
 });
 

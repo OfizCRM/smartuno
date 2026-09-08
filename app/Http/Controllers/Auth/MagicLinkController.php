@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\MagicLink;
+use App\Models\SystemSetting;
 use App\Models\User;
+use App\Services\Mail\MailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,8 +30,8 @@ class MagicLinkController extends Controller
     public function send(Request $request): RedirectResponse
     {
         // Only allow when enabled in system settings
-        if (! \App\Models\SystemSetting::get('magic_link_enabled', false)) {
-            return back()->withErrors(['email' => 'Magic link login is not enabled.']);
+        if (! SystemSetting::get('magic_link_enabled', false)) {
+            return back()->withErrors(['email' => __('Magic link login is not enabled.')]);
         }
 
         $request->validate(['email' => ['required', 'email']]);
@@ -48,14 +50,14 @@ class MagicLinkController extends Controller
 
             $url = route('auth.magic-link.verify', ['token' => $link->token]);
 
-            app(\App\Services\Mail\MailService::class)->sendWithTemplate('magic_link', $request->email, [
+            app(MailService::class)->sendWithTemplate('magic_link', $request->email, [
                 'app_name' => config('app.name'),
                 'magic_link_url' => $url,
                 'expires_minutes' => 15,
             ]);
         }
 
-        return back()->with('status', 'If an account exists for that email, we\'ve sent a magic link.');
+        return back()->with('status', __('If an account exists for that email, we\'ve sent a magic link.'));
     }
 
     /**
@@ -66,13 +68,13 @@ class MagicLinkController extends Controller
         $link = MagicLink::where('token', $token)->first();
 
         if (! $link || ! $link->isValid()) {
-            return redirect()->route('login')->withErrors(['email' => 'This magic link is invalid or has expired.']);
+            return redirect()->route('login')->withErrors(['email' => __('This magic link is invalid or has expired.')]);
         }
 
         $user = User::where('email', $link->email)->first();
 
         if (! $user) {
-            return redirect()->route('login')->withErrors(['email' => 'No account found for this magic link.']);
+            return redirect()->route('login')->withErrors(['email' => __('No account found for this magic link.')]);
         }
 
         $link->update(['used_at' => now()]);

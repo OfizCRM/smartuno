@@ -12,6 +12,7 @@ use App\Modules\Shared\Models\Message;
 use App\Modules\Shared\Services\ChannelManager;
 use App\Modules\Whatsapp\Models\WhatsappAutoReply;
 use App\Notifications\ConversationHandoverNotification;
+use App\Support\Entitlement;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -74,19 +75,43 @@ class AutoReplyListener
             return;
         }
 
+        // ── 0. Entitlement ───────────────────────────────────────────────────
+        // The inbound message is already stored and already in the inbox — the
+        // driver persisted it before dispatching MessageReceived — so nothing a
+        // customer sent is lost here. What stops is the app *answering* on the
+        // tenant's behalf: sections 1 and 3 both put an outbound message on the
+        // tenant's channel, and the chatbot one spends an LLM key that
+        // CredentialResolver falls back to the platform's when the workspace has
+        // none, so a read-only client could spend the owner's credit for ever.
+        //
+        // Section 2 is deliberately NOT gated. Handover sends nothing outbound —
+        // it flags the conversation for a human and raises an in-app notification
+        // (ConversationHandoverNotification::via is database + broadcast +
+        // OneSignal, none of which reaches the customer or costs the owner). It
+        // is a read-side inbox signal the tenant's own staff rely on, and the
+        // owner's decision was explicit that inbound must still surface in the
+        // inbox. Suppressing it would leave a patient asking for a human with a
+        // silent bot and nobody flagged.
+        //
+        // Resolved once and reused rather than asked twice: two calls would mean
+        // two lookups and, worse, two chances to disagree within one message.
+        $readonly = $this->isReadonly($conversation->workspace_id);
+
         // ── 1. Keyword / trigger auto-reply rules (always run, no chatbot required) ──
-        $autoReply = $this->findMatchingAutoReply(
-            $conversation->workspace_id,
-            $channelAccount->id,
-            $message,
-            $conversation,
-            $message->channel,
-        );
+        if (! $readonly) {
+            $autoReply = $this->findMatchingAutoReply(
+                $conversation->workspace_id,
+                $channelAccount->id,
+                $message,
+                $conversation,
+                $message->channel,
+            );
 
-        if ($autoReply) {
-            $this->dispatchAutoReply($autoReply, $message, $conversation);
+            if ($autoReply) {
+                $this->dispatchAutoReply($autoReply, $message, $conversation);
 
-            return;
+                return;
+            }
         }
 
         // ── 2. Handover phrase detection ─────────────────────────────────────
@@ -97,6 +122,10 @@ class AutoReplyListener
 
                 return;
             }
+        }
+
+        if ($readonly) {
+            return;
         }
 
         // ── 3. AI chatbot (only if one is linked to this channel account) ─────
@@ -155,6 +184,33 @@ class AutoReplyListener
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Whether the client owning this workspace has run out of entitlement.
+     * Fails open — an unknown or clientless workspace answers false.
+     */
+    private function isReadonly(?int $workspaceId): bool
+    {
+        $client = Entitlement::clientForWorkspace($workspaceId);
+
+        if (Entitlement::state($client) !== Entitlement::READONLY) {
+            return false;
+        }
+
+        $clientId = (int) $client?->getKey();
+
+        // One line per client per hour, not one per inbound message: a blocked
+        // tenant keeps receiving messages all day and the owner needs to notice
+        // this, not scroll past it. Ids only — no numbers, names or bodies.
+        if (Cache::add("entitlement_block_log:auto_reply:{$clientId}", 1, 3600)) {
+            Log::warning('Auto-reply suppressed: client entitlement is read-only.', [
+                'workspace_id' => $workspaceId,
+                'client_id' => $clientId,
+            ]);
+        }
+
+        return true;
     }
 
     private function findMatchingAutoReply(

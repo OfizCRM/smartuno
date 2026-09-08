@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Locale;
 use App\Services\I18n\I18nFileService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -80,7 +81,7 @@ class LocaleController extends Controller
         ]);
     }
 
-    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:10', 'unique:locales,code', 'regex:/^[a-z]{2,6}$/'],
@@ -100,10 +101,10 @@ class LocaleController extends Controller
         $this->i18nFiles->createLocaleFile($validated['code'], true);
         $this->i18nFiles->invalidateCache();
 
-        return redirect()->route('admin.locales.index')->with('success', 'Locale added.');
+        return redirect()->route('admin.locales.index')->with('success', __('Locale added.'));
     }
 
-    public function update(Request $request, Locale $locale): \Illuminate\Http\RedirectResponse
+    public function update(Request $request, Locale $locale): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:128'],
@@ -117,33 +118,33 @@ class LocaleController extends Controller
         $locale->update($validated);
         $this->i18nFiles->invalidateCache();
 
-        return back()->with('success', 'Locale updated.');
+        return back()->with('success', __('Locale updated.'));
     }
 
-    public function setDefault(Locale $locale): \Illuminate\Http\RedirectResponse
+    public function setDefault(Locale $locale): RedirectResponse
     {
         if (! $locale->enabled) {
-            return back()->with('error', 'Enable the locale first.');
+            return back()->with('error', __('Enable the locale first.'));
         }
         Locale::where('is_default', true)->update(['is_default' => false]);
         $locale->update(['is_default' => true]);
         $this->i18nFiles->invalidateCache();
 
-        return back()->with('success', $locale->name.' is now the default language.');
+        return back()->with('success', __(':language is now the default language.', ['language' => $locale->name]));
     }
 
-    public function destroy(Locale $locale): \Illuminate\Http\RedirectResponse
+    public function destroy(Locale $locale): RedirectResponse
     {
         if ($locale->is_default) {
-            return back()->with('error', 'Cannot delete the default language. Set another as default first.');
+            return back()->with('error', __('Cannot delete the default language. Set another as default first.'));
         }
         $enabledCount = Locale::where('enabled', true)->count();
         if ($enabledCount <= 1) {
-            return back()->with('error', 'Cannot delete the last enabled language.');
+            return back()->with('error', __('Cannot delete the last enabled language.'));
         }
         $locale->delete();
         $this->i18nFiles->invalidateCache();
 
-        return back()->with('success', 'Language removed.');
+        return back()->with('success', __('Language removed.'));
     }
 }

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Locale;
 use App\Services\I18n\I18nFileService;
 use App\Services\I18n\TranslationProviderInterface;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 
@@ -15,7 +15,7 @@ class TranslationController extends Controller
         private I18nFileService $i18nFiles
     ) {}
 
-    public function update(Request $request): \Illuminate\Http\RedirectResponse
+    public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'locale' => ['required', 'string', 'max:10'],
@@ -28,10 +28,10 @@ class TranslationController extends Controller
         $this->i18nFiles->putFlatDictionary($validated['locale'], $flat);
         $this->i18nFiles->invalidateCache();
 
-        return back()->with('success', 'Translation saved.');
+        return back()->with('success', __('Translation saved.'));
     }
 
-    public function bulkUpdate(Request $request): \Illuminate\Http\RedirectResponse
+    public function bulkUpdate(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'locale' => ['required', 'string', 'max:10'],
@@ -47,10 +47,10 @@ class TranslationController extends Controller
         $this->i18nFiles->putFlatDictionary($validated['locale'], $flat);
         $this->i18nFiles->invalidateCache();
 
-        return back()->with('success', count($validated['translations']).' translations saved.');
+        return back()->with('success', __(':count translations saved.', ['count' => count($validated['translations'])]));
     }
 
-    public function autoTranslateMissing(Request $request): \Illuminate\Http\RedirectResponse
+    public function autoTranslateMissing(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'locale' => ['required', 'string', 'exists:locales,code'],
@@ -58,7 +58,7 @@ class TranslationController extends Controller
 
         $targetCode = $validated['locale'];
         if ($targetCode === 'en') {
-            return back()->with('info', 'English is the source; no auto-translate needed.');
+            return back()->with('info', __('English is the source; no auto-translate needed.'));
         }
 
         $provider = App::bound(TranslationProviderInterface::class)
@@ -66,7 +66,7 @@ class TranslationController extends Controller
             : null;
 
         if (! $provider) {
-            return back()->with('error', 'No translation provider configured. Set OPENAI_API_KEY or similar in .env.');
+            return back()->with('error', __('No translation provider configured. Set OPENAI_API_KEY or similar in .env.'));
         }
 
         $enFlat = $this->i18nFiles->getFlatDictionary('en');
@@ -89,6 +89,6 @@ class TranslationController extends Controller
         $this->i18nFiles->putFlatDictionary($targetCode, $targetFlat);
         $this->i18nFiles->invalidateCache();
 
-        return back()->with('success', "Auto-translated {$updated} missing entries for {$targetCode}.");
+        return back()->with('success', __('Auto-translated :count missing entries for :locale.', ['count' => $updated, 'locale' => $targetCode]));
     }
 }

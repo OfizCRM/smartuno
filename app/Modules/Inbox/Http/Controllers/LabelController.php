@@ -40,7 +40,7 @@ class LabelController extends Controller
 
         InboxLabel::create(array_merge($validated, ['workspace_id' => $wid]));
 
-        return back()->with('success', 'Label created.');
+        return back()->with('success', __('Label created.'));
     }
 
     public function update(Request $request, InboxLabel $label): RedirectResponse
@@ -55,7 +55,7 @@ class LabelController extends Controller
 
         $label->update($validated);
 
-        return back()->with('success', 'Label updated.');
+        return back()->with('success', __('Label updated.'));
     }
 
     public function destroy(Request $request, InboxLabel $label): RedirectResponse
@@ -63,7 +63,7 @@ class LabelController extends Controller
         $this->authorise($request, $label);
         $label->delete();
 
-        return back()->with('success', 'Label deleted.');
+        return back()->with('success', __('Label deleted.'));
     }
 
     public function attach(Request $request, Conversation $conversation): JsonResponse

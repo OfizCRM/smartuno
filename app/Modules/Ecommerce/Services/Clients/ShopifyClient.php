@@ -37,6 +37,12 @@ class ShopifyClient implements EcommerceClientInterface
             if ($resp->successful() && isset($resp->json()['shop'])) {
                 $shop = $resp->json()['shop'];
 
+                // Not translated, deliberately. StoreConnectionTester persists this string into
+                // ecommerce_stores.last_test_message, which the stores page reads back for every
+                // member of the workspace — a translated value would leave the column holding
+                // whichever language the person who last pressed Test happened to be using, and
+                // flip it again on the next test. Driver-level results stay English internal
+                // signals; the same split CampaignController::testSend already makes.
                 return [
                     'ok' => true,
                     'message' => 'Connected to '.($shop['name'] ?? $this->domain),
@@ -250,7 +256,7 @@ class ShopifyClient implements EcommerceClientInterface
                 ->all();
 
             if (empty($fulfillmentOrders)) {
-                return ['ok' => false, 'message' => 'No open fulfillment orders found.'];
+                return ['ok' => false, 'message' => __('No open fulfillment orders found.')];
             }
 
             $resp = $this->http()->post('/fulfillments.json', [
@@ -265,8 +271,8 @@ class ShopifyClient implements EcommerceClientInterface
             ]);
 
             return $resp->successful()
-                ? ['ok' => true, 'message' => 'Fulfillment created.']
-                : ['ok' => false, 'message' => $resp->json()['errors'] ?? 'Shopify rejected the fulfillment.'];
+                ? ['ok' => true, 'message' => __('Fulfillment created.')]
+                : ['ok' => false, 'message' => $resp->json()['errors'] ?? __('Shopify rejected the fulfillment.')];
         } catch (\Throwable $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
         }

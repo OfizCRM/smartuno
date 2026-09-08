@@ -38,7 +38,7 @@ class SegmentController extends Controller
             $this->resolver->materialise($segment);
         }
 
-        return back()->with('success', 'Segment created.');
+        return back()->with('success', __('Segment created.'));
     }
 
     public function update(Request $request, Segment $segment): RedirectResponse
@@ -54,7 +54,7 @@ class SegmentController extends Controller
             $this->resolver->materialise($segment);
         }
 
-        return back()->with('success', 'Segment updated.');
+        return back()->with('success', __('Segment updated.'));
     }
 
     public function destroy(Request $request, Segment $segment): RedirectResponse
@@ -63,13 +63,13 @@ class SegmentController extends Controller
         $segment->contacts()->detach();
         $segment->delete();
 
-        return back()->with('success', 'Segment deleted.');
+        return back()->with('success', __('Segment deleted.'));
     }
 
     public function manageContacts(Request $request, Segment $segment): Response
     {
         $this->authorise($request, $segment);
-        abort_if($segment->type !== 'static', 403, 'Only static segments support manual contact management.');
+        abort_if($segment->type !== 'static', 403, __('Only static segments support manual contact management.'));
 
         $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
 
@@ -110,7 +110,7 @@ class SegmentController extends Controller
         $segment->contacts()->syncWithoutDetaching($validated['contact_ids']);
         $segment->update(['contact_count' => $segment->contacts()->count()]);
 
-        return back()->with('success', count($validated['contact_ids']).' contact(s) added to segment.');
+        return back()->with('success', trans_choice(':count contact(s) added to segment.', count($validated['contact_ids'])));
     }
 
     public function detachContact(Request $request, Segment $segment, Contact $contact): RedirectResponse
@@ -121,7 +121,7 @@ class SegmentController extends Controller
         $segment->contacts()->detach($contact->id);
         $segment->update(['contact_count' => $segment->contacts()->count()]);
 
-        return back()->with('success', 'Contact removed from segment.');
+        return back()->with('success', __('Contact removed from segment.'));
     }
 
     private function authorise(Request $request, Segment $segment): void

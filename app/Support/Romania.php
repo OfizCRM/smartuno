@@ -2,10 +2,13 @@
 
 namespace App\Support;
 
+use Carbon\CarbonImmutable;
+use DateTimeInterface;
+
 /**
- * Read access to config/romania.php.
+ * Romanian-specific formatting and read access to config/romania.php.
  *
- * The only interesting part is the VAT lookup. Rates are stored as dated
+ * The only interesting part of the config side is the VAT lookup. Rates are stored as dated
  * entries rather than a single current value, so asking "what is the standard
  * rate" is always really asking "what was it on this date" — an invoice
  * reissued for July 2025 must still say 19%, not the 21% that took effect on
@@ -13,6 +16,83 @@ namespace App\Support;
  */
 final class Romania
 {
+    /** The zone a date is written in when the recipient has not chosen one of their own. */
+    public const DEFAULT_TIMEZONE = 'Europe/Bucharest';
+
+    /**
+     * A date written the way a Romanian reads it: "4 septembrie 2026".
+     *
+     * The locale is pinned to 'ro' rather than left to app()->getLocale(). APP_LOCALE is
+     * 'en' and the only thing that ever changes it is SetLocale, a web middleware — so a
+     * date formatted from a Stripe webhook, a scheduled command or a queue worker would
+     * come out as "Sep 4, 2026" in the middle of Romanian email copy. Every transactional
+     * template is Romanian, so the date has to be too, whatever ran the code.
+     *
+     * $timezone is not optional in spirit. config('app.timezone') is 'UTC', so every
+     * subscription column hydrates as a UTC Carbon, and an instant in the last hours of the
+     * UTC day prints the day *before* the one the customer's own screen shows for the same
+     * column — Stripe writes renews_at from a period end, so that is a couple of hours out
+     * of every twenty-four. Callers pass the recipient's own timezone; a recipient who
+     * never set one gets Bucharest, which for a Romanian-only product is right far more
+     * often than UTC is.
+     *
+     * $fallback is what a missing date renders as. It exists so a null never reaches the
+     * recipient as the literal string "null".
+     */
+    public static function longDate(mixed $date, ?string $timezone = null, string $fallback = '—'): string
+    {
+        $zone = is_string($timezone) && trim($timezone) !== '' ? trim($timezone) : self::DEFAULT_TIMEZONE;
+
+        try {
+            if ($date instanceof DateTimeInterface) {
+                $instance = CarbonImmutable::instance($date);
+            } elseif (is_string($date) && trim($date) !== '') {
+                $instance = CarbonImmutable::parse($date);
+            } else {
+                return $fallback;
+            }
+
+            try {
+                $instance = $instance->setTimezone($zone);
+            } catch (\Throwable) {
+                // A timezone name a stale profile still carries loses the recipient a few
+                // hours, not the whole date — printing the fallback here would put an em
+                // dash where they expect a day.
+                $instance = $instance->setTimezone(self::DEFAULT_TIMEZONE);
+            }
+
+            return $instance->locale('ro')->isoFormat('D MMMM YYYY');
+        } catch (\Throwable) {
+            return $fallback;
+        }
+    }
+
+    /**
+     * The name to put after "Salut," — the first word of a full name.
+     *
+     * Every greeting in the transactional templates is informal, and in Romanian that
+     * register does not take a surname: "Salut, Ana Popescu," is the signature of a badly
+     * merged mail merge, and it is the first line the recipient reads. An empty name stays
+     * empty; the templates that identify a customer *to an admin* rather than greet them
+     * keep passing the full name, so this is applied per call site, not inside MailService.
+     */
+    public static function greetingName(mixed $name): string
+    {
+        if (! is_string($name)) {
+            return '';
+        }
+
+        $name = trim((string) preg_replace('/\s+/u', ' ', $name));
+
+        if ($name === '') {
+            return '';
+        }
+
+        $first = strstr($name, ' ', true);
+
+        return $first === false ? $name : $first;
+    }
+
     /** The rate that applies to ordinary goods and services on a given date. */
     public static function standardVatRate(?string $onDate = null): float
     {

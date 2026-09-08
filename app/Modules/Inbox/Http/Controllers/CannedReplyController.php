@@ -38,7 +38,7 @@ class CannedReplyController extends Controller
 
         CannedReply::create(array_merge($validated, ['workspace_id' => $wid]));
 
-        return back()->with('success', 'Canned reply created.');
+        return back()->with('success', __('Canned reply created.'));
     }
 
     public function update(Request $request, CannedReply $cannedReply): RedirectResponse
@@ -53,7 +53,7 @@ class CannedReplyController extends Controller
 
         $cannedReply->update($validated);
 
-        return back()->with('success', 'Canned reply updated.');
+        return back()->with('success', __('Canned reply updated.'));
     }
 
     public function destroy(Request $request, CannedReply $cannedReply): RedirectResponse
@@ -61,7 +61,7 @@ class CannedReplyController extends Controller
         $this->authorise($request, $cannedReply);
         $cannedReply->delete();
 
-        return back()->with('success', 'Canned reply deleted.');
+        return back()->with('success', __('Canned reply deleted.'));
     }
 
     /** Lightweight JSON endpoint used by the slash-command picker in Show.jsx */

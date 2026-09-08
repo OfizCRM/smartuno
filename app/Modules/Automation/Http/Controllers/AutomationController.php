@@ -49,7 +49,7 @@ class AutomationController extends Controller
             'edges' => [],
         ]));
 
-        return redirect()->route('client.automations.edit', $auto->uuid)->with('success', 'Automation created.');
+        return redirect()->route('client.automations.edit', $auto->uuid)->with('success', __('Automation created.'));
     }
 
     public function edit(Request $request, Automation $automation): Response
@@ -119,7 +119,7 @@ class AutomationController extends Controller
 
         $automation->update($validated);
 
-        return back()->with('success', 'Automation saved.');
+        return back()->with('success', __('Automation saved.'));
     }
 
     public function destroy(Request $request, Automation $automation): RedirectResponse
@@ -127,7 +127,7 @@ class AutomationController extends Controller
         $this->authorise($request, $automation);
         $automation->delete();
 
-        return redirect()->route('client.automations.index')->with('success', 'Automation deleted.');
+        return redirect()->route('client.automations.index')->with('success', __('Automation deleted.'));
     }
 
     public function runs(Request $request, Automation $automation): Response

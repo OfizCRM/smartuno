@@ -18,7 +18,7 @@ class EnsureAdminRole
         }
 
         if (! $request->user()->isAdmin()) {
-            abort(403, 'Access denied. Admin role required.');
+            abort(403, __('Access denied. Admin role required.'));
         }
 
         return $next($request);

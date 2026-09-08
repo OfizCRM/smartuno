@@ -53,6 +53,6 @@ class AiProviderController extends Controller
             'enabled' => (bool) $validated['enabled'],
         ])->save();
 
-        return back()->with('success', ucfirst($provider).' configuration saved.');
+        return back()->with('success', __(':provider configuration saved.', ['provider' => ucfirst($provider)]));
     }
 }

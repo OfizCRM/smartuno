@@ -7,6 +7,7 @@ use App\Http\Controllers\LicenseController;
 use App\Http\Middleware\BroadcastingAuthDebug;
 use App\Http\Middleware\CheckApiAbility;
 use App\Http\Middleware\EnforceLimit;
+use App\Http\Middleware\EnforceSubscriptionAccess;
 use App\Http\Middleware\EnsureAdminRole;
 use App\Http\Middleware\EnsureClientScope;
 use App\Http\Middleware\EnsureInstalled;
@@ -25,6 +26,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Sentry\Laravel\Integration;
@@ -65,7 +67,7 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware(['web'])
                 ->group(base_path('routes/webhooks.php'));
 
-            Route::middleware(['web', 'auth', 'role:client', 'client.scope', 'demo'])
+            Route::middleware(['web', 'auth', 'role:client', 'client.scope', 'demo', 'subscription.access'])
                 ->prefix('app')
                 ->name('client.')
                 ->group(base_path('routes/client.php'));
@@ -124,6 +126,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'demo' => EnsureNotDemoMode::class,
+            'subscription.access' => EnforceSubscriptionAccess::class,
             'admin' => EnsureAdminRole::class,
             'admin.super' => EnsureSuperAdmin::class,
             'role' => EnsureUserRole::class,
@@ -141,15 +144,18 @@ return Application::configure(basePath: dirname(__DIR__))
             'role:client',
             EnsureClientScope::class,
             EnsureNotDemoMode::class,
+            // Last: it needs the authenticated client user the middleware above
+            // resolve, and demo mode's own message should win when both apply.
+            EnforceSubscriptionAccess::class,
         ]);
         // Trust all proxies so X-Forwarded-For is used for real client IPs.
         // In production, restrict to your actual load balancer IPs via TRUSTED_PROXIES env var.
         $middleware->trustProxies(
             at: env('TRUSTED_PROXIES', '*'),
-            headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR
-                | \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST
-                | \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT
-                | \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO,
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO,
         );
 
         // Gateways sign their webhooks; each handler verifies that signature itself. They

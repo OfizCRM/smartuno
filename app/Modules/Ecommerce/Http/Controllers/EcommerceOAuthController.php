@@ -51,7 +51,7 @@ class EcommerceOAuthController extends Controller
             try {
                 $url = $this->oauth->shopifyAuthUrl($shop, $state, route('client.ecommerce.oauth.shopify.callback'));
             } catch (\RuntimeException $e) {
-                return redirect($this->index())->with('error', 'Shopify OAuth is not configured by the administrator.');
+                return redirect($this->index())->with('error', __('Shopify OAuth is not configured by the administrator.'));
             }
 
             return redirect()->away($url);
@@ -81,7 +81,7 @@ class EcommerceOAuthController extends Controller
         }
 
         return redirect($this->index())
-            ->with('error', 'BigCommerce connects by installing the app from your BigCommerce control panel.');
+            ->with('error', __('BigCommerce connects by installing the app from your BigCommerce control panel.'));
     }
 
     public function shopifyCallback(Request $request): RedirectResponse
@@ -92,24 +92,24 @@ class EcommerceOAuthController extends Controller
         $code = (string) $request->query('code', '');
 
         if (empty($stored['state']) || ! hash_equals($stored['state'], $state) || ($stored['shop'] ?? null) !== $shop) {
-            return redirect($this->index())->with('error', 'Invalid OAuth state. Please try connecting again.');
+            return redirect($this->index())->with('error', __('Invalid OAuth state. Please try connecting again.'));
         }
         if ($error = StoreUrlGuard::validate('shopify', $shop)) {
             return redirect($this->index())->with('error', $error);
         }
         if (! $this->oauth->shopifyVerifyHmac($request->query())) {
-            return redirect($this->index())->with('error', 'Shopify request signature could not be verified.');
+            return redirect($this->index())->with('error', __('Shopify request signature could not be verified.'));
         }
 
         $token = $code ? $this->oauth->shopifyExchange($shop, $code) : null;
         if (! $token) {
-            return redirect($this->index())->with('error', 'Failed to obtain Shopify access token.');
+            return redirect($this->index())->with('error', __('Failed to obtain Shopify access token.'));
         }
 
         $result = $this->connector->connect((int) $stored['workspace'], 'shopify', $shop, ['access_token' => $token]);
 
         return redirect($this->index())->with($result['ok'] ? 'success' : 'error',
-            $result['ok'] ? 'Shopify store connected.' : ('Connected but: '.$result['message']));
+            $result['ok'] ? __('Shopify store connected.') : __('Connected but: :message', ['message' => $result['message']]));
     }
 
     public function bigcommerceCallback(Request $request): RedirectResponse
@@ -119,12 +119,12 @@ class EcommerceOAuthController extends Controller
         $context = (string) $request->query('context', ''); // stores/{hash}
 
         if ($code === '' || $context === '') {
-            return redirect($this->index())->with('error', 'BigCommerce did not return an authorization code.');
+            return redirect($this->index())->with('error', __('BigCommerce did not return an authorization code.'));
         }
 
         $result = $this->oauth->bigcommerceExchange($code, $scope, $context, route('client.ecommerce.oauth.bigcommerce.callback'));
         if (! $result) {
-            return redirect($this->index())->with('error', 'Failed to obtain BigCommerce access token.');
+            return redirect($this->index())->with('error', __('Failed to obtain BigCommerce access token.'));
         }
 
         $connect = $this->connector->connect(
@@ -135,13 +135,13 @@ class EcommerceOAuthController extends Controller
         );
 
         return redirect($this->index())->with($connect['ok'] ? 'success' : 'error',
-            $connect['ok'] ? 'BigCommerce store connected.' : ('Connected but: '.$connect['message']));
+            $connect['ok'] ? __('BigCommerce store connected.') : __('Connected but: :message', ['message' => $connect['message']]));
     }
 
     /** Browser landing after the merchant approves in WooCommerce. */
     public function woocommerceReturn(): RedirectResponse
     {
-        return redirect($this->index())->with('success', 'WooCommerce authorization complete. Finishing connection…');
+        return redirect($this->index())->with('success', __('WooCommerce authorization complete. Finishing connection…'));
     }
 
     /**
