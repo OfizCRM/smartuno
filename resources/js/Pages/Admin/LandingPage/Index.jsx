@@ -654,7 +654,7 @@ function MetricsTab({ data, setData, t }) {
 
 // ─── Channels Tab ─────────────────────────────────────────────────────────────
 
-const CHANNEL_OPTIONS = ['whatsapp', 'messenger', 'instagram', 'sms', 'email'];
+const CHANNEL_OPTIONS = ['whatsapp', 'messenger', 'instagram', 'sms', 'email', 'telegram'];
 
 function ChannelsTab({ data, setData, t }) {
     const s = (key) => data[`landing.${key}`] ?? '';
@@ -682,7 +682,7 @@ function ChannelsTab({ data, setData, t }) {
                     </Field>
                 </div>
                 <div className="grid grid-cols-1 gap-4 pt-2">
-                    {[1, 2, 3, 4, 5].map((i) => (
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
                         <div key={i} className="p-4 rounded-soft border border-neutral-200 dark:border-neutral-700 space-y-3">
                             <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">{t('landing_page_admin.channel_n', { n: i, defaultValue: `Channel ${i}` })}</p>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

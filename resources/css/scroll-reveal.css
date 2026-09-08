@@ -1,0 +1,47 @@
+/* Progressive enhancement: content stays visible without the observer,
+   when reduced motion is requested, and when printing the page. */
+@media screen and (prefers-reduced-motion: no-preference) {
+    [data-scroll-reveal][data-reveal-ready='true'] {
+        --reveal-distance: clamp(2rem, 6vw, 4.5rem);
+        --reveal-offset: calc(-1 * var(--reveal-distance));
+        --reveal-delay: 0ms;
+        opacity: 0;
+        translate: var(--reveal-offset) 0;
+    }
+
+    [data-scroll-reveal='right'][data-reveal-ready='true'] {
+        --reveal-offset: var(--reveal-distance);
+    }
+
+    [data-reveal-ready='true'][data-reveal-delay='1'] {
+        --reveal-delay: 80ms;
+    }
+
+    [data-reveal-ready='true'][data-reveal-delay='2'] {
+        --reveal-delay: 160ms;
+    }
+
+    [data-scroll-reveal][data-reveal-ready='true'][data-reveal-visible='true'] {
+        opacity: 1;
+        translate: 0 0;
+        animation: scroll-reveal-in 680ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay) both;
+    }
+
+    /* Keyboard navigation must reveal a focused link or button immediately. */
+    [data-scroll-reveal][data-reveal-ready='true']:focus-within {
+        opacity: 1;
+        translate: 0 0;
+        animation: none;
+    }
+}
+
+@keyframes scroll-reveal-in {
+    from {
+        opacity: 0;
+        translate: var(--reveal-offset) 0;
+    }
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
