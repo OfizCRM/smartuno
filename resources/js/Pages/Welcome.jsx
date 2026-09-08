@@ -5,6 +5,15 @@ import SeoHead from '@/Components/SeoHead';
 import { BrandMark } from '@/Components/BrandIcons';
 import { useTranslation } from 'react-i18next';
 import { useBranding } from '@/hooks/useBranding';
+import useScrollReveal from '@/hooks/useScrollReveal';
+import '../../css/scroll-reveal.css';
+
+function reveal(index = 0) {
+    return {
+        'data-scroll-reveal': index % 2 === 0 ? 'left' : 'right',
+        'data-reveal-delay': index % 3,
+    };
+}
 
 // ─── Icon map ─────────────────────────────────────────────────────────────────
 
@@ -115,6 +124,11 @@ function ChannelIcon({ name, className = 'h-6 w-6' }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
             </svg>
         ),
+        'telegram': (
+            <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21.8 3.2a1 1 0 0 0-1.05-.15L2.8 10.2c-1.05.42-1.04 1.02-.2 1.28l4.6 1.44 1.76 5.5c.22.68.4.93.83.93.34 0 .49-.15.68-.33l2.24-2.18 4.65 3.43c.86.47 1.47.23 1.69-.8l3.03-14.25c.28-1.25-.2-1.81-.28-2.02ZM9.34 12.6l9.03-5.7c.45-.28.86-.13.52.18l-7.45 6.73-.29 3.11-1.81-4.32Z" />
+            </svg>
+        ),
     };
     return icons[name] || icons['email'];
 }
@@ -125,6 +139,7 @@ const CHANNEL_STYLES = {
     'instagram': { bg: 'bg-[#E1306C]/12', text: 'text-[#E1306C]' },
     'sms':       { bg: 'bg-brand-500/15', text: 'text-brand-600 dark:text-brand-500' },
     'email':     { bg: 'bg-[#F59E0B]/12', text: 'text-[#F59E0B]' },
+    'telegram':  { bg: 'bg-[#229ED9]/12', text: 'text-[#229ED9]' },
 };
 
 // ─── Section Badge ─────────────────────────────────────────────────────────────
@@ -169,20 +184,20 @@ function HeroSection({ landing, canLogin, canRegister, auth }) {
 
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-16 sm:pt-24 sm:pb-20 text-center relative">
                 {s('hero_badge') && (
-                    <div className="mb-6 flex justify-center">
+                    <div {...reveal(1)} className="mb-6 flex justify-center">
                         <Badge text={s('hero_badge')} />
                     </div>
                 )}
 
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-tight">
+                <h1 {...reveal()} className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-tight">
                     {s('hero_title')}
                 </h1>
 
-                <p className="mt-6 text-lg sm:text-xl text-neutral-300 max-w-2xl mx-auto leading-relaxed">
+                <p {...reveal(1)} className="mt-6 text-lg sm:text-xl text-neutral-300 max-w-2xl mx-auto leading-relaxed">
                     {s('hero_subtitle')}
                 </p>
 
-                <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                <div {...reveal(2)} className="mt-10 flex flex-wrap items-center justify-center gap-4">
                     {auth?.user ? (
                         <Link
                             href={route('client.dashboard')}
@@ -223,6 +238,7 @@ function HeroSection({ landing, canLogin, canRegister, auth }) {
                             {badges.map((badge, idx) => (
                                 <span
                                     key={idx}
+                                    {...reveal(idx)}
                                     className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 backdrop-blur-sm px-4 py-2 text-sm font-medium text-white/90"
                                 >
                                     <svg className="h-4 w-4 flex-shrink-0 text-brand-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -254,7 +270,7 @@ function TrustedBySection({ landing }) {
         <section className="border-y border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 py-6 overflow-hidden">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {heading && (
-                    <p className="text-center text-xs font-medium text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-5">
+                    <p {...reveal()} className="text-center text-xs font-medium text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-5">
                         {heading}
                     </p>
                 )}
@@ -262,6 +278,7 @@ function TrustedBySection({ landing }) {
                     {brands.map((brand, idx) => (
                         <span
                             key={idx}
+                            {...reveal(idx)}
                             className="text-lg font-bold text-neutral-300 dark:text-neutral-600 tracking-tight select-none hover:text-neutral-400 dark:hover:text-neutral-500 transition-colors"
                         >
                             {brand}
@@ -292,7 +309,7 @@ function ProblemSolutionSection({ landing }) {
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid gap-6 md:grid-cols-2">
                     {/* Problem */}
-                    <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8">
+                    <div {...reveal()} className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8">
                         <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-6">{problemTitle}</h3>
                         <ul className="space-y-4">
                             {problems.map((item, idx) => (
@@ -310,6 +327,7 @@ function ProblemSolutionSection({ landing }) {
 
                     {/* Solution */}
                     <div
+                        {...reveal(1)}
                         className="rounded-2xl p-8"
                         style={{ background: 'linear-gradient(135deg, rgb(var(--brand-400) / 0.15) 0%, rgb(var(--brand-400) / 0.05) 100%)', border: '1px solid rgb(var(--brand-400) / 0.3)' }}
                     >
@@ -351,7 +369,7 @@ function FeaturesSection({ landing }) {
     return (
         <section id="features" className="py-16 sm:py-24 bg-neutral-50 dark:bg-neutral-900/30">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-16">
+                <div {...reveal()} className="text-center mb-16">
                     <Badge text={s('features_badge')} />
                     <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight">
                         {s('features_title')}
@@ -367,6 +385,7 @@ function FeaturesSection({ landing }) {
                     {features.map((feat, idx) => (
                         <div
                             key={idx}
+                            {...reveal(idx)}
                             className="group relative overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-7 transition-all duration-300 hover:-translate-y-1 hover:border-brand-500/40 hover:shadow-xl hover:shadow-brand-500/10"
                         >
                             {/* Soft glow that fades in on hover */}
@@ -405,7 +424,7 @@ function HowItWorksSection({ landing, canRegister }) {
     return (
         <section className="py-16 sm:py-24">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-16">
+                <div {...reveal(1)} className="text-center mb-16">
                     <Badge text={s('howitworks_badge')} />
                     <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight">
                         {s('howitworks_title')}
@@ -419,7 +438,7 @@ function HowItWorksSection({ landing, canRegister }) {
                     <div className="hidden lg:block absolute top-12 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-brand-500/20 via-brand-500/50 to-brand-500/20" />
                     <div className="grid gap-10 lg:grid-cols-3">
                         {steps.map((step, idx) => (
-                            <div key={idx} className="relative text-center">
+                            <div key={idx} {...reveal(idx)} className="relative text-center">
                                 <div
                                     className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full font-bold text-xl shadow-lg ring-4 ring-white dark:ring-neutral-950 text-white"
                                     style={{ background: 'rgb(var(--brand-500))', boxShadow: '0 8px 24px rgb(var(--brand-400) / 0.3)' }}
@@ -434,7 +453,7 @@ function HowItWorksSection({ landing, canRegister }) {
                 </div>
 
                 {canRegister && (
-                    <div className="mt-14 text-center">
+                    <div {...reveal(1)} className="mt-14 text-center">
                         <Link
                             href={route('register')}
                             className="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-base font-bold text-white shadow-lg transition-all duration-200 hover:opacity-90"
@@ -460,7 +479,7 @@ function PricingSection({ plans }) {
     return (
         <section id="pricing" className="py-16 sm:py-24 bg-neutral-50 dark:bg-neutral-900/30">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-12">
+                <div {...reveal()} className="text-center mb-12">
                     <Badge text={t('welcome.badge_pricing')} />
                     <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight">
                         {t('pricing.simple_transparent')}
@@ -487,11 +506,12 @@ function PricingSection({ plans }) {
                 </div>
 
                 <div className={`grid gap-6 ${plans.length <= 2 ? 'sm:grid-cols-2 max-w-2xl mx-auto' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
-                    {plans.map((plan) => {
+                    {plans.map((plan, idx) => {
                         const price = yearly ? plan.price_yearly : plan.price_monthly;
                         return (
                             <div
                                 key={plan.id}
+                                {...reveal(idx)}
                                 className={`relative rounded-2xl border p-7 flex flex-col ${
                                     plan.is_featured
                                         ? 'border-brand-500/50 bg-brand-950 text-white shadow-2xl shadow-brand-500/10 lg:scale-105'
@@ -575,7 +595,7 @@ function WhySection({ landing }) {
     return (
         <section className="py-16 sm:py-24">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-16">
+                <div {...reveal()} className="text-center mb-16">
                     <Badge text={s('why_badge')} />
                     <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight">
                         {s('why_title')}
@@ -589,7 +609,7 @@ function WhySection({ landing }) {
 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {items.map((item, idx) => (
-                        <div key={idx} className="flex gap-4 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-brand-500/30 transition-colors">
+                        <div key={idx} {...reveal(idx)} className="flex gap-4 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-brand-500/30 transition-colors">
                             <div className="flex-shrink-0 h-11 w-11 rounded-xl flex items-center justify-center" style={{ background: 'rgb(var(--brand-400) / 0.12)' }}>
                                 <FeatureIcon name={item.icon} className="h-5 w-5" style={{ color: 'rgb(var(--brand-500))' }} />
                             </div>
@@ -635,7 +655,7 @@ function TestimonialsSection({ landing }) {
     return (
         <section className="py-16 sm:py-24 bg-neutral-50 dark:bg-neutral-900/30">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-16">
+                <div {...reveal(1)} className="text-center mb-16">
                     <Badge text={s('testimonials_badge')} />
                     <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight">
                         {s('testimonials_title')}
@@ -649,6 +669,7 @@ function TestimonialsSection({ landing }) {
                     {testimonials.map((t, idx) => (
                         <div
                             key={idx}
+                            {...reveal(idx)}
                             className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 flex flex-col gap-4"
                         >
                             <StarRating />
@@ -693,7 +714,7 @@ function FaqSection({ landing }) {
     return (
         <section id="faq" className="py-16 sm:py-24">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-14">
+                <div {...reveal()} className="text-center mb-14">
                     <Badge text={s('faq_badge')} />
                     <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight">
                         {s('faq_title')}
@@ -707,6 +728,7 @@ function FaqSection({ landing }) {
                     {faqs.map((faq, idx) => (
                         <div
                             key={idx}
+                            {...reveal(idx)}
                             className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden"
                         >
                             <button
@@ -744,6 +766,7 @@ function CtaSection({ landing, canRegister }) {
         <section className="py-14 sm:py-20">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div
+                    {...reveal(1)}
                     className="relative overflow-hidden rounded-3xl px-6 py-12 sm:px-8 sm:py-16 text-center"
                     style={{
                         background: 'radial-gradient(ellipse 60% 80% at 50% 50%, rgb(var(--brand-400) / 0.15) 0%, transparent 70%), rgb(var(--brand-950))',
@@ -813,7 +836,7 @@ function MetricsSection({ landing }) {
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     {metrics.map((m, idx) => (
-                        <div key={idx} className="text-center">
+                        <div key={idx} {...reveal(idx)} className="text-center">
                             <p className="text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: 'rgb(var(--brand-500))' }}>{m.value}</p>
                             <p className="mt-1 text-sm text-neutral-400">{m.label}</p>
                         </div>
@@ -830,7 +853,7 @@ function ChannelsSection({ landing }) {
     const s = (key, def = '') => landing[`landing.${key}`] ?? def;
     if (s('channels_enabled') !== '1') return null;
 
-    const channels = [1, 2, 3, 4, 5].map((i) => ({
+    const channels = [1, 2, 3, 4, 5, 6].map((i) => ({
         key: s(`channel_${i}_key`, 'email'),
         title: s(`channel_${i}_title`),
         desc: s(`channel_${i}_desc`),
@@ -841,7 +864,7 @@ function ChannelsSection({ landing }) {
     return (
         <section className="py-16 sm:py-24">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-16">
+                <div {...reveal(1)} className="text-center mb-16">
                     <Badge text={s('channels_badge')} />
                     <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight">
                         {s('channels_title')}
@@ -857,6 +880,7 @@ function ChannelsSection({ landing }) {
                         return (
                             <div
                                 key={idx}
+                                {...reveal(idx)}
                                 className="group rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 hover:shadow-lg transition-all duration-300"
                             >
                                 <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl ${style.bg} ${style.text}`}>
@@ -890,11 +914,11 @@ function IntegrationsStripSection({ landing }) {
     return (
         <section className="py-14 sm:py-20 bg-neutral-50 dark:bg-neutral-900/30 border-y border-neutral-200 dark:border-neutral-800">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
+                <h2 {...reveal()} className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
                     {s('integrations_strip_title')}
                 </h2>
                 {s('integrations_strip_subtitle') && (
-                    <p className="mt-3 text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">{s('integrations_strip_subtitle')}</p>
+                    <p {...reveal(1)} className="mt-3 text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">{s('integrations_strip_subtitle')}</p>
                 )}
 
                 {names.length > 0 && (
@@ -902,6 +926,7 @@ function IntegrationsStripSection({ landing }) {
                         {names.map((name, idx) => (
                             <span
                                 key={idx}
+                                {...reveal(idx)}
                                 className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300"
                             >
                                 <BrandMark name={name} tileClassName="h-6 w-6 rounded-md" glyphClassName="h-4 w-4" monogramClassName="text-[0.65rem]" />
@@ -911,7 +936,7 @@ function IntegrationsStripSection({ landing }) {
                     </div>
                 )}
 
-                <div className="mt-10">
+                <div {...reveal(1)} className="mt-10">
                     <Link href="/integrations" className="inline-flex items-center gap-2 text-sm font-semibold text-brand-600 dark:text-brand-500 hover:underline">
                         {t('welcome.view_all_integrations', { defaultValue: 'View all integrations' })}
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
@@ -939,7 +964,7 @@ function SecuritySection({ landing }) {
     return (
         <section className="py-16 sm:py-24">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-16">
+                <div {...reveal(1)} className="text-center mb-16">
                     <Badge text={s('security_badge')} />
                     <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tracking-tight">
                         {s('security_title')}
@@ -951,7 +976,7 @@ function SecuritySection({ landing }) {
 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     {items.map((item, idx) => (
-                        <div key={idx} className="text-center p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+                        <div key={idx} {...reveal(idx)} className="text-center p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
                             <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl" style={{ background: 'rgb(var(--brand-400) / 0.12)' }}>
                                 <FeatureIcon name={item.icon} className="h-6 w-6" style={{ color: 'rgb(var(--brand-500))' }} />
                             </div>
@@ -969,6 +994,7 @@ function SecuritySection({ landing }) {
 
 export default function Welcome({ auth, canLogin, canRegister, landing = {}, plans = [] }) {
     const { appName } = useBranding();
+    const revealRef = useScrollReveal();
     const s = (key, def = '') => landing[`landing.${key}`] ?? def;
 
     const metaTitle = s('seo_title') || s('hero_title') || appName;
@@ -1023,20 +1049,22 @@ export default function Welcome({ auth, canLogin, canRegister, landing = {}, pla
                 jsonLd={jsonLd}
             />
 
-            <HeroSection landing={landing} canLogin={canLogin} canRegister={canRegister} auth={auth} />
-            <MetricsSection landing={landing} />
-            <TrustedBySection landing={landing} />
-            <ChannelsSection landing={landing} />
-            <ProblemSolutionSection landing={landing} />
-            <FeaturesSection landing={landing} />
-            <HowItWorksSection landing={landing} canRegister={canRegister} />
-            <IntegrationsStripSection landing={landing} />
-            <WhySection landing={landing} />
-            <SecuritySection landing={landing} />
-            <PricingSection plans={plans} />
-            <TestimonialsSection landing={landing} />
-            <FaqSection landing={landing} />
-            <CtaSection landing={landing} canRegister={canRegister} />
+            <div ref={revealRef} className="overflow-x-clip">
+                <HeroSection landing={landing} canLogin={canLogin} canRegister={canRegister} auth={auth} />
+                <MetricsSection landing={landing} />
+                <TrustedBySection landing={landing} />
+                <ChannelsSection landing={landing} />
+                <ProblemSolutionSection landing={landing} />
+                <FeaturesSection landing={landing} />
+                <HowItWorksSection landing={landing} canRegister={canRegister} />
+                <IntegrationsStripSection landing={landing} />
+                <WhySection landing={landing} />
+                <SecuritySection landing={landing} />
+                <PricingSection plans={plans} />
+                <TestimonialsSection landing={landing} />
+                <FaqSection landing={landing} />
+                <CtaSection landing={landing} canRegister={canRegister} />
+            </div>
         </LandingLayout>
     );
 }

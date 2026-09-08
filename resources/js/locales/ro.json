@@ -65,7 +65,9 @@
         "data_export": "Exportă datele mele",
         "data_export_desc": "Descarcă tot ce ai aici",
         "docs": "Ghiduri și documentație",
-        "docs_desc": "Ghiduri și răspunsuri la întrebări frecvente"
+        "docs_desc": "Ghiduri și răspunsuri la întrebări frecvente",
+        "chip_members": "Chip Members",
+        "chip_connected": "Chip Connected"
     },
     "company": {
         "section_logo": "Logoul firmei",
@@ -114,7 +116,7 @@
         "cui": "CUI",
         "cui_hint": "Doar cifrele, cu sau fără prefixul RO.",
         "trade_register_no": "Nr. Registrul Comerțului",
-        "trade_register_no_hint": "De exemplu J12/1234/2020.",
+        "trade_register_no_hint": "De exemplu J12\/1234\/2020.",
         "vat_status": "Statut TVA",
         "vat_status_none": "Neplătitor de TVA",
         "vat_status_standard": "Plătitor de TVA",
@@ -169,7 +171,17 @@
         "facebook_url": "Pagina de Facebook",
         "instagram_url": "Instagram",
         "google_maps_url": "Google Maps",
-        "online_shop_url": "Magazin online"
+        "online_shop_url": "Magazin online",
+        "industry_${slug}": "Industry ${Slug}",
+        "${SIZE_KEYS[size]}": "${Size Keys[Size]}",
+        "vat_status_${status}": "Vat Status ${Status}",
+        "country_${code": {
+            "toLowerCase()}": "Tolowercase()}"
+        },
+        "day_${row": {
+            "day_of_week}": "Day Of Week}"
+        },
+        "${field}": "${Field}"
     },
     "0": {
         "01": "01",
@@ -196,13 +208,6 @@
     "37": {
         "4220": "4220"
     },
-    "127": [
-        [
-            {
-                "1": "1"
-            }
-        ]
-    ],
     "dashboard": {
         "date_range": "Interval",
         "range_7d": "7z",
@@ -350,8 +355,8 @@
         "monthly": "Lunar",
         "yearly": "Anual",
         "save_percent": "Economisești {{percent}}%",
-        "per_month": "/lună",
-        "per_year": "/an",
+        "per_month": "\/lună",
+        "per_year": "\/an",
         "everything_in": "Totul din {{plan}}",
         "most_popular": "Cel mai popular"
     },
@@ -384,11 +389,11 @@
         "profile": {
             "edit": "Editează",
             "2fa": {
-                "enable": "Activează",
-                "disable": "Dezactivează"
+                "enable": "Enable",
+                "disable": "Disable"
             },
             "sessions": {
-                "destroy": "Șterge"
+                "destroy": "Destroy"
             },
             "update": "Actualizează",
             "destroy": "Șterge"
@@ -554,8 +559,8 @@
             "store": "Creează",
             "destroy": "Șterge",
             "contacts": {
-                "attach": "Atașează",
-                "detach": "Detașează"
+                "attach": "Attach",
+                "detach": "Detach"
             }
         },
         "whatsapp": {
@@ -597,7 +602,8 @@
                 "store": "Creează",
                 "destroy": "Șterge",
                 "detach": "Detașează",
-                "attach": "Atașează"
+                "attach": "Atașează",
+                "index": "Index"
             },
             "typing": "Tastează",
             "notes": {
@@ -612,8 +618,8 @@
             "templates": "Șabloane",
             "assign": "Atribuie",
             "setup": {
-                "destroy": "Șterge",
-                "resubscribe": "Reabonează",
+                "destroy": "Destroy",
+                "resubscribe": "Resubscribe",
                 "manual": {
                     "instagram": "Instagram"
                 }
@@ -787,11 +793,13 @@
                 "connect": "Conectează"
             }
         },
-        "workspaces": "Spații de lucru",
+        "workspaces": "Workspaces",
         "settings": {
             "update": "Actualizează",
             "notifications": "Notificări",
-            "index": "Listă"
+            "index": "Listă",
+            "company": "Company",
+            "preferences": "Preferences"
         },
         "team": {
             "store": "Creează",
@@ -879,7 +887,7 @@
             "destroy": "Șterge",
             "update": "Actualizează"
         },
-        "website_templates": "Site / pagini de landing",
+        "website_templates": "Site \/ pagini de landing",
         "roles_permissions": "Roluri și permisiuni",
         "ai_requests": "Cereri AI",
         "templates": "Șabloane",
@@ -1046,7 +1054,7 @@
         "tax_rates": "Cote de taxă",
         "landing_page": "Conținut site",
         "cms_pages": "Pagini CMS",
-        "license": "Licență",
+        "license": "License",
         "cron_setup": "Configurare Cron",
         "support": {
             "index": "Listă",
@@ -1148,7 +1156,7 @@
         "webhook_secret": "Secret webhook",
         "note_label": "Notă:",
         "gateway_credentials_note": "Credențialele sunt stocate criptat în baza de date.",
-        "test_mode_desc": "Folosește credențiale sandbox/test",
+        "test_mode_desc": "Folosește credențiale sandbox\/test",
         "gateway_enable_desc": "Fă acest gateway disponibil la plată",
         "pricing": "Prețuri",
         "price_id_monthly": "ID preț lunar",
@@ -1158,41 +1166,41 @@
         "test_mode": "Mod test",
         "live_mode": "Mod live",
         "stripe_pk_hint": "Cheia publicabilă Stripe (pk_…)",
-        "publishable_key_hint": "Cheie publică/client din panoul gateway-ului",
+        "publishable_key_hint": "Cheie publică\/client din panoul gateway-ului",
         "stripe_sk_hint": "Cheia secretă Stripe (sk_…)",
         "secret_key_hint": "Cheie secretă server — păstreaz-o privată",
         "stripe_webhook_hint": "Secret de semnare webhook (whsec_…) din panoul Stripe",
         "webhook_hint": "Secret webhook folosit pentru a verifica evenimentele primite de la gateway",
-        "clients": "Clienți",
+        "clients": "Clients",
         "subscriptions": {
-            "index": "Listă",
-            "store": "Creează",
-            "export": "Exportă"
+            "index": "Index",
+            "store": "Store",
+            "export": "Export"
         },
-        "payments": "Plăți",
-        "plans": "Planuri",
+        "payments": "Payments",
+        "plans": "Plans",
         "currencies": {
-            "index": "Listă",
-            "update": "Actualizează",
-            "store": "Creează"
+            "index": "Index",
+            "update": "Update",
+            "store": "Store"
         },
-        "admins": "Admini",
+        "admins": "Admins",
         "settings": {
-            "index": "Listă",
+            "index": "Index",
             "general": {
-                "update": "Actualizează"
+                "update": "Update"
             },
             "logo": {
-                "upload": "Încarcă",
-                "delete": "Șterge"
+                "upload": "Upload",
+                "delete": "Delete"
             },
             "favicon": {
-                "upload": "Încarcă",
-                "delete": "Șterge"
+                "upload": "Upload",
+                "delete": "Delete"
             },
-            "update": "Actualizează",
+            "update": "Update",
             "firebase": {
-                "update": "Actualizează"
+                "update": "Update"
             }
         },
         "ai": {
@@ -1235,7 +1243,7 @@
         "tax_new": "Cotă de taxă nouă",
         "tax_empty": "Nicio cotă de taxă configurată.",
         "tax_country_code": "Cod țară (ISO 2)",
-        "tax_region": "Regiune / Județ (opțional)",
+        "tax_region": "Regiune \/ Județ (opțional)",
         "tax_percentage": "Procent (%)",
         "tax_inclusive": "Inclusiv (inclus în preț)",
         "tax_update": "Actualizează cota de taxă",
@@ -1265,7 +1273,7 @@
         "cui": "CUI",
         "cui_placeholder": "RO14399840",
         "trade_register_no": "Nr. Reg. Comerțului",
-        "trade_register_placeholder": "J12/1234/2020",
+        "trade_register_placeholder": "J12\/1234\/2020",
         "share_capital": "Capital social (RON)",
         "vat_status": "Statut TVA",
         "vat_status_none": "Neplătitor de TVA",
@@ -1334,7 +1342,9 @@
         "industry_professional_services": "Servicii profesionale",
         "industry_education": "Educație",
         "industry_auto_service": "Service auto",
-        "industry_other": "Altele"
+        "industry_other": "Altele",
+        "vat_status_${status}": "Vat Status ${Status}",
+        "day_${day}": "Day ${Day}"
     },
     "open_menu": "Deschide meniul",
     "impersonation": {
@@ -1411,7 +1421,7 @@
         "sub": "Alătură-te miilor de echipe care folosesc AI pentru a automatiza suportul, a hrăni lead-urile și a închide vânzări mai rapid.",
         "feature1": "Automatizează sarcinile repetitive și recâștigă peste 10 ore pe săptămână",
         "feature2": "Crește rata de răspuns de până la 3× cu mesaje create de AI",
-        "feature3": "Chatboți 24/7 care califică lead-uri în timp ce tu dormi",
+        "feature3": "Chatboți 24\/7 care califică lead-uri în timp ce tu dormi",
         "admin_feature1": "Acces granular pe roluri pentru fiecare membru al echipei",
         "admin_feature2": "Gestionează clienți, planuri și facturare dintr-un singur panou",
         "admin_feature3": "Jurnale de audit în timp real și monitorizare live a cozii",
@@ -1464,7 +1474,7 @@
         "proof_uptime_sla": "SLA de uptime",
         "testimonial_quote": "„Am redus timpul de răspuns cu 80% și am dublat conversiile de vânzări în prima lună.”",
         "testimonial_author": "Sarah K.",
-        "testimonial_role": "Head of Growth, magazin Shopify · 12k comenzi/lună",
+        "testimonial_role": "Head of Growth, magazin Shopify · 12k comenzi\/lună",
         "demo_password_label": "Etichetă parolă demo",
         "demo_one_click_login": "Login demo cu un clic",
         "demo_mode_title": "Titlu mod demo",
@@ -1506,7 +1516,7 @@
         "profile_information": "Informații profil",
         "profile_information_intro": "Actualizează informațiile de profil și adresa de email.",
         "email_address": "Adresă de email",
-        "email_unverified": "Adresa ta de email nu este verificată. <resend>Apasă aici pentru a retrimite emailul de verificare.</resend>",
+        "email_unverified": "Adresa ta de email nu este verificată. <resend>Apasă aici pentru a retrimite emailul de verificare.<\/resend>",
         "verification_link_sent": "Un nou link de verificare a fost trimis la adresa ta de email.",
         "save_changes": "Salvează modificările",
         "active_sessions": "Sesiuni active",
@@ -1596,7 +1606,9 @@
         "trial_grace_message_few": "Perioada de probă s-a încheiat. Mai ai acces complet încă {{count}} zile.",
         "trial_grace_message_other": "Perioada de probă s-a încheiat. Mai ai acces complet încă {{count}} de zile.",
         "trial_readonly_message": "Perioada de probă s-a încheiat, așa că deocamdată contul e doar de citire.",
-        "trial_cta": "Alege un plan"
+        "trial_cta": "Alege un plan",
+        "trial_grace_message": "Trial Grace Message",
+        "grace_message": "Grace Message"
     },
     "payment": {
         "succeeded": "Reușit",
@@ -1743,7 +1755,7 @@
         "send_at": "Trimite la",
         "timezone": "Fus orar",
         "will_be_sent_at": "Va fi trimis la",
-        "which_is_browser": "(adică <time>{{time}}</time> în browserul tău)",
+        "which_is_browser": "(adică <time>{{time}}<\/time> în browserul tău)",
         "review_confirm": "Revizuiește și confirmă",
         "reachable_contacts": "Contacte accesibile",
         "template": "Șablon",
@@ -1775,7 +1787,7 @@
         "file_set": "Fișier setat",
         "subject": "Subiect",
         "live_preview": "Previzualizare live",
-        "variables_hint": "Variabilele apar ca <field>[Câmp]</field>. Fiecare destinatar primește propria valoare.",
+        "variables_hint": "Variabilele apar ca <field>[Câmp]<\/field>. Fiecare destinatar primește propria valoare.",
         "at_a_glance": "Pe scurt",
         "reachable": "Accesibil"
     },
@@ -1878,7 +1890,7 @@
         "kpi_avg_latency": "Latență medie",
         "kpi_error_rate": "Rată de eroare",
         "no_ai_runs": "Nicio rulare AI în această perioadă",
-        "status_running_other": "În rulare/Altele",
+        "status_running_other": "În rulare\/Altele",
         "no_runs": "Nicio rulare în această perioadă",
         "campaign_report_title": "Raport campanie: {{name}}",
         "campaign_report_head": "Raport: {{name}}",
@@ -1962,7 +1974,7 @@
         "step2_title": "2. Pornește workerii de coadă",
         "step2_desc": "Joburile de fundal — campanii, mesaje, postări sociale — rulează pe cozi. Pornește un worker persistent și folosește Supervisor în producție ca să rămână activ și să repornească automat.",
         "supervisor_title": "Configurare Supervisor",
-        "supervisor_desc": "Salvează ca /etc/supervisor/conf.d/queue-worker.conf, apoi rulează: supervisorctl reread && supervisorctl update.",
+        "supervisor_desc": "Salvează ca \/etc\/supervisor\/conf.d\/queue-worker.conf, apoi rulează: supervisorctl reread && supervisorctl update.",
         "step3_title": "3. Verifică",
         "step3_desc": "Rulează aceste comenzi pentru a confirma că programatorul și coada sunt conectate corect.",
         "verify_run": "Declanșează imediat toate sarcinile programate scadente:",
@@ -2058,7 +2070,7 @@
         "notif_event_campaign_completed_desc": "Când o campanie broadcast termină trimiterea",
         "notif_event_automation_failed_label": "Automatizare eșuată",
         "notif_event_automation_failed_desc": "Când o rulare de automatizare întâmpină o eroare",
-        "notif_event_billing_failed_label": "Facturare / Plată",
+        "notif_event_billing_failed_label": "Facturare \/ Plată",
         "notif_event_billing_failed_desc": "Când o plată eșuează și necesită atenție",
         "notif_not_available": "Indisponibil pentru acest eveniment",
         "notif_toggle_on": "Activat – apasă pentru a dezactiva",
@@ -2127,7 +2139,7 @@
         "refresh": "Reîmprospătează",
         "mark_fulfilled": "Marchează ca îndeplinit",
         "fulfill_order": "Îndeplinește comanda",
-        "fulfill_hint": "Trimite un status de îndeplinire/expediere către magazin. Webhook-ul magazinului va confirma și poate declanșa automatizarea de livrare.",
+        "fulfill_hint": "Trimite un status de îndeplinire\/expediere către magazin. Webhook-ul magazinului va confirma și poate declanșa automatizarea de livrare.",
         "tracking_number": "Număr AWB (opțional)",
         "tracking_url": "URL urmărire (opțional)",
         "confirm_fulfill": "Confirmă îndeplinirea",
@@ -2164,7 +2176,7 @@
         "setup_guide": "Ghid de configurare",
         "cat_storage": "Stocare",
         "cat_meta": "Meta",
-        "cat_ai_llm": "AI / LLM",
+        "cat_ai_llm": "AI \/ LLM",
         "cat_social_oauth": "OAuth social",
         "cat_maps": "Hărți",
         "cat_vector_store": "Vector store",
@@ -2178,7 +2190,7 @@
         "col_changed_keys": "Chei modificate",
         "col_ip": "IP",
         "no_audit_entries": "Nicio înregistrare în jurnalul de audit.",
-        "callback_url_title": "URL callback / redirect",
+        "callback_url_title": "URL callback \/ redirect",
         "callback_url_desc": "Înregistrează exact acest URL în setările aplicației de pe platformă.",
         "copied": "Copiat",
         "copy": "Copiază",
@@ -2189,7 +2201,7 @@
         "enter_value": "Introdu valoarea…",
         "storage_provider": "Furnizor de stocare",
         "storage_local_banner": "Stocarea locală folosește discul public al serverului. Nu sunt necesare credențiale. Activează pentru încărcări locale.",
-        "storage_remote_banner": "Doar <strong>un</strong> furnizor de stocare poate fi activ odată. Activarea acestuia îl face destinația de încărcare pentru toată aplicația. Câmpul <strong>Prefix director</strong> îți permite să pui toate încărcările într-un subfolder (ex. <code>myapp/uploads</code>).",
+        "storage_remote_banner": "Doar <strong>un<\/strong> furnizor de stocare poate fi activ odată. Activarea acestuia îl face destinația de încărcare pentru toată aplicația. Câmpul <strong>Prefix director<\/strong> îți permite să pui toate încărcările într-un subfolder (ex. <code>myapp\/uploads<\/code>).",
         "rotate_confirm": "Rotești secretul webhook? Secretul vechi nu va mai funcționa.",
         "status": "Status",
         "mode_label": "Mod:",
@@ -2198,7 +2210,7 @@
         "credentials": "Credențiale",
         "no_credentials_local": "Nu sunt necesare credențiale pentru stocare locală. Activează integrarea de mai sus.",
         "encrypted_note": "Valorile sunt stocate criptat. Câmpurile mascate (••••) se păstrează neschimbate dacă le lași așa.",
-        "config_id_conflict": "<strong>Conflict Config ID:</strong> ID-urile de configurare WhatsApp și Social (Instagram/Messenger) sunt identice. Trebuie să fie configurații <em>diferite</em>, create separat în Meta App Dashboard → Facebook Login for Business → Configurations. Folosirea aceluiași Config ID va face ca înscrierea Instagram/Messenger să afișeze permisiuni WhatsApp.",
+        "config_id_conflict": "<strong>Conflict Config ID:<\/strong> ID-urile de configurare WhatsApp și Social (Instagram\/Messenger) sunt identice. Trebuie să fie configurații <em>diferite<\/em>, create separat în Meta App Dashboard → Facebook Login for Business → Configurations. Folosirea aceluiași Config ID va face ca înscrierea Instagram\/Messenger să afișeze permisiuni WhatsApp.",
         "saving": "Se salvează…",
         "test_connection": "Testează conexiunea",
         "rotating": "Se rotește…",
@@ -2304,7 +2316,7 @@
         "enabled": "Activat",
         "disabled": "Dezactivat",
         "dynamic_label": "Dinamic",
-        "dynamic_hint": "(folosește ruta de autentificare/înregistrare)",
+        "dynamic_hint": "(folosește ruta de autentificare\/înregistrare)",
         "static_label": "Static",
         "static_hint": "(URL personalizat)",
         "group_general": "General",
@@ -2316,7 +2328,7 @@
         "tab_metrics": "Metrici",
         "tab_trustedby": "De încredere pentru",
         "tab_channels": "Canale",
-        "tab_problems": "Problemă/Soluție",
+        "tab_problems": "Problemă\/Soluție",
         "tab_features": "Funcții",
         "tab_howitworks": "Cum funcționează",
         "tab_integrations_strip": "Bandă integrări",
@@ -2341,11 +2353,11 @@
         "secondary_cta": "Buton CTA secundar",
         "trust_badges_label": "Insigne de încredere (sub butoanele CTA)",
         "badge_n": "Insignă {{n}}",
-        "trustedby_section": "Bară logo-uri / De încredere pentru",
+        "trustedby_section": "Bară logo-uri \/ De încredere pentru",
         "heading": "Titlu",
         "heading_hint": "Text mic deasupra numelor de brand",
         "brand_n": "Brand {{n}}",
-        "problems_section": "Secțiune problemă / soluție",
+        "problems_section": "Secțiune problemă \/ soluție",
         "problem_col_title": "Titlu coloană problemă",
         "problem_n": "Problemă {{n}}",
         "solution_col_title": "Titlu coloană soluție",
@@ -2590,7 +2602,7 @@
         "edit_template_title": "Editează șablonul: {{name}}",
         "click_to_copy": "Apasă pentru a copia",
         "subject_placeholder": "ex. Plată eșuată — {{app_name}}",
-        "body_placeholder": "<p>Bună {{user_name}},</p>...",
+        "body_placeholder": "<p>Bună {{user_name}},<\/p>...",
         "email_preview": "Previzualizare email",
         "recipient_placeholder": "recipient@example.com",
         "send_to_label": "Trimite către",
@@ -2731,7 +2743,7 @@
         "scope_contacts_write": "Creează și actualizează contacte și segmente",
         "scope_campaigns_read": "Citește campanii și statistici destinatari",
         "scope_campaigns_write": "Creează, lansează și întrerupe campanii",
-        "scope_messages_write": "Trimite mesaje de ieșire (WhatsApp / SMS / Email)",
+        "scope_messages_write": "Trimite mesaje de ieșire (WhatsApp \/ SMS \/ Email)",
         "scope_conversations_read": "Citește conversațiile din inbox și firele de mesaje",
         "scope_webhooks_write": "Înregistrează și elimină endpoint-uri webhook de ieșire",
         "scope_ai_read": "Citește chatboți AI și baze de cunoștințe",
@@ -2766,7 +2778,7 @@
         "ep_campaigns_launch": "Lansează o campanie ciornă",
         "ep_campaigns_pause": "Întrerupe o campanie în curs de trimitere",
         "ep_campaigns_recipients": "Listă paginată de destinatari cu status",
-        "ep_messages_send": "Trimite un mesaj de ieșire către un contact (WhatsApp / SMS)",
+        "ep_messages_send": "Trimite un mesaj de ieșire către un contact (WhatsApp \/ SMS)",
         "ep_conversations_list": "Listează conversațiile; filtrează după canal, status, assigned_to",
         "ep_conversations_messages": "Fir de mesaje ordonat",
         "ep_webhooks_list": "Listează endpoint-urile webhook înregistrate",
@@ -2777,7 +2789,7 @@
         "ep_kb_list": "Listează bazele de cunoștințe",
         "ep_kb_create": "Creează o bază de cunoștințe",
         "ep_kb_get": "Obține baza de cunoștințe cu documente",
-        "ep_kb_add_doc": "Adaugă un document (URL / text / încărcare fișier)",
+        "ep_kb_add_doc": "Adaugă un document (URL \/ text \/ încărcare fișier)",
         "ep_kb_remove_doc": "Elimină un document",
         "ep_automations_list": "Listează automatizările",
         "ep_automations_trigger": "Declanșează manual o automatizare pentru un contact",
@@ -2821,7 +2833,7 @@
         "bulk_err_no_phone_column": "Nu s-a găsit o coloană Telefon. Folosește antetele din fișierul exemplu.",
         "bulk_err_unreadable": "Nu s-a putut citi fișierul. Încearcă export .xlsx din Excel sau Google Sheets.",
         "bulk_choose_file": "Alege fișier",
-        "bulk_file_hint": "Doar fișiere <b>.xlsx</b> (citite cu ExcelJS). Numerele de telefon trebuie să includă prefixul țării (ex. <code>+40</code>). Grila folosește Handsontable pentru copiere/lipire, filtre, redimensionare coloane, meniu contextual și fill handle. <sample>Descarcă fișierul exemplu aici</sample>.",
+        "bulk_file_hint": "Doar fișiere <b>.xlsx<\/b> (citite cu ExcelJS). Numerele de telefon trebuie să includă prefixul țării (ex. <code>+40<\/code>). Grila folosește Handsontable pentru copiere\/lipire, filtre, redimensionare coloane, meniu contextual și fill handle. <sample>Descarcă fișierul exemplu aici<\/sample>.",
         "bulk_uploading": "Se încarcă…",
         "bulk_confirm_upload": "Confirmă încărcarea",
         "bulk_reset_table": "Resetează tabelul",
@@ -2963,7 +2975,7 @@
         "date_time": "Oră",
         "date_prev": "Anterior",
         "date_next": "Următorul",
-        "usage_banner": "Ai folosit {{percent}}% din cota de {{label}} ({{current}}/{{limit}}).",
+        "usage_banner": "Ai folosit {{percent}}% din cota de {{label}} ({{current}}\/{{limit}}).",
         "usage_banner_upgrade": "Fă upgrade la plan",
         "usage_banner_suffix": "pentru a evita întreruperile.",
         "onboarding_progress": "{{done}} din {{total}} finalizate",
@@ -3157,12 +3169,12 @@
         "edit_canned_reply": "Editează răspunsul predefinit",
         "new_canned_reply": "Răspuns predefinit nou",
         "shortcut": "Scurtătură",
-        "shortcut_hint": "(fără /)",
+        "shortcut_hint": "(fără \/)",
         "shortcut_placeholder": "ex. salut",
         "body": "Conținut",
         "body_placeholder": "Bună {{contact.first_name}}, mulțumim că ne-ai contactat!",
         "no_canned_replies": "Niciun răspuns predefinit încă. Creează unul mai sus.",
-        "canned_delete_confirm": "Ștergi /{{shortcut}}?",
+        "canned_delete_confirm": "Ștergi \/{{shortcut}}?",
         "body_hint": "(suportă {{token}})",
         "view_contact": "Vezi contactul",
         "view_contact_profile": "Vezi profilul contactului",
@@ -3261,7 +3273,7 @@
         "send_template": "Trimite șablon",
         "template": "Șablon",
         "session_closed_placeholder": "Sesiune închisă — selectează un șablon de mai sus pentru a reangaja",
-        "type_message_placeholder": "Scrie un mesaj… sau /scurtătură pentru răspuns predefinit",
+        "type_message_placeholder": "Scrie un mesaj… sau \/scurtătură pentru răspuns predefinit",
         "view_full_profile": "Vezi profilul complet →",
         "conversation": "Conversație",
         "status": "Status",
@@ -3417,15 +3429,15 @@
         "trigger_form_submitted": "Formular trimis",
         "trigger_webhook_received": "Webhook primit",
         "trigger_order_placed": "Comandă plasată",
-        "trigger_order_fulfilled": "Comandă expediată / îndeplinită",
+        "trigger_order_fulfilled": "Comandă expediată \/ îndeplinită",
         "trigger_order_cancelled": "Comandă anulată",
         "trigger_cart_abandoned": "Coș abandonat",
         "trigger_customer_created": "Client magazin nou",
         "node_send_whatsapp": "Trimite WhatsApp",
         "node_send_sms": "Trimite SMS",
         "node_send_email": "Trimite email",
-        "node_wait": "Așteaptă / Întârziere",
-        "node_condition": "Condiție (If/Else)",
+        "node_wait": "Așteaptă \/ Întârziere",
+        "node_condition": "Condiție (If\/Else)",
         "node_add_tag": "Adaugă etichetă",
         "node_remove_tag": "Elimină eticheta",
         "node_update_contact": "Actualizează contactul",
@@ -3437,7 +3449,7 @@
         "cond_field_contact_phone": "Telefon contact",
         "cond_field_contact_tag": "Contactul are eticheta",
         "cond_field_message_body": "Conținut mesaj",
-        "cond_field_context_key": "Cheie webhook/context",
+        "cond_field_context_key": "Cheie webhook\/context",
         "op_equals": "este egal cu",
         "op_not_equals": "nu este egal cu",
         "op_contains": "conține",
@@ -3478,7 +3490,7 @@
         "field_new_value_required": "Valoare nouă *",
         "placeholder_new_value": "Valoare nouă sau {{token}}",
         "field_campaign_id_required": "ID campanie *",
-        "field_prompt_instructions_required": "Prompt / Instrucțiuni *",
+        "field_prompt_instructions_required": "Prompt \/ Instrucțiuni *",
         "placeholder_ai_prompt": "Ești un asistent util. Răspunde mesajului contactului pe un ton prietenos…",
         "field_channel": "Canal",
         "channel_meta_hint": "Messenger și Instagram permit mesaje doar într-un fir existent (contactul trebuie să îți fi scris primul).",
@@ -3597,7 +3609,7 @@
         "poll_hint": "Trimis ca butoane de răspuns (≤3 opțiuni) sau listă interactivă (4+).",
         "field_summary_required": "Titlu *",
         "placeholder_appointment_summary": "Consultație cu {{contact.name}}",
-        "field_start_required": "Dată/oră de început *",
+        "field_start_required": "Dată\/oră de început *",
         "field_duration_min": "Durată (min)",
         "field_timezone_optional": "Fus orar (opțional)",
         "field_calendar_id_optional": "ID calendar (opțional)",
@@ -3722,7 +3734,7 @@
         "source_text": "Text",
         "source_sitemap": "Sitemap",
         "source_faq": "FAQ",
-        "drop_a_file_or_browse": "Plasează un fișier sau <1>răsfoiește</1>",
+        "drop_a_file_or_browse": "Plasează un fișier sau <1>răsfoiește<\/1>",
         "text_content": "Conținut text",
         "text_content_placeholder": "Lipește conținutul text aici…",
         "questions_and_answers": "Întrebări și răspunsuri",
@@ -3806,9 +3818,9 @@
         "setup_empty_description": "Folosește pagina Configurare canal pentru a conecta contul WhatsApp Business.",
         "setup_webhook_instructions": "Instrucțiuni configurare webhook",
         "setup_webhook_step_1": "Mergi la Meta App → WhatsApp → Configuration → Webhooks.",
-        "setup_webhook_step_2": "Lipește <1>URL-ul de callback</1> din cardul WABA de mai sus în „Callback URL”.",
-        "setup_webhook_step_3": "Lipește <1>tokenul de verificare</1> în „Verify token”, apoi apasă <3>Verify and Save</3>.",
-        "setup_webhook_step_4": "Abonează-te la <1>messages</1> și <3>message_status_updates</3>.",
+        "setup_webhook_step_2": "Lipește <1>URL-ul de callback<\/1> din cardul WABA de mai sus în „Callback URL”.",
+        "setup_webhook_step_3": "Lipește <1>tokenul de verificare<\/1> în „Verify token”, apoi apasă <3>Verify and Save<\/3>.",
+        "setup_webhook_step_4": "Abonează-te la <1>messages<\/1> și <3>message_status_updates<\/3>.",
         "setup_webhook_step_5": "Repetă pentru fiecare WABA suplimentar (fiecare are propriul token de verificare).",
         "setup_nav_templates": "Șabloane →",
         "setup_nav_auto_replies": "Răspunsuri automate →",
@@ -3865,7 +3877,7 @@
         "widget_field_greeting": "Mesaj de salut",
         "widget_field_greeting_hint": "Se afișează automat ca popup la 3 s după încărcarea paginii. Lasă gol pentru a dezactiva.",
         "widget_field_greeting_placeholder": "Bună! 👋 Cum te putem ajuta azi?",
-        "widget_field_agent_name": "Nume agent / echipă",
+        "widget_field_agent_name": "Nume agent \/ echipă",
         "widget_field_agent_name_hint": "Afișat în antetul cardului de salut.",
         "widget_field_button_color": "Culoare buton",
         "widget_field_avatar_color": "Culoare avatar",
@@ -3882,10 +3894,10 @@
         "widget_summary_all": "Toate",
         "widget_summary_restricted": "{{count}} restricționate",
         "widget_embed_desc": "Lipește acest fragment pe site pentru a activa widget-ul.",
-        "widget_embed_instructions": "Adaugă acest fragment în <1>&lt;head&gt;</1> al site-ului sau imediat înainte de tagul de închidere <3>&lt;/body&gt;</3>.",
+        "widget_embed_instructions": "Adaugă acest fragment în <1>&lt;head&gt;<\/1> al site-ului sau imediat înainte de tagul de închidere <3>&lt;\/body&gt;<\/3>.",
         "widget_install_tips": "Sfaturi de instalare",
         "widget_install_tip_platforms": "Funcționează pe orice site HTML, WordPress, Shopify, Webflow, Wix etc.",
-        "widget_install_tip_async": "Atributele <1>async defer</1> asigură că nu blochează încărcarea paginii.",
+        "widget_install_tip_async": "Atributele <1>async defer<\/1> asigură că nu blochează încărcarea paginii.",
         "widget_install_tip_cache": "Modificările setărilor widget-ului se aplică în maximum 5 minute (cache).",
         "widget_direct_js_link": "Link JS direct",
         "widget_default_agent_name": "Suport",
@@ -4010,7 +4022,7 @@
         "templates_header_text_placeholder": "Text antet (max. 60 caractere)",
         "templates_file_uploaded": "Fișier încărcat",
         "templates_uploading": "Se încarcă…",
-        "templates_upload_image": "Încarcă imagine (JPEG / PNG, max. 5 MB)",
+        "templates_upload_image": "Încarcă imagine (JPEG \/ PNG, max. 5 MB)",
         "templates_upload_video": "Încarcă video (MP4, max. 16 MB)",
         "templates_upload_document": "Încarcă document (PDF, max. 100 MB)",
         "templates_upload_failed": "Încărcarea a eșuat.",
@@ -4027,7 +4039,7 @@
         "templates_url_example_label": "Exemplu URL (pentru {{token}})",
         "templates_phone_number_label": "Număr de telefon",
         "templates_phone_hint": "(E.164, ex. +407xxxxxxxx)",
-        "templates_buttons_used": "{{used}} / {{max}} butoane folosite",
+        "templates_buttons_used": "{{used}} \/ {{max}} butoane folosite",
         "templates_lang_en": "Engleză",
         "templates_lang_bn": "Bengaleză",
         "templates_lang_ar": "Arabă",
@@ -4099,7 +4111,7 @@
         "field_width_placeholder": "ex. 320px sau 100%",
         "field_line_color": "Culoare linie",
         "field_height": "Înălțime — {{height}}px",
-        "link_placeholder": "https://…  or  {{token}}",
+        "link_placeholder": "https:\/\/…  or  {{token}}",
         "apply": "Aplică",
         "bold": "Aldin (Ctrl+B)",
         "italic": "Cursiv (Ctrl+I)",
@@ -4159,7 +4171,7 @@
         "preview_like": "Apreciază",
         "preview_comment": "Comentariu",
         "preview_share": "Distribuie",
-        "preview_photo_video": "Foto / Video",
+        "preview_photo_video": "Foto \/ Video",
         "preview_caption_placeholder": "Legenda va apărea aici…",
         "preview_your_profile": "Profilul tău",
         "preview_now": "Acum",
@@ -4167,7 +4179,7 @@
         "preview_send": "Trimite",
         "preview_video": "Previzualizare video",
         "preview_caption_short": "Legendă…",
-        "preview_video_title_placeholder": "Titlu / descriere video…",
+        "preview_video_title_placeholder": "Titlu \/ descriere video…",
         "preview_your_channel": "Canalul tău",
         "preview_youtube_meta": "0 vizualizări · Chiar acum",
         "accounts_title": "Conturi sociale",
@@ -4177,7 +4189,7 @@
         "network_desc_facebook": "Conectează pagini Facebook pentru a programa postări.",
         "network_desc_instagram": "Conectează conturi Instagram Business prin Facebook.",
         "network_desc_linkedin": "Conectează profilul sau pagina de companie LinkedIn.",
-        "network_desc_twitter": "Conectează contul X / Twitter.",
+        "network_desc_twitter": "Conectează contul X \/ Twitter.",
         "network_desc_youtube": "Conectează canalul YouTube pentru a încărca videoclipuri.",
         "network_desc_tiktok": "Conectează contul TikTok pentru a publica videoclipuri.",
         "manual_setup": "Configurare manuală",
@@ -4196,7 +4208,7 @@
         "token_expired": "Token expirat",
         "disconnect": "Deconectează",
         "disconnect_confirm": "Deconectezi „{{name}}”?",
-        "reconnect_add_another": "Reconectează / Adaugă altul",
+        "reconnect_add_another": "Reconectează \/ Adaugă altul",
         "add_another_account": "Adaugă un alt cont",
         "connect_network": "Conectează {{network}}",
         "no_accounts_yet": "Niciun cont conectat încă",
@@ -4306,6 +4318,134 @@
         "scheduling_failed": "Programarea a eșuat. Încearcă din nou.",
         "manual_help_${network}": "Ajutor manual ${Network}"
     },
+<<<<<<< HEAD
+=======
+    "leads": {
+        "title": "Colector lead-uri",
+        "subtitle": "Descoperă afaceri din Google Places și trimite-le în lista de contacte.",
+        "new_search": "Căutare nouă",
+        "recent_searches": "Căutări recente",
+        "keyword_in_location": "{{keyword}} în {{location}}",
+        "job_status_pending": "în așteptare",
+        "job_status_running": "în rulare",
+        "job_status_done": "gata",
+        "job_status_failed": "eșuat",
+        "job_pending_hint": "Încă în așteptare. Verifică dacă rulează un worker pentru coada „leads”.",
+        "found_count": "{{count}} găsite",
+        "selected_count": "{{count}} selectate",
+        "push_to_contacts": "Trimite în contacte",
+        "col_business": "Afacere",
+        "col_phone": "Telefon",
+        "col_category": "Categorie",
+        "col_rating": "Rating",
+        "no_leads_title": "Niciun lead încă",
+        "no_leads_description": "Pornește o căutare pentru a descoperi afaceri din Google Places și a le trimite în lista de contacte.",
+        "confirm_delete": "Ștergi acest lead?",
+        "search_businesses": "Caută afaceri",
+        "business_type_keyword": "Tip afacere \/ Cuvânt-cheie",
+        "keyword_placeholder": "ex. restaurante, dentiști, săli de sport",
+        "city_location": "Oraș \/ Locație",
+        "location_placeholder": "ex. București, România",
+        "radius_meters": "Rază (metri)",
+        "queuing": "Se pune în coadă…",
+        "start_scrape": "Pornește colectarea",
+        "pipeline_title": "Pipeline lead-uri",
+        "pipeline_summary": "{{total}} lead-uri pe tablă · {{hot}} fierbinți",
+        "view_pipeline": "Pipeline",
+        "view_table": "Vizualizare tabel",
+        "col_score": "Scor",
+        "unnamed": "Afacere fără nume",
+        "in_contacts": "În contacte",
+        "has_website": "Are site web",
+        "drag_handle": "Trage {{name}} în altă etapă",
+        "rating_summary": "{{rating}} din 5 din {{count}} recenzii Google",
+        "search_placeholder": "Caută lead-uri…",
+        "filter_all": "Toate",
+        "band_hot": "Fierbinte",
+        "band_warm": "Cald",
+        "band_cold": "Rece",
+        "stage_empty": "Plasează lead-uri aici",
+        "stage_won": "Etapă câștigată",
+        "stage_lost": "Etapă pierdută",
+        "new_stage": "Etapă nouă",
+        "edit_stage": "Editează etapa",
+        "edit_stage_named": "Editează etapa {{name}}",
+        "stage_name": "Nume etapă",
+        "stage_color": "Culoare",
+        "mark_as_won": "Lead-urile de aici sunt câștigate",
+        "mark_as_lost": "Lead-urile de aici sunt pierdute",
+        "terminal_stage_hint": "Etapele câștigat și pierdut pot declanșa propriile automatizări. O etapă poate fi una sau alta, nu ambele.",
+        "confirm_delete_stage": "Ștergi această etapă? Lead-urile trec în prima etapă — nimic nu se pierde.",
+        "why_this_score": "De ce acest scor",
+        "scoring_button": "Scorare",
+        "rescore_button": "Rescorează",
+        "scoring_title": "Scorare lead-uri",
+        "scoring_subtitle": "Definește cum arată un lead bun. Scorurile se recalculează din semnalele colectate la scraping.",
+        "rule_has_phone": "Are număr de telefon",
+        "rule_rating": "Rating Google",
+        "rule_review_volume": "Număr de recenzii",
+        "rule_has_website": "Are site web",
+        "threshold_hot": "Fierbinte de la",
+        "threshold_warm": "Cald de la",
+        "thresholds_hint": "Orice sub scorul cald este rece.",
+        "weights_total_ok": "Greutățile însumează 100.",
+        "weights_total_rescaled": "Greutățile însumează {{total}} — vor fi scalate astfel încât fiecare scor să rămână din 100.",
+        "save_and_rescore": "Salvează și rescorează",
+        "tab_history": "Istoric",
+        "tab_score": "Scor",
+        "no_activity_yet": "Nimic înregistrat încă.",
+        "not_scored_yet": "Acest lead nu a fost încă scorat.",
+        "just_now": "chiar acum",
+        "by_system": "Automat",
+        "log_activity": "Înregistrează activitate",
+        "activity_body_placeholder": "Ce s-a întâmplat? (opțional pentru un apel)",
+        "activity_call": "Apel",
+        "activity_note": "Notă",
+        "activity_email": "Email",
+        "activity_whatsapp": "WhatsApp",
+        "activity_meeting": "Întâlnire",
+        "activity_created": "Lead găsit",
+        "activity_stage_changed": "Mutat {{from}} → {{to}}",
+        "activity_qualified": "Calificat — scor {{score}}",
+        "activity_pushed_to_contacts": "Trimis în contacte",
+        "activity_rescored": "Rescorat",
+        "stage_none": "nicăieri",
+        "outcome_answered": "Răspuns",
+        "outcome_no_answer": "Fără răspuns",
+        "outcome_voicemail": "Mesagerie vocală",
+        "outcome_wrong_number": "Număr greșit",
+        "outcome_not_interested": "Neinteresat",
+        "outcome_interested": "Interesat",
+        "next_follow_up": "Următorul follow-up",
+        "clear_follow_up": "Golește",
+        "move_to_stage": "Etapă",
+        "move_with_log_hint": "Schimbarea mută lead-ul în timp ce înregistrezi.",
+        "preset_tomorrow": "Mâine",
+        "preset_in_3_days": "În 3 zile",
+        "preset_next_week": "Săptămâna viitoare",
+        "follow_up_today": "Scadent azi",
+        "follow_up_overdue": "Întârziat {{count}}z",
+        "follow_up_in": "În {{count}}z",
+        "filter_due": "Scadent",
+        "more_in_stage": "+ încă {{count}}",
+        "activity_${a": {
+            "type}": "Type}"
+        },
+        "outcome_${a": {
+            "meta": {
+                "outcome}": "Outcome}"
+            }
+        },
+        "activity_${type}": "Activitate ${Type}",
+        "outcome_${outcome}": "Rezultat ${Outcome}",
+        "preset_${p": {
+            "key}": "Key}"
+        },
+        "rule_${rule}": "Regulă ${Rule}",
+        "threshold_${band}": "Prag ${Band}",
+        "band_${band}": "Bandă ${Band}"
+    },
+>>>>>>> antonel-branch
     "workspaces": {
         "title": "Spații de lucru",
         "subtitle": "Comută între spațiile de lucru sau creează unul nou.",
@@ -4416,13 +4556,13 @@
         "retail_b1": "Broadcast-uri flash sale",
         "retail_b2": "Actualizări program de loialitate",
         "retail_b3": "Promoții personalizate",
-        "retail_b4": "Rezervare masă / livrare",
+        "retail_b4": "Rezervare masă \/ livrare",
         "finance_label": "Finanțe și bănci",
         "finance_title": "Automatizează serviciul clienți",
         "finance_desc": "Trimite alerte de tranzacții, mementouri KYC, actualizări de cont și notificări de fraudă, sigur și instant, prin WhatsApp Cloud API.",
         "finance_b1": "Alerte tranzacții",
         "finance_b2": "Fluxuri KYC și onboarding",
-        "finance_b3": "Alerte fraudă / securitate",
+        "finance_b3": "Alerte fraudă \/ securitate",
         "finance_b4": "Actualizări cont și credite"
     },
     "invoice": {
@@ -4511,9 +4651,6 @@
     },
     "Secure checkout": "Plată sigură",
     "Back to pricing": "Înapoi la prețuri",
-    "v20": [
-        "0"
-    ],
     "notif": {
         "new_message_title": "Mesaj nou",
         "mention_title": "Ai fost menționat",
@@ -4560,6 +4697,24 @@
         "unread_few": "{{count}} necitite",
         "unread_other": "{{count}} de necitite",
         "all_read": "Ai citit tot.",
-        "delete": "Șterge notificarea"
-    }
+        "delete": "Șterge notificarea",
+        "unread": "Unread",
+        "trial_ending_body": "Trial Ending Body"
+    },
+    "data": {
+        "message": "Message"
+    },
+    "149": {
+        "00": "00"
+    },
+    "v20": [
+        "0"
+    ],
+    "127": [
+        [
+            {
+                "1": "1"
+            }
+        ]
+    ]
 }

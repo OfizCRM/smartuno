@@ -94,6 +94,9 @@ class LandingPageController extends Controller
             'landing.channel_5_key' => 'email',
             'landing.channel_5_title' => 'Email',
             'landing.channel_5_desc' => 'Send transactional and marketing email from the same contact timeline.',
+            'landing.channel_6_key' => 'telegram',
+            'landing.channel_6_title' => 'Telegram',
+            'landing.channel_6_desc' => 'Connect with your audience on Telegram through fast, direct conversations.',
 
             // ── Problem / Solution ──────────────────────────────────
             'landing.problems_enabled' => '1',
