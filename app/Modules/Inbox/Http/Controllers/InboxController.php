@@ -277,7 +277,7 @@ class InboxController extends Controller
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'direction' => 'out',
-            'channel' => $conversation->channelAccount?->channel ?? 'whatsapp',
+            'channel' => $conversation->resolvedChannel() ?? 'whatsapp',
             'type' => $msgType,
             'body' => $validated['body'],
             'payload' => $msgPayload,
@@ -288,9 +288,14 @@ class InboxController extends Controller
         ]);
 
         // Send via the channel driver
-        $channel = $conversation->channelAccount?->channel ?? 'whatsapp';
+        // resolvedChannel(), not a fallback to whatsapp: an email thread routed
+        // to the WhatsApp driver sends to the contact's phone number.
+        $channel = $conversation->resolvedChannel();
         $sendError = null;
         try {
+            if (! $channel) {
+                throw new \RuntimeException(__('This conversation is not attached to a channel.'));
+            }
             $driver = $this->channelManager->driver($channel);
             $messageId = $driver->send($message);
             $message->update(['status' => 'sent', 'provider_message_id' => $messageId]);
@@ -360,7 +365,10 @@ class InboxController extends Controller
 
         abort_unless($product, 404, __('Product not found.'));
 
-        $channel = $conversation->channelAccount?->channel ?? 'whatsapp';
+        // Product sharing builds a WhatsApp interactive payload, so it is only
+        // ever meaningful there. Unknown channel is treated as not-WhatsApp and
+        // falls through to the driver, which refuses honestly.
+        $channel = $conversation->resolvedChannel();
 
         // Free-form messages need an open 24h session on WhatsApp.
         if ($channel === 'whatsapp' && ! $conversation->isWhatsappWindowOpen()) {
@@ -395,6 +403,9 @@ class InboxController extends Controller
 
         $sendError = null;
         try {
+            if (! $channel) {
+                throw new \RuntimeException(__('This conversation is not attached to a channel.'));
+            }
             $messageId = $this->channelManager->driver($channel)->send($message);
             $message->update(['status' => 'sent', 'provider_message_id' => $messageId]);
         } catch (\Throwable $e) {

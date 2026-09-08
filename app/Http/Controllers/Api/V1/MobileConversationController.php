@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Events\ConversationAssigned;
 use App\Events\MessageSent;
 use App\Events\TypingChanged;
-use App\Models\InternalNote;
 use App\Models\User;
 use App\Modules\Inbox\Models\InboxLabel;
 use App\Modules\Shared\Models\ChannelAccount;
@@ -150,7 +149,7 @@ class MobileConversationController extends WorkspaceScopedController
                     : (str_starts_with($mimeType, 'video/') ? 'video' : 'document');
             }
 
-            $channel = $conversation->channelAccount?->channel ?? 'whatsapp';
+            $channel = $conversation->resolvedChannel() ?? 'whatsapp';
             if ($channel === 'whatsapp') {
                 $client = CloudApiClient::forWorkspace($conversation->workspace_id);
                 if (! $client) {
@@ -197,7 +196,7 @@ class MobileConversationController extends WorkspaceScopedController
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'direction' => 'out',
-            'channel' => $conversation->channelAccount?->channel ?? 'whatsapp',
+            'channel' => $conversation->resolvedChannel() ?? 'whatsapp',
             'type' => $msgType,
             'body' => $validated['body'],
             'payload' => $msgPayload,
@@ -209,7 +208,13 @@ class MobileConversationController extends WorkspaceScopedController
 
         $sendError = null;
         try {
-            $driver = $this->channelManager->driver($conversation->channelAccount?->channel ?? 'whatsapp');
+            // No fallback here: guessing whatsapp on an email thread sends the
+            // agent's reply to the contact's phone number instead.
+            $channel = $conversation->resolvedChannel();
+            if (! $channel) {
+                throw new \RuntimeException(__('This conversation is not attached to a channel.'));
+            }
+            $driver = $this->channelManager->driver($channel);
             $messageId = $driver->send($message);
             $message->update(['status' => 'sent', 'provider_message_id' => $messageId]);
         } catch (\Throwable $e) {

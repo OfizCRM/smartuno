@@ -1420,7 +1420,12 @@ export default function InboxShow({
     // Prefer the active workspace (user can switch between accessible workspaces);
     // fall back to the user's primary workspace if not present.
     const workspaceId = props.currentWorkspace?.id ?? authUser?.workspace_id;
-    const channel = conversation.channel_account?.channel ?? 'whatsapp';
+    // The server resolves this the same way; keep the two in step. Read from the
+    // prop rather than the `messages` state, which is declared below — and a
+    // conversation does not change channel mid-thread, so the seed is enough.
+    const channel = conversation.channel_account?.channel
+        ?? initialMessages?.[initialMessages.length - 1]?.channel
+        ?? 'whatsapp';
     const isWindowOpen = conversation.is_whatsapp_window_open ?? (channel !== 'whatsapp');
     const isWhatsApp = channel === 'whatsapp';
 

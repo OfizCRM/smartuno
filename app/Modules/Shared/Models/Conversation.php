@@ -197,9 +197,16 @@ class Conversation extends Model
     public function scopeInboxNarrowed(Builder $query, array $filters): Builder
     {
         return $query
-            ->when($filters['channel'] ?? null, fn (Builder $q, $channel) => $q->whereHas(
-                'channelAccount', fn ($c) => $c->where('channel', $channel)
-            ))
+            // An account-less conversation is invisible to a whereHas on the
+            // account — which is every email and SMS thread a campaign has ever
+            // mirrored. Those carry the channel on their messages instead, so the
+            // filter has to look in both places or the Email row returns nothing,
+            // for ever, with no way to tell that from "no email yet".
+            ->when($filters['channel'] ?? null, fn (Builder $q, $channel) => $q->where(fn (Builder $q) => $q
+                ->whereHas('channelAccount', fn ($c) => $c->where('channel', $channel))
+                ->orWhere(fn (Builder $q) => $q
+                    ->whereNull($q->qualifyColumn('channel_account_id'))
+                    ->whereHas('messages', fn ($m) => $m->where('channel', $channel)))))
             ->when($filters['account_id'] ?? null, fn (Builder $q, $accountId) => $q->where($q->qualifyColumn('channel_account_id'), $accountId))
             ->when($filters['label'] ?? null, fn (Builder $q, $labelId) => $q->whereHas(
                 'labels', fn ($l) => $l->where('inbox_labels.id', $labelId)
@@ -242,6 +249,36 @@ class Conversation extends Model
                 ->orWhere('email', 'like', $like)
                 ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) LIKE ?", [$like]))
             ->orWhereHas('messages', fn ($m) => $m->where('body', 'like', $like)));
+    }
+
+    /**
+     * Which channel this conversation is actually on.
+     *
+     * A conversation has no channel column: it borrows one from its channel
+     * account. But campaign mirroring creates conversations with a NULL account
+     * whenever the workspace has no ChannelAccount for that channel — and no
+     * email or SMS account can be created at all today, so every email campaign
+     * produces account-less threads.
+     *
+     * Every caller used to close that gap with `?? 'whatsapp'`. On an email
+     * thread that resolved to the WhatsApp driver, which sends to the contact's
+     * PHONE — so a reply typed into what looked like an email conversation went
+     * out as a WhatsApp message, and the agent had no way to tell.
+     *
+     * The messages themselves carry the truth: SendCampaignMessageJob writes
+     * channel='email' on the rows it mirrors. Read it from there, and guess only
+     * when there is nothing at all to read.
+     */
+    public function resolvedChannel(): ?string
+    {
+        $fromAccount = $this->channelAccount?->channel;
+        if ($fromAccount) {
+            return $fromAccount;
+        }
+
+        return $this->relationLoaded('lastMessage')
+            ? $this->lastMessage?->channel
+            : $this->messages()->latest('sent_at')->value('channel');
     }
 
     /**

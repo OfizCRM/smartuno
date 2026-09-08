@@ -17,7 +17,10 @@ import { formatTimeTz } from '@/Utils/datetime';
  */
 export default function ConversationCard({ conv, isActive = false, isFlashing = false, userTz }) {
     const { t } = useTranslation();
-    const channel = conv.channel_account?.channel ?? 'whatsapp';
+    // Not a plain fallback to whatsapp: an email-campaign thread has no channel
+    // account, and the row used to show a green WhatsApp icon on a conversation
+    // that was never WhatsApp.
+    const channel = conv.channel_account?.channel ?? conv.last_message?.channel ?? 'whatsapp';
     const name = conv.contact?.first_name || conv.contact?.last_name
         ? `${conv.contact.first_name ?? ''} ${conv.contact.last_name ?? ''}`.trim()
         : conv.contact?.phone_e164 ?? t('inbox.unknown_contact');
