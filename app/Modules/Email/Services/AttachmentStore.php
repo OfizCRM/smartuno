@@ -2,7 +2,8 @@
 
 namespace App\Modules\Email\Services;
 
-use App\Services\StorageManager;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -12,16 +13,29 @@ use Illuminate\Support\Str;
  * API before it stores anything and serves by redirecting to a public URL. An
  * email attachment has no Meta side, and a public URL would mean anyone holding
  * the link can read a tenant's invoice.
+ *
+ * Deliberately NOT StorageManager, which is the rule everywhere else in this
+ * application: it resolves to the `public` disk, and that disk is symlinked into
+ * the web root and served with no authentication at all. Logos, favicons and
+ * WhatsApp previews need exactly that; an invoice or a scanned ID arriving by
+ * email is the one class of file that must never have a public URL. The
+ * configured cloud disks are no better here — they are declared public-read.
  */
 class AttachmentStore
 {
+    /**
+     * `local` is storage/app/private: outside the web root, and reachable
+     * through Laravel's own storage route only with a valid signature, which
+     * nothing in this module ever mints. The single way in is
+     * AttachmentController, which checks the workspace first.
+     */
+    private const DISK = 'local';
+
     /** Per file. Anything larger is recorded by name and not kept. */
     public const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
     /** Per message, so one mail cannot fill the disk on its own. */
     public const MAX_MESSAGE_BYTES = 25 * 1024 * 1024;
-
-    public function __construct(private readonly StorageManager $storage) {}
 
     /**
      * Keep one file and describe it for messages.payload.
@@ -47,15 +61,15 @@ class AttachmentStore
             return ['name' => $name, 'mime' => $mime, 'size' => $size, 'path' => null, 'stored' => false];
         }
 
-        $path = $this->storage->prefixedPath('email-attachments/'.Str::uuid().'.'.$this->extensionFor($mime));
-        $this->storage->disk()->put($path, $contents);
+        $path = 'email-attachments/'.Str::uuid().'.'.$this->extensionFor($mime);
+        $this->disk()->put($path, $contents);
 
         return ['name' => $name, 'mime' => $mime, 'size' => $size, 'path' => $path, 'stored' => true];
     }
 
     public function contents(string $path): ?string
     {
-        $disk = $this->storage->disk();
+        $disk = $this->disk();
 
         return $disk->exists($path) ? $disk->get($path) : null;
     }
@@ -63,8 +77,13 @@ class AttachmentStore
     public function delete(?string $path): void
     {
         if ($path) {
-            $this->storage->disk()->delete($path);
+            $this->disk()->delete($path);
         }
+    }
+
+    private function disk(): Filesystem
+    {
+        return Storage::disk(self::DISK);
     }
 
     /**
@@ -79,6 +98,30 @@ class AttachmentStore
         $name = ltrim($name, '.');
 
         return $name !== '' ? Str::limit($name, 180, '') : 'atasament';
+    }
+
+    /**
+     * The content type to serve a stored file as, or null if it must not be
+     * shown in the browser at all.
+     *
+     * Keyed on the extension WE gave the file, never on the type the sender
+     * declared: that is the whole reason put() derives its own. The list is
+     * deliberately short — an invoice, a photo, a spreadsheet export. Anything a
+     * browser executes, HTML and SVG above all, is absent and stays a download.
+     * SVG cannot reach here anyway; extensionFor() files it as `bin`.
+     */
+    public function previewMimeFor(string $path): ?string
+    {
+        return match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'pdf' => 'application/pdf',
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'txt' => 'text/plain; charset=UTF-8',
+            'csv' => 'text/plain; charset=UTF-8',
+            default => null,
+        };
     }
 
     private function extensionFor(string $mime): string

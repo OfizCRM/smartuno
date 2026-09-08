@@ -38,8 +38,8 @@ class ProcessInboundInboxMessageJob implements ShouldQueue
     {
         match ($this->object) {
             'instagram' => $instagram->processWebhookPayload($this->payload),
-            'page'      => $messenger->processWebhookPayload($this->payload),
-            default     => null,
+            'page' => $messenger->processWebhookPayload($this->payload),
+            default => null,
         };
     }
 }

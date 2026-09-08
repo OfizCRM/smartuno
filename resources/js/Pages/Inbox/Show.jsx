@@ -10,11 +10,16 @@ import {
     Paperclip, Image as ImageIcon, ChevronDown, UserCheck,
     LayoutTemplate, Plus, Loader2, Bot, Calendar, BarChart2, PhoneMissed,
     Volume2, VolumeX, ShoppingBag, History, Tag, ArrowRightLeft, UserMinus,
-    Zap, Radio, IdCard, Check,
+    Zap, Radio, IdCard, Check, Trash2, Download,
 } from 'lucide-react';
 import { ChannelBrandIcon, CHANNEL_LABELS } from '@/Components/BrandIcons';
-import { formatTimeTz, formatInTz, formatDateTz } from '@/Utils/datetime';
+import { formatTimeTz, formatInTz, formatDateTz, msUntilMidnightTz } from '@/Utils/datetime';
 import { activityText } from '@/Utils/conversationActivity';
+import { Button, Modal } from '@/Components/ui';
+import MarkdownLite from '@/Components/MarkdownLite';
+import AttachmentPreview, { previewKindFor } from '@/Components/Inbox/AttachmentPreview';
+import AttachmentIcon from '@/Components/Inbox/AttachmentIcon';
+import ComposerFormatting, { applyFormat, formatShortcut } from '@/Components/Inbox/ComposerFormatting';
 import { playInboundSound, getSoundPrefs, setChannelSoundEnabled, SOUND_CHANNELS } from '@/Utils/notificationSound';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +38,14 @@ function reportActionError(err, fallback) {
 }
 
 /* ─── helpers ─────────────────────────────────────────── */
+
+/**
+ * How tall the reply box may grow before it starts scrolling instead.
+ *
+ * About fourteen lines. Past that the composer would be eating the thread it is
+ * a reply to, which is the other way of making a message hard to write.
+ */
+const COMPOSER_MAX_HEIGHT = 320;
 
 /**
  * Who sent an outbound message, from messages.sent_by. 'human' gets no badge —
@@ -773,8 +786,9 @@ function SoundPrefsMenu() {
     );
 }
 
-function MessageBubble({ msg, conversationId }) {
+function MessageBubble({ msg, conversationId, contactName }) {
     const { t } = useTranslation();
+    const [preview, setPreview] = useState(null);
     const { props: pageProps } = usePage();
     const bubbleTz = pageProps.timezone || 'Europe/Bucharest';
     const isOut = msg.direction === 'out';
@@ -797,12 +811,23 @@ function MessageBubble({ msg, conversationId }) {
     const sticker  = mediaType === 'sticker';
     const caption  = p.caption ?? p[mediaType]?.caption ?? (msg.body && msg.body !== '(media)' ? msg.body : '');
 
+    // An email is a document, not a chat line: it carries a subject, paragraphs
+    // and a signature, and squeezing it into 72% of the column wastes half the
+    // screen on the longest messages in the inbox. It gets the full width — and
+    // because full width means left/right no longer says who wrote it, the
+    // colour and the named header have to carry that on their own.
+    const isEmail = msg.channel === 'email';
+
     // Both sides sit on a light surface: outbound is a brand tint rather than a
     // solid fill, so a long reply does not become a slab of colour and the status
     // ticks, links and inset cards stay legible without a second palette.
-    const bubbleBase = `max-w-[72%] overflow-hidden rounded-2xl border text-sm ${isOut
-        ? 'rounded-br-md border-brand-100 bg-brand-50 text-neutral-900 dark:border-brand-900/40 dark:bg-brand-900/25 dark:text-neutral-100'
-        : 'rounded-bl-md border-neutral-200 bg-white text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100'}`;
+    const bubbleBase = isEmail
+        ? `w-full overflow-hidden rounded-xl border border-l-4 text-sm ${isOut
+            ? 'border-brand-100 border-l-brand-500 bg-brand-50/70 text-neutral-900 dark:border-brand-900/40 dark:border-l-brand-500 dark:bg-brand-900/20 dark:text-neutral-100'
+            : 'border-neutral-200 border-l-neutral-300 bg-white text-neutral-900 dark:border-neutral-700 dark:border-l-neutral-500 dark:bg-neutral-800 dark:text-neutral-100'}`
+        : `max-w-[72%] overflow-hidden rounded-2xl border text-sm ${isOut
+            ? 'rounded-br-md border-brand-100 bg-brand-50 text-neutral-900 dark:border-brand-900/40 dark:bg-brand-900/25 dark:text-neutral-100'
+            : 'rounded-bl-md border-neutral-200 bg-white text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100'}`;
 
     // Reaction: no bubble, just float
     if (mediaType === 'reaction' || reaction) {
@@ -852,7 +877,8 @@ function MessageBubble({ msg, conversationId }) {
     // line of the message and forced a blank strip on every short reply.
     const timeRow = (
         <div className={`mt-1 flex items-center gap-1 px-1 text-[10px] text-neutral-400 ${isOut ? 'justify-end' : ''}`}>
-            <span>{msg.sent_at ? formatTimeTz(msg.sent_at, bubbleTz) : ''}</span>
+            {/* An email prints its own time in the card header, beside the sender. */}
+            <span>{!isEmail && msg.sent_at ? formatTimeTz(msg.sent_at, bubbleTz) : ''}</span>
             {isOut && msg.status && (
                 <>
                     <span aria-hidden>·</span>
@@ -864,7 +890,7 @@ function MessageBubble({ msg, conversationId }) {
     );
 
     return (
-        <div className={`mb-2 flex flex-col ${isOut ? 'items-end' : 'items-start'}`}>
+        <div className={`mb-2 flex flex-col ${isEmail ? 'items-stretch' : isOut ? 'items-end' : 'items-start'}`}>
             <div className={bubbleBase}>
                 {/* Template header image/video/doc */}
                 {templateComponents && (
@@ -875,11 +901,23 @@ function MessageBubble({ msg, conversationId }) {
                     {senderBadge}
 
                     {/* Email carries a subject; chat does not. Shown above the body
-                        because a thread can be renamed halfway through. */}
-                    {msg.channel === 'email' && p.subject && (
-                        <p className="mb-1 border-b border-black/5 pb-1 text-[13px] font-semibold dark:border-white/10">
-                            {p.subject}
-                        </p>
+                        because a thread can be renamed halfway through. The name
+                        above it is not decoration: at full width there is no left
+                        or right to say who wrote this one. */}
+                    {isEmail && (
+                        <div className="mb-1.5 flex items-baseline justify-between gap-2 border-b border-black/5 pb-1.5 dark:border-white/10">
+                            <div className="min-w-0">
+                                <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                                    {isOut ? t('inbox.you') : (contactName || t('inbox.unknown_contact'))}
+                                </p>
+                                {p.subject && (
+                                    <p className="mt-0.5 truncate text-[13px] font-semibold">{p.subject}</p>
+                                )}
+                            </div>
+                            <span className="shrink-0 text-[10px] tabular-nums text-neutral-400">
+                                {msg.sent_at ? formatTimeTz(msg.sent_at, bubbleTz) : ''}
+                            </span>
+                        </div>
                     )}
 
                     {/* IMAGE */}
@@ -947,34 +985,61 @@ function MessageBubble({ msg, conversationId }) {
                         <UnsupportedBubble payload={p} body={msg.body} />
                     )}
 
-                    {/* TEXT / fallback */}
+                    {/* TEXT / fallback. Email is Markdown at both ends — inbound
+                        was converted from HTML when it was filed, outbound is what
+                        the composer wrote — so it renders through MarkdownLite,
+                        which puts everything in React text nodes and never touches
+                        innerHTML. WaText is WhatsApp's own *bold* dialect and would
+                        read an email's asterisks wrong. */}
                     {!templateComponents && (mediaType === 'text' || (!['image','video','audio','document','location','contacts','interactive','template','poll','event','unsupported'].includes(mediaType))) && (
-                        <WaText text={msg.body || '(media)'} />
+                        isEmail
+                            ? <MarkdownLite content={msg.body || '(media)'} />
+                            : <WaText text={msg.body || '(media)'} />
                     )}
 
-                    {/* Email attachments. Always a download link — the server
-                        streams them with an attachment disposition, never inline. */}
-                    {msg.channel === 'email' && p.attachments?.length > 0 && (
+                    {/* Email attachments. The few types that are safe to display
+                        open in place; everything else is a download, because the
+                        server will not serve it any other way. */}
+                    {isEmail && p.attachments?.length > 0 && (
                         <div className="mt-2 space-y-1">
-                            {p.attachments.map((file, i) => (
-                                file.path ? (
-                                    <a
-                                        key={i}
-                                        href={route('client.email.attachment', { conversation: conversationId, message: msg.id, index: i })}
-                                        className="flex items-center gap-2 rounded-lg bg-black/[0.04] px-2.5 py-1.5 text-xs transition hover:bg-black/[0.07] dark:bg-white/10 dark:hover:bg-white/15"
-                                    >
-                                        <Paperclip className="h-3.5 w-3.5 shrink-0" />
-                                        <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                                        <span className="shrink-0 tabular-nums opacity-60">{formatBytes(file.size)}</span>
-                                    </a>
+                            {p.attachments.map((file, i) => {
+                                const url = file.path
+                                    ? route('client.email.attachment', { conversation: conversationId, message: msg.id, index: i })
+                                    : null;
+                                const rowClass = 'group/att flex w-full items-center gap-2.5 rounded-xl border border-black/5 bg-white/70 px-2.5 py-2 text-left transition hover:border-black/10 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10';
+                                const Action = previewKindFor(file.path) ? Eye : Download;
+
+                                if (!url) {
+                                    return (
+                                        <p key={i} className="flex items-center gap-2.5 rounded-xl border border-dashed border-black/10 px-2.5 py-2 dark:border-white/10">
+                                            <AttachmentIcon file={file} muted />
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block truncate text-xs font-medium opacity-60">{file.name}</span>
+                                                <span className="block text-[11px] text-neutral-400">{t('inbox.attachment_too_large')}</span>
+                                            </span>
+                                        </p>
+                                    );
+                                }
+
+                                const inner = (
+                                    <>
+                                        <AttachmentIcon file={file} />
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-xs font-medium">{file.name}</span>
+                                            <span className="block text-[11px] tabular-nums text-neutral-400">{formatBytes(file.size)}</span>
+                                        </span>
+                                        <Action className="h-4 w-4 shrink-0 text-neutral-400 transition group-hover/att:text-brand-600" />
+                                    </>
+                                );
+
+                                return previewKindFor(file.path) ? (
+                                    <button key={i} type="button" onClick={() => setPreview({ file, url })} className={rowClass}>
+                                        {inner}
+                                    </button>
                                 ) : (
-                                    <p key={i} className="flex items-center gap-2 rounded-lg bg-black/[0.03] px-2.5 py-1.5 text-xs opacity-60 dark:bg-white/5">
-                                        <Paperclip className="h-3.5 w-3.5 shrink-0" />
-                                        <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                                        <span className="shrink-0">{t('inbox.attachment_too_large')}</span>
-                                    </p>
-                                )
-                            ))}
+                                    <a key={i} href={url} className={rowClass}>{inner}</a>
+                                );
+                            })}
                         </div>
                     )}
 
@@ -986,6 +1051,7 @@ function MessageBubble({ msg, conversationId }) {
                 </div>
             </div>
             {timeRow}
+            {preview && <AttachmentPreview file={preview.file} url={preview.url} onClose={() => setPreview(null)} />}
         </div>
     );
 }
@@ -1504,7 +1570,15 @@ export default function InboxShow({
     // Read once on mount, so the "Astazi" / "Ieri" dividers do not recompute the
     // clock on every render. A session left open past midnight relabels on the
     // next navigation, which is the right trade for a stable render.
-    const [nowMs] = useState(() => Date.now());
+    // Read once so rendering stays pure — but then a tab left open overnight
+    // keeps answering "today" with yesterday, which is every night for an inbox
+    // that is never closed. Re-armed at the real boundary in the user's timezone.
+    const [nowMs, setNowMs] = useState(() => Date.now());
+    useEffect(() => {
+        const timer = setTimeout(() => setNowMs(Date.now()), msUntilMidnightTz(userTz, nowMs));
+
+        return () => clearTimeout(timer);
+    }, [nowMs, userTz]);
 
     // When Inertia navigates between conversations the page component is
     // re-used, so seed local state from the new server props on conversation
@@ -1530,8 +1604,16 @@ export default function InboxShow({
     const [showTemplates, setShowTemplates]   = useState(false);
     const [showProducts, setShowProducts]     = useState(false);
     const [showAgentDrop, setShowAgentDrop]   = useState(false);
-    const [attachPreview, setAttachPreview]   = useState(null); // { file, url, type }
+    // A list, not one: an email carries as many files as fit, and picking a
+    // second used to silently replace the first. The other channels still take
+    // one, because Meta's media API carries one per message.
+    const [attachments, setAttachments] = useState([]); // [{ id, file, url, type }]
     const fileRef = useRef(null);
+    const bodyRef = useRef(null);
+    // Markdown is what gets stored, so the writer needs a way to see it rendered
+    // before it leaves. Email only: WhatsApp has its own *bold* dialect and a
+    // toolbar that emitted Markdown there would send the marks as literal text.
+    const [previewingBody, setPreviewingBody] = useState(false);
     const bottomRef = useRef(null);
 
     const { data, setData, reset } = useForm({ body: '', type: 'text', payload: null, subject: '' });
@@ -1705,10 +1787,27 @@ export default function InboxShow({
         setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
     };
 
+    // The box grows to fit what is in it rather than scrolling inside two rows.
+    // An email is written in paragraphs, and following your own sentences through
+    // a two-line window with its own scrollbar is the thing that makes a long
+    // reply unpleasant to write.
+    useEffect(() => {
+        const el = bodyRef.current;
+        if (!el) {
+            return;
+        }
+
+        // Reset first: without it the box can only ever grow, because scrollHeight
+        // never reports less than the height already set.
+        el.style.height = 'auto';
+        el.style.height = `${Math.min(el.scrollHeight, COMPOSER_MAX_HEIGHT)}px`;
+        el.style.overflowY = el.scrollHeight > COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden';
+    }, [data.body, previewingBody, attachments.length]);
+
     const handleSend = (e) => {
         e?.preventDefault?.();
         if (sending) return;
-        if (!data.body.trim() && !attachPreview) return;
+        if (!data.body.trim() && attachments.length === 0) return;
 
         setSending(true);
         setSendError(null);
@@ -1719,7 +1818,8 @@ export default function InboxShow({
             const errText = res?.data?.error;
             appendMessage(msg);
             reset();
-            setAttachPreview(null);
+            attachments.forEach(a => URL.revokeObjectURL(a.url));
+            setAttachments([]);
             if (errText) setSendError(errText);
         };
 
@@ -1733,11 +1833,19 @@ export default function InboxShow({
 
         const config = { headers: { Accept: 'application/json' } };
 
-        if (attachPreview) {
+        if (attachments.length > 0) {
             const fd = new FormData();
-            fd.append('body', data.body || attachPreview.file.name);
-            fd.append('type', attachPreview.type === 'image' ? 'image' : 'document');
-            fd.append('attachment', attachPreview.file);
+            fd.append('body', data.body || attachments[0].file.name);
+            if (isEmail) {
+                // Plain text: an email renders its body and lists its files. Typing
+                // it as a document would draw a broken media card above them.
+                fd.append('type', 'text');
+                if (data.subject) fd.append('subject', data.subject);
+                attachments.forEach(a => fd.append('attachments[]', a.file));
+            } else {
+                fd.append('type', attachments[0].type === 'image' ? 'image' : 'document');
+                fd.append('attachment', attachments[0].file);
+            }
             axios.post(route('client.inbox.reply', conversation.uuid), fd, {
                 headers: { 'Content-Type': 'multipart/form-data', Accept: 'application/json' },
             })
@@ -1760,13 +1868,39 @@ export default function InboxShow({
     };
 
     const handleFileChange = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const isImage = file.type.startsWith('image/');
-        const url = URL.createObjectURL(file);
-        setAttachPreview({ file, url, type: isImage ? 'image' : 'document' });
+        const picked = Array.from(e.target.files ?? []);
+        if (picked.length === 0) return;
+
+        const mapped = picked.map(file => ({
+            id: `${file.name}-${file.size}-${file.lastModified}`,
+            file,
+            url: URL.createObjectURL(file),
+            type: file.type.startsWith('image/') ? 'image' : 'document',
+        }));
+
+        setAttachments(prev => {
+            // Only email keeps a list; the others replace, because only one of
+            // them can ever be sent.
+            if (!isEmail) {
+                prev.forEach(a => URL.revokeObjectURL(a.url));
+
+                return mapped.slice(0, 1);
+            }
+
+            // Picking the same file twice is a slip, not an instruction.
+            const seen = new Set(prev.map(a => a.id));
+            mapped.filter(a => seen.has(a.id)).forEach(a => URL.revokeObjectURL(a.url));
+
+            return [...prev, ...mapped.filter(a => !seen.has(a.id))];
+        });
         e.target.value = '';
     };
+
+    const removeAttachment = (id) => setAttachments(prev => {
+        prev.filter(a => a.id === id).forEach(a => URL.revokeObjectURL(a.url));
+
+        return prev.filter(a => a.id !== id);
+    });
 
     const switchHandover = (mode) => {
         axios.post(route('client.inbox.handover', conversation.uuid), { mode })
@@ -1775,6 +1909,17 @@ export default function InboxShow({
     };
 
     const handleStatus = (status) => router.post(route('client.inbox.status', conversation.uuid), { status }, { preserveScroll: true });
+
+    // Deleting hides the thread from every list for good. The row survives in the
+    // database, and nothing is touched in the customer's own mailbox.
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const deleteConversation = () => {
+        setDeleting(true);
+        router.delete(route('client.inbox.destroy', conversation.uuid), {
+            onFinish: () => setDeleting(false),
+        });
+    };
 
     // Memoised so the debounced search effect below can depend on it without
     // rebuilding its timer on every render, which would defeat the debounce.
@@ -1932,7 +2077,32 @@ export default function InboxShow({
                                 {t('inbox.resolve')}
                             </button>
                         )}
+
+                        <button
+                            type="button"
+                            onClick={() => setConfirmDelete(true)}
+                            title={t('inbox.delete_conversation')}
+                            aria-label={t('inbox.delete_conversation')}
+                            className="rounded-lg border border-neutral-200 bg-white p-1.5 text-neutral-400 transition hover:border-coral-200 hover:bg-coral-50 hover:text-coral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
+
+                      <Modal show={confirmDelete} onClose={() => setConfirmDelete(false)} maxWidth="md">
+                        <div className="p-5">
+                            <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                                {t('inbox.delete_confirm_title', { count: 1 })}
+                            </h3>
+                            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                {t('inbox.delete_confirm_body')}
+                            </p>
+                            <div className="mt-5 flex justify-end gap-2">
+                                <Button variant="ghost" onClick={() => setConfirmDelete(false)}>{t('common.cancel')}</Button>
+                                <Button variant="danger" onClick={deleteConversation} disabled={deleting}>{t('common.delete')}</Button>
+                            </div>
+                        </div>
+                      </Modal>
                     </div>
 
                     {/* Tab bar */}
@@ -1968,7 +2138,7 @@ export default function InboxShow({
                                     ? <DayDivider key={item.key} at={item.at} day={item.day} tz={userTz} nowMs={nowMs} />
                                     : item.kind === 'album'
                                         ? <ImageGallery key={item.key} messages={item.messages} conversationId={conversation.uuid} />
-                                        : <MessageBubble key={item.key} msg={item.msg} conversationId={conversation.uuid} />
+                                        : <MessageBubble key={item.key} msg={item.msg} conversationId={conversation.uuid} contactName={contactName} />
                             ))}
                             {messages.length === 0 && (
                                 <div className="py-8"><EmptyState icon={<MessageSquare className="h-8 w-8" />} title={t('inbox.no_messages_yet')} description={t('inbox.no_messages_desc')} /></div>
@@ -2081,20 +2251,33 @@ export default function InboxShow({
 
 
 
-                        {/* Attachment preview */}
-                        {attachPreview && (
-                            <div className="mb-2 flex items-center gap-2 bg-neutral-50 dark:bg-neutral-800 rounded-xl p-2 border border-neutral-200 dark:border-neutral-700">
-                                {attachPreview.type === 'image'
-                                    ? <img src={attachPreview.url} alt="" className="h-12 w-12 rounded-lg object-cover" />
-                                    : <div className="h-12 w-12 rounded-lg bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center"><Paperclip className="h-5 w-5 text-neutral-500" /></div>
-                                }
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 truncate">{attachPreview.file.name}</p>
-                                    <p className="text-[10px] text-neutral-400">{(attachPreview.file.size / 1024).toFixed(1)} KB</p>
-                                </div>
-                                <button type="button" onClick={() => setAttachPreview(null)} className="text-neutral-400 hover:text-red-500 transition">
-                                    <X className="h-4 w-4" />
-                                </button>
+                        {/* Attachments waiting to go */}
+                        {attachments.length > 0 && (
+                            <div className="mb-2 space-y-1.5">
+                                {attachments.map(a => (
+                                    <div key={a.id} className="flex items-center gap-2.5 rounded-xl border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-700 dark:bg-neutral-800">
+                                        {a.type === 'image'
+                                            ? <img src={a.url} alt="" className="h-9 w-9 rounded-lg object-cover" />
+                                            : <AttachmentIcon file={{ name: a.file.name }} />}
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-xs font-medium text-neutral-700 dark:text-neutral-300">{a.file.name}</p>
+                                            <p className="text-[11px] tabular-nums text-neutral-400">{formatBytes(a.file.size)}</p>
+                                        </div>
+                                        <button type="button" onClick={() => removeAttachment(a.id)}
+                                            aria-label={t('inbox.attachment_remove')}
+                                            className="rounded-lg p-1 text-neutral-400 transition hover:bg-white hover:text-coral-600 dark:hover:bg-neutral-700">
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                                {isEmail && (
+                                    <p className="px-1 text-[11px] tabular-nums text-neutral-400">
+                                        {t('inbox.attachments_total', {
+                                            count: attachments.length,
+                                            size: formatBytes(attachments.reduce((sum, a) => sum + a.file.size, 0)),
+                                        })}
+                                    </p>
+                                )}
                             </div>
                         )}
 
@@ -2169,6 +2352,15 @@ export default function InboxShow({
                                     <input
                                         value={data.subject}
                                         onChange={e => setData('subject', e.target.value)}
+                                        // A lone text input submits its form on Enter, which
+                                        // here means sending the mail while still writing the
+                                        // subject. Move to the body instead.
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                bodyRef.current?.focus();
+                                            }
+                                        }}
                                         placeholder={emailSubjectPlaceholder}
                                         className="w-full border-0 border-b border-neutral-200 bg-transparent px-4 pb-2 pt-3 text-sm font-medium placeholder-neutral-400 focus:outline-none focus:ring-0 dark:border-neutral-700"
                                     />
@@ -2176,22 +2368,71 @@ export default function InboxShow({
 
                                 {/* Text first, tools underneath — one field rather than a
                                     toolbar floating above a separate box. */}
+                                {isEmail && previewingBody ? (
+                                    <div className="min-h-[4.5rem] px-4 pb-1 pt-3 text-sm">
+                                        {data.body?.trim()
+                                            ? <MarkdownLite content={data.body} />
+                                            : <p className="text-neutral-400">{t('inbox.format_preview_empty')}</p>}
+                                    </div>
+                                ) : (
                                 <textarea
+                                    ref={bodyRef}
                                     value={data.body}
                                     onChange={e => handleReplyChange(e.target.value)}
-                                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
+                                    onKeyDown={e => {
+                                        // Ctrl+B / Ctrl+I before Enter: the browser's own
+                                        // bold does nothing in a textarea, so the shortcut
+                                        // would otherwise be dead.
+                                        const shortcut = isEmail ? formatShortcut(e) : null;
+                                        if (shortcut) {
+                                            e.preventDefault();
+                                            const el = e.currentTarget;
+                                            const next = applyFormat(data.body ?? '', el.selectionStart, el.selectionEnd, shortcut);
+                                            handleReplyChange(next.value);
+                                            requestAnimationFrame(() => { el.focus(); el.setSelectionRange(next.start, next.end); });
+
+                                            return;
+                                        }
+                                        if (e.key !== 'Enter') {
+                                            return;
+                                        }
+
+                                        // An email is written in paragraphs, so Enter goes
+                                        // to the next line and the button does the sending —
+                                        // which is what the button is for. Ctrl+Enter still
+                                        // sends, for the hands that expect it. Chat is the
+                                        // other way round and stays that way: Enter has sent
+                                        // the message there for as long as chat has existed.
+                                        if (isEmail) {
+                                            if (e.metaKey || e.ctrlKey) { e.preventDefault(); handleSend(e); }
+
+                                            return;
+                                        }
+
+                                        if (!e.shiftKey) { e.preventDefault(); handleSend(e); }
+                                    }}
                                     placeholder={
                                         isWhatsApp && !isWindowOpen
                                             ? t('inbox.session_closed_placeholder')
                                             : t('inbox.type_message_placeholder')
                                     }
                                     rows={2}
-                                    disabled={isWhatsApp && !isWindowOpen && !attachPreview}
-                                    className="w-full resize-none border-0 bg-transparent px-4 pb-1 pt-3 text-sm focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60"
+                                    disabled={isWhatsApp && !isWindowOpen && attachments.length === 0}
+                                    className="min-h-[3.5rem] w-full resize-none border-0 bg-transparent px-4 pb-1 pt-3 text-sm focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60"
                                 />
+                                )}
 
                                 {/* Toolbar */}
                                 <div className="flex items-center gap-1 px-2 pb-2">
+                                    {isEmail && (
+                                        <ComposerFormatting
+                                            textareaRef={bodyRef}
+                                            value={data.body}
+                                            onChange={handleReplyChange}
+                                            previewing={previewingBody}
+                                            onTogglePreview={() => setPreviewingBody(v => !v)}
+                                        />
+                                    )}
                                     {/* Emoji */}
                                     <button type="button" onClick={() => setShowEmoji(v => !v)}
                                         title={t('inbox.emoji')}
@@ -2205,7 +2446,7 @@ export default function InboxShow({
                                         <Paperclip className="h-4 w-4" />
                                     </button>
                                     {/* Image */}
-                                    <button type="button" onClick={() => { const i = document.createElement('input'); i.type='file'; i.accept='image/*'; i.onchange=handleFileChange; i.click(); }}
+                                    <button type="button" onClick={() => { const i = document.createElement('input'); i.type='file'; i.accept='image/*'; i.multiple = isEmail; i.onchange=handleFileChange; i.click(); }}
                                         title={t('inbox.attach_image')}
                                         className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
                                         <ImageIcon className="h-4 w-4" />
@@ -2233,11 +2474,11 @@ export default function InboxShow({
                                         </button>
                                     )}
                                     {/* Hidden file input */}
-                                    <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange} />
+                                    <input ref={fileRef} type="file" multiple={isEmail} className="hidden" onChange={handleFileChange} />
 
                                     <button
                                         type="submit"
-                                        disabled={sending || (!data.body.trim() && !attachPreview) || (isWhatsApp && !isWindowOpen && !attachPreview)}
+                                        disabled={sending || (!data.body.trim() && attachments.length === 0) || (isWhatsApp && !isWindowOpen && attachments.length === 0)}
                                         className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
                                     >
                                         {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><span>{t('inbox.send')}</span><Send className="h-4 w-4" /></>}

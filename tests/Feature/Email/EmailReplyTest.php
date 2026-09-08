@@ -260,4 +260,77 @@ class EmailReplyTest extends TestCase
         $this->assertCount(1, self::$sent);
         $this->assertCount(0, self::$sent[0]->getAttachments());
     }
+
+    public function test_the_reply_goes_out_as_both_plain_text_and_html(): void
+    {
+        $conversation = $this->conversation();
+
+        app(EmailDriver::class)->send($this->outbound($conversation));
+        $sent = self::$sent[0];
+
+        // The text part is the message exactly as it was typed — which is also
+        // the readable version, because what the composer stores is Markdown.
+        $this->assertSame('Pleacă azi, vă trimit AWB-ul.', $sent->getTextBody());
+        $this->assertStringContainsString('Pleacă azi', (string) $sent->getHtmlBody());
+    }
+
+    public function test_the_formatting_typed_in_the_composer_reaches_the_html_part(): void
+    {
+        $conversation = $this->conversation();
+        $message = $this->outbound($conversation);
+        $message->update(['body' => "**Confirmat.**\n\n- coletul pleacă azi\n- AWB pe email\n\n[urmărire](https://awb.ro/123)"]);
+
+        app(EmailDriver::class)->send($message->fresh());
+        $html = (string) self::$sent[0]->getHtmlBody();
+
+        $this->assertStringContainsString('<strong>Confirmat.</strong>', $html);
+        $this->assertStringContainsString('<li>coletul pleacă azi</li>', $html);
+        $this->assertStringContainsString('<a href="https://awb.ro/123">urmărire</a>', $html);
+    }
+
+    public function test_html_typed_into_the_body_is_escaped_not_passed_through(): void
+    {
+        $conversation = $this->conversation();
+        $message = $this->outbound($conversation);
+        // Forwarding a customer's own words is the realistic way this arrives.
+        $message->update(['body' => '<script>alert(1)</script> vezi mai jos']);
+
+        app(EmailDriver::class)->send($message->fresh());
+        $html = (string) self::$sent[0]->getHtmlBody();
+
+        $this->assertStringNotContainsString('<script>', $html);
+        $this->assertStringContainsString('&lt;script&gt;', $html);
+    }
+
+    public function test_an_unsafe_link_scheme_does_not_survive_into_the_html(): void
+    {
+        $conversation = $this->conversation();
+        $message = $this->outbound($conversation);
+        $message->update(['body' => '[apasă aici](javascript:alert(1))']);
+
+        app(EmailDriver::class)->send($message->fresh());
+
+        $this->assertStringNotContainsString('javascript:', (string) self::$sent[0]->getHtmlBody());
+    }
+
+    public function test_every_attached_file_leaves_with_the_email(): void
+    {
+        $conversation = $this->conversation();
+
+        $this->actingAs($this->ctx['user'])->postJson(
+            route('client.inbox.reply', $conversation->uuid),
+            [
+                'body' => 'Vezi documentele',
+                'attachments' => [
+                    UploadedFile::fake()->createWithContent('oferta.txt', 'CONTINUT UNU'),
+                    UploadedFile::fake()->createWithContent('anexa.txt', 'CONTINUT DOI'),
+                ],
+            ],
+        )->assertOk();
+
+        $attachments = self::$sent[0]->getAttachments();
+
+        $this->assertCount(2, $attachments);
+        $this->assertSame(['CONTINUT UNU', 'CONTINUT DOI'], array_map(fn ($a) => $a->getBody(), $attachments));
+    }
 }

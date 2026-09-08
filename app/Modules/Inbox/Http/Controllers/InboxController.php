@@ -84,6 +84,10 @@ class InboxController extends Controller
 
         $views = DB::table('conversations')
             ->where('workspace_id', $workspaceId)
+            // The query builder knows nothing about the model's soft deletes, so
+            // without this the counts keep including threads the tenant deleted
+            // while the list beside them does not.
+            ->whereNull('deleted_at')
             ->selectRaw("
                 SUM(status IN ($active)) as `all`,
                 SUM(status IN ($active) AND assigned_user_id = ?) as mine,
@@ -228,29 +232,65 @@ class InboxController extends Controller
                 'nullable', 'file', 'max:20480',
                 'mimes:jpg,jpeg,png,webp,mp4,3gp,mov,mp3,aac,m4a,amr,ogg,pdf,doc,docx,xls,xlsx,ppt,pptx,txt',
             ],
+            // An email carries as many as fit; `attachment` above stays for the
+            // single-file channels and for anything already posting that shape.
+            'attachments' => ['nullable', 'array', 'max:10'],
+            'attachments.*' => [
+                'file', 'max:20480',
+                'mimes:jpg,jpeg,png,webp,mp4,3gp,mov,mp3,aac,m4a,amr,ogg,pdf,doc,docx,xls,xlsx,ppt,pptx,txt',
+            ],
         ]);
 
         $msgType = $validated['type'] ?? 'text';
         $msgPayload = $validated['payload'] ?? null;
 
+        $files = array_merge(
+            $request->hasFile('attachment') ? [$request->file('attachment')] : [],
+            $request->file('attachments') ?? [],
+        );
+
         // Email keeps its files on our own disk; the WhatsApp path below uploads
         // to Meta's Media API first, which an email has no use for.
-        if ($request->hasFile('attachment') && $conversation->resolvedChannel() === 'email') {
-            $file = $request->file('attachment');
-            $entry = app(AttachmentStore::class)->put(
-                (string) $file->getClientOriginalName(),
-                (string) ($file->getMimeType() ?: 'application/octet-stream'),
-                (string) file_get_contents($file->getRealPath()),
-            );
+        if ($files !== [] && $conversation->resolvedChannel() === 'email') {
+            $store = app(AttachmentStore::class);
+            $entries = [];
+            $bytes = 0;
 
-            if (! $entry['stored']) {
-                return response()->json(['error' => __('That file is too large to send by email.')], 422);
+            foreach ($files as $file) {
+                $entry = $store->put(
+                    (string) $file->getClientOriginalName(),
+                    (string) ($file->getMimeType() ?: 'application/octet-stream'),
+                    (string) file_get_contents($file->getRealPath()),
+                    // The cap is on the message, not the file: ten attachments of
+                    // nine megabytes each is still a mail nobody can receive.
+                    $bytes,
+                );
+
+                if (! $entry['stored']) {
+                    // Refused rather than sent without it. The person picked these
+                    // files; a mail that arrives quietly missing one is worse than
+                    // one that does not leave. Nothing already written stays behind.
+                    foreach ($entries as $orphan) {
+                        $store->delete($orphan['path']);
+                    }
+
+                    return response()->json(['error' => __('That file is too large to send by email.')], 422);
+                }
+
+                $bytes += $entry['size'];
+                $entries[] = $entry;
             }
 
-            $msgPayload = array_merge($msgPayload ?? [], ['attachments' => [$entry]]);
-            $validated['body'] = $validated['body'] ?: $entry['name'];
-        } elseif ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
+            $msgPayload = array_merge($msgPayload ?? [], ['attachments' => $entries]);
+            $validated['body'] = $validated['body'] ?: $entries[0]['name'];
+        } elseif ($files !== []) {
+            // Meta's Media API carries one file per message, so the other channels
+            // cannot honour a second one and must say so instead of dropping it.
+            if (count($files) > 1) {
+                return response()->json(['error' => __('Only one file can be sent per message on this channel.')], 422);
+            }
+
+            $file = $files[0];
             $mimeType = $file->getMimeType() ?? 'application/octet-stream';
 
             // Derive type from MIME if not explicitly set
@@ -558,6 +598,54 @@ class InboxController extends Controller
         $conversation->update($updates);
 
         return back()->with('success', __('Status updated.'));
+    }
+
+    /**
+     * Hide one thread for good.
+     *
+     * A soft delete: the row survives so an inbox row removed by mistake is
+     * recoverable, and so inbound de-duplication can still see the messages that
+     * were filed under it. Nothing is touched in the customer's own mailbox —
+     * the settings page promises we neither delete nor move their mail, and they
+     * read the same account from their phone.
+     */
+    public function destroy(Request $request, Conversation $conversation): RedirectResponse
+    {
+        $this->authorise($request, $conversation);
+        $conversation->delete();
+
+        return redirect()
+            ->route('client.inbox.index')
+            ->with('success', __('Conversation deleted.'));
+    }
+
+    /**
+     * Hide everything the user ticked.
+     *
+     * The workspace is a condition of the query rather than a check on each row:
+     * an id belonging to another tenant simply does not match, so there is no
+     * path where one is deleted because a check was forgotten.
+     */
+    public function destroyMany(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'uuids' => ['required', 'array', 'min:1', 'max:200'],
+            'uuids.*' => ['required', 'string', 'uuid'],
+            // Set when the thread the caller has open is one of these: going
+            // "back" would then land on a conversation that no longer resolves,
+            // and route binding answers that with a 404 rather than a list.
+            'to_index' => ['sometimes', 'boolean'],
+        ]);
+
+        $deleted = Conversation::where('workspace_id', $request->user()->workspace_id)
+            ->whereIn('uuid', $data['uuids'])
+            ->delete();
+
+        $message = trans_choice(':count conversation(s) deleted.', $deleted, ['count' => $deleted]);
+
+        return $request->boolean('to_index')
+            ? redirect()->route('client.inbox.index')->with('success', $message)
+            : back()->with('success', $message);
     }
 
     public function handover(Request $request, Conversation $conversation): JsonResponse

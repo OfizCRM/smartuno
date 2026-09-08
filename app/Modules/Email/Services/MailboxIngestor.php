@@ -81,8 +81,15 @@ class MailboxIngestor
 
     private function alreadyStored(int $workspaceId, string $messageId): bool
     {
+        // withTrashed: a thread the tenant deleted must stay deleted. Without it
+        // the message becomes invisible to this check and the next poll that
+        // re-offers the same uid files the whole thread over again. Written as a
+        // subquery on the model rather than whereHas, so the soft-delete scope is
+        // the one thing being changed and static analysis can see the type.
         return Message::where('provider_message_id', $messageId)
-            ->whereHas('conversation', fn ($q) => $q->where('workspace_id', $workspaceId))
+            ->whereIn('conversation_id', Conversation::withTrashed()
+                ->where('workspace_id', $workspaceId)
+                ->select('id'))
             ->exists();
     }
 

@@ -33,16 +33,61 @@ class AttachmentController extends Controller
         $contents = $this->store->contents($attachment['path']);
         abort_if($contents === null, 404);
 
-        // Always a download, never rendered. An HTML or SVG attachment displayed
-        // inline would be running a stranger's markup on this application's own
-        // origin, against the session of the person who opened it.
+        $name = $attachment['name'] ?? 'atasament';
+
+        return $request->boolean('preview')
+            ? $this->inline($attachment['path'], $name, $contents)
+            : $this->download($name, $contents);
+    }
+
+    /**
+     * The default: a download, never rendered.
+     *
+     * An HTML or SVG attachment displayed inline would be running a stranger's
+     * markup on this application's own origin, against the session of the person
+     * who opened it — which is why the type is not even consulted here.
+     */
+    private function download(string $name, string $contents): Response
+    {
         return response($contents, 200, [
             'Content-Type' => 'application/octet-stream',
             'Content-Length' => (string) strlen($contents),
             'X-Content-Type-Options' => 'nosniff',
             'Content-Disposition' => (new ResponseHeaderBag)->makeDisposition(
                 ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                $attachment['name'] ?? 'atasament',
+                $name,
+                'atasament',
+            ),
+        ]);
+    }
+
+    /**
+     * Shown in the page, for the few types where that is safe.
+     *
+     * Three things make it safe, and all three are needed. The content type comes
+     * from the extension this application chose when it stored the file, never
+     * from what the sender declared. The list of types it can produce excludes
+     * everything a browser executes. And the response carries the same sandbox
+     * policy Laravel puts on its own storage route, which is what stops script
+     * inside a PDF from running.
+     *
+     * A type outside that list is not quietly downloaded instead: the caller
+     * asked to display something that must not be displayed, and answering 404
+     * says so rather than looking like it worked.
+     */
+    private function inline(string $path, string $name, string $contents): Response
+    {
+        $mime = $this->store->previewMimeFor($path);
+        abort_if($mime === null, 404);
+
+        return response($contents, 200, [
+            'Content-Type' => $mime,
+            'Content-Length' => (string) strlen($contents),
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            'Content-Disposition' => (new ResponseHeaderBag)->makeDisposition(
+                ResponseHeaderBag::DISPOSITION_INLINE,
+                $name,
                 'atasament',
             ),
         ]);

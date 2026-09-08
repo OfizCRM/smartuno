@@ -40,6 +40,12 @@ class PollMailboxJob implements ShouldQueue
 
     public int $timeout = 120;
 
+    /**
+     * Set once the IMAP session is open, so a failure after that point does not
+     * tell the tenant to go and check settings that are already correct.
+     */
+    private bool $connected = false;
+
     public function __construct(public readonly int $mailboxId) {}
 
     public function handle(InboundMailParser $parser, MailboxIngestor $ingestor): void
@@ -71,10 +77,16 @@ class PollMailboxJob implements ShouldQueue
         try {
             $this->poll($mailbox, $imap, $parser, $ingestor);
         } catch (\Throwable $e) {
+            // error, not warning: a mailbox that has stopped working is the kind
+            // of thing an operator must see, and a production LOG_LEVEL of
+            // `error` would swallow anything quieter.
+            Log::error('Mailbox poll failed', ['mailbox_id' => $mailbox->id, 'error' => $e->getMessage()]);
+
             // The tenant sees this on the settings page; a mailbox that has
             // stopped working must say so rather than simply going quiet.
-            Log::warning('Mailbox poll failed', ['mailbox_id' => $mailbox->id, 'error' => $e->getMessage()]);
-            $this->markError($mailbox, __('Could not connect. Check the host, the port and the encryption setting.'));
+            $this->markError($mailbox, $this->connected
+                ? __('Connected, but the mailbox could not be read. It will be retried automatically.')
+                : __('Could not connect. Check the host, the port and the encryption setting.'));
         }
     }
 
@@ -110,12 +122,20 @@ class PollMailboxJob implements ShouldQueue
 
         try {
             $client->connect();
+            $this->connected = true;
             $folder = $client->getFolder('INBOX');
 
             $query = $folder->query()->leaveUnread()->setFetchOrderAsc()->limit(self::BATCH);
+            $lastUid = (int) ($meta['last_uid'] ?? 0);
 
-            if (! empty($meta['last_uid'])) {
-                $query->getByUidGreater((int) $meta['last_uid']);
+            if ($lastUid > 0) {
+                // whereUid() and not getByUidGreater(): the latter reads like a
+                // filter on this builder and is not one — it runs its own search,
+                // returns a collection, and leaves this query with no criteria at
+                // all, so the get() below asks the server for "UID SEARCH" with
+                // nothing after it and every poll after the first one fails. It
+                // would also pull every id in the mailbox and filter them in PHP.
+                $query->whereUid(($lastUid + 1).':*');
             } else {
                 // First run: only as far back as the tenant asked for. Importing
                 // a ten-year mailbox would bury the inbox in dead history.
@@ -123,10 +143,21 @@ class PollMailboxJob implements ShouldQueue
                 $query->whereSince(Carbon::now()->subDays($days)->format('d M Y'));
             }
 
-            $highestUid = (int) ($meta['last_uid'] ?? 0);
+            $highestUid = $lastUid;
 
             foreach ($query->get() as $message) {
-                $highestUid = max($highestUid, (int) $message->getUid());
+                $uid = (int) $message->getUid();
+
+                // "5:*" in a mailbox whose highest uid is 4 still returns message
+                // 4 — an IMAP range is read from whichever end is lower, so the
+                // newest message comes back on every poll until something newer
+                // arrives. De-duplication would catch it; skipping is cheaper and
+                // keeps the batch limit meaningful.
+                if ($uid <= $lastUid) {
+                    continue;
+                }
+
+                $highestUid = max($highestUid, $uid);
                 $this->ingestOne($mailbox, $message, $parser, $ingestor);
             }
 

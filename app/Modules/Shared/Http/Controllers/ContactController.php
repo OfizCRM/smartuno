@@ -125,6 +125,9 @@ class ContactController extends Controller
         $rows = DB::table('conversations')
             ->leftJoin('channel_accounts', 'channel_accounts.id', '=', 'conversations.channel_account_id')
             ->where('conversations.workspace_id', $workspaceId)
+            // The query builder does not apply the model's soft delete, and a
+            // thread deleted from the inbox must not reappear on the contact.
+            ->whereNull('conversations.deleted_at')
             ->whereIn('conversations.contact_id', $contactIds)
             ->groupBy('conversations.contact_id', 'channel_accounts.channel')
             ->selectRaw('conversations.contact_id as contact_id, channel_accounts.channel as channel, MAX(conversations.last_message_at) as last_at')
@@ -212,6 +215,7 @@ class ContactController extends Controller
 
         $last = DB::table('conversations')
             ->where('workspace_id', $workspaceId)
+            ->whereNull('deleted_at')
             ->where('contact_id', $contact->id)
             ->max('last_message_at');
 
@@ -220,6 +224,7 @@ class ContactController extends Controller
             'lifetime_currency' => $custom['lifetime_currency'] ?? null,
             'conversations' => (int) DB::table('conversations')
                 ->where('workspace_id', $workspaceId)
+                ->whereNull('deleted_at')
                 ->where('contact_id', $contact->id)
                 ->count(),
             'last_at' => $last,

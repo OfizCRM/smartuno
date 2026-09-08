@@ -46,11 +46,19 @@ class EmailDriver implements ChannelDriverInterface
         // In-Reply-To, and that is how their answer finds this thread again.
         $messageId = sprintf('%s@%s', Str::uuid(), $this->domainOf($from));
 
+        $body = (string) $message->getAttribute('body');
+
         $mail = (new MimeEmail)
             ->from(new Address($from, (string) ($credentials['from_name'] ?? '')))
             ->to($to)
             ->subject($this->subjectFor($message, $conversation))
-            ->text((string) $message->getAttribute('body'));
+            // Both parts, from the same source. What the composer stores is
+            // Markdown, which is already the plain-text version — so the text
+            // part is the message as typed, and the HTML part is that same text
+            // with the formatting applied. A client that refuses HTML still gets
+            // something a person can read.
+            ->text($body)
+            ->html($this->htmlFor($body));
 
         foreach ((($message->getAttribute('payload') ?? [])['attachments'] ?? []) as $attachment) {
             $contents = ! empty($attachment['path']) ? $this->attachments->contents($attachment['path']) : null;
@@ -147,6 +155,22 @@ class EmailDriver implements ChannelDriverInterface
         // References carries the whole chain and can run to kilobytes on a long
         // thread; the last few are what every client actually matches on.
         return [end($ids), array_slice($ids, -8)];
+    }
+
+    /**
+     * The HTML part, rendered from the Markdown the composer produced.
+     *
+     * `html_input: escape` is not optional: without it CommonMark passes raw
+     * HTML straight through, and the body of a message is text a person typed —
+     * or, on a forward, text that came from outside. Unsafe link schemes are
+     * dropped for the same reason.
+     */
+    private function htmlFor(string $body): string
+    {
+        return Str::markdown($body, [
+            'html_input' => 'escape',
+            'allow_unsafe_links' => false,
+        ]);
     }
 
     private function domainOf(string $email): string

@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { UserCheck } from 'lucide-react';
+import { Check, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ChannelBrandIcon } from '@/Components/BrandIcons';
 import { formatTimeTz } from '@/Utils/datetime';
@@ -15,7 +15,15 @@ import { formatTimeTz } from '@/Utils/datetime';
  * when a message lands on it over the websocket. Sharing the component means the
  * conversation page gets it too.
  */
-export default function ConversationCard({ conv, isActive = false, isFlashing = false, userTz }) {
+export default function ConversationCard({
+    conv,
+    isActive = false,
+    isFlashing = false,
+    userTz,
+    selected = false,
+    selecting = false,
+    onToggleSelect = null,
+}) {
     const { t } = useTranslation();
     // Not a plain fallback to whatsapp: an email-campaign thread has no channel
     // account, and the row used to show a green WhatsApp icon on a conversation
@@ -24,6 +32,13 @@ export default function ConversationCard({ conv, isActive = false, isFlashing = 
     const name = conv.contact?.first_name || conv.contact?.last_name
         ? `${conv.contact.first_name ?? ''} ${conv.contact.last_name ?? ''}`.trim()
         : conv.contact?.phone_e164 ?? t('inbox.unknown_contact');
+
+    // Ticking a row must not open it.
+    const toggleSelect = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggleSelect?.(conv.uuid);
+    };
 
     // The avatar and the name jump to the contact record rather than the thread,
     // so stop the row's own navigation.
@@ -38,16 +53,37 @@ export default function ConversationCard({ conv, isActive = false, isFlashing = 
     return (
         <Link
             href={route('client.inbox.show', conv.uuid)}
-            className={`block border-b border-neutral-100 px-3 py-3 transition-colors dark:border-neutral-800 ${
-                isActive
-                    ? 'border-l-2 border-l-brand-600 bg-brand-50 dark:bg-brand-900/20'
-                    : isFlashing
-                        ? 'bg-brand-50/60 dark:bg-brand-900/10'
-                        : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
+            className={`group/row block border-b border-neutral-100 px-3 py-3 transition-colors dark:border-neutral-800 ${
+                selected
+                    ? 'bg-brand-50/70 dark:bg-brand-900/20'
+                    : isActive
+                        ? 'border-l-2 border-l-brand-600 bg-brand-50 dark:bg-brand-900/20'
+                        : isFlashing
+                            ? 'bg-brand-50/60 dark:bg-brand-900/10'
+                            : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
             }`}
         >
             <div className="flex items-start gap-2.5">
-                <button type="button" onClick={openContact} title={t('inbox.view_contact')} className="group relative shrink-0">
+                {/* The tick sits over the avatar rather than in a column of its
+                    own: a permanent checkbox on every row is noise on a screen
+                    that is read far more often than it is tidied. */}
+                {onToggleSelect && (
+                    <button
+                        type="button"
+                        onClick={toggleSelect}
+                        aria-label={t('inbox.select_row')}
+                        aria-pressed={selected}
+                        className={`h-9 w-9 shrink-0 items-center justify-center rounded-full border transition ${
+                            selected
+                                ? 'flex border-brand-600 bg-brand-600 text-white'
+                                : `border-neutral-300 bg-white text-transparent hover:border-brand-400 hover:text-brand-500 dark:border-neutral-600 dark:bg-neutral-800 ${selecting ? 'flex' : 'hidden group-hover/row:flex'}`
+                        }`}
+                    >
+                        <Check className="h-4 w-4" />
+                    </button>
+                )}
+                <button type="button" onClick={openContact} title={t('inbox.view_contact')}
+                    className={`group relative shrink-0 ${onToggleSelect ? (selected ? 'hidden' : `${selecting ? 'hidden' : 'group-hover/row:hidden'}`) : ''}`}>
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700 transition group-hover:ring-2 group-hover:ring-brand-400 dark:bg-brand-900/30 dark:text-brand-300">
                         {name[0]?.toUpperCase() ?? '?'}
                     </div>

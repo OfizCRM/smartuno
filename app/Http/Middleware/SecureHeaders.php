@@ -29,8 +29,13 @@ class SecureHeaders
             $response->headers->set('Expires', '0');
         }
 
+        // A response that already set its own policy keeps it. The site-wide one
+        // is written for the application's own pages and permits inline script;
+        // a route that serves a file from outside — an email attachment shown in
+        // the page — sets something far stricter on purpose, and overwriting it
+        // here would quietly hand a stranger's document the looser rules.
         $csp = $this->buildCsp();
-        if ($csp !== null) {
+        if ($csp !== null && ! $response->headers->has('Content-Security-Policy')) {
             $response->headers->set('Content-Security-Policy', $csp);
         }
 

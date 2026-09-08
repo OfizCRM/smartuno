@@ -12,10 +12,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Conversation extends Model
 {
+    /**
+     * A deleted thread is gone from every list, count and folder — the trait
+     * adds the condition to every query in the application at once. The row
+     * survives, so a thread deleted by mistake is recoverable and inbound
+     * de-duplication can still see the messages filed under it.
+     */
+    use SoftDeletes;
+
     protected static function boot(): void
     {
         parent::boot();

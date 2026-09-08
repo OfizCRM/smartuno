@@ -21,6 +21,9 @@ Route::middleware(['web', 'client-app'])->prefix('app/inbox')->name('client.inbo
     Route::post('/conversations/{conversation}/share-product', [InboxController::class, 'shareProduct'])->name('share-product')->middleware('limit:whatsapp_messages_per_month,whatsapp_messages');
     Route::post('/conversations/{conversation}/assign', [InboxController::class, 'assign'])->name('assign');
     Route::post('/conversations/{conversation}/status', [InboxController::class, 'updateStatus'])->name('status');
+    // Bulk first only for readability; the two patterns cannot collide.
+    Route::delete('/conversations', [InboxController::class, 'destroyMany'])->name('destroy-many');
+    Route::delete('/conversations/{conversation}', [InboxController::class, 'destroy'])->name('destroy');
     Route::post('/conversations/{conversation}/typing', [InboxController::class, 'typing'])->name('typing');
     Route::get('/conversations/{conversation}/activities', [ConversationActivityController::class, 'index'])->name('activities.index');
     Route::get('/conversations/{conversation}/notes', [InternalNoteController::class, 'index'])->name('notes.index');

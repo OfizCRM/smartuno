@@ -42,7 +42,7 @@ class MetaWebhookController extends Controller
 
         $appSecret = $meta->appSecret();
         if ($appSecret) {
-            $expected = 'sha256=' . hash_hmac('sha256', $request->getContent(), $appSecret);
+            $expected = 'sha256='.hash_hmac('sha256', $request->getContent(), $appSecret);
             if (! hash_equals($expected, $request->header('X-Hub-Signature-256', ''))) {
                 Log::warning('meta.webhook.signature_mismatch', ['ip' => $request->ip()]);
                 abort(401, 'Invalid signature');
@@ -57,9 +57,9 @@ class MetaWebhookController extends Controller
         $object = $request->input('object', '');
 
         Log::info('meta.webhook.received', [
-            'object'      => $object,
+            'object' => $object,
             'entry_count' => count($request->input('entry', [])),
-            'entry_ids'   => collect($request->input('entry', []))->pluck('id')->filter()->values()->all(),
+            'entry_ids' => collect($request->input('entry', []))->pluck('id')->filter()->values()->all(),
         ]);
 
         if (! in_array($object, ['instagram', 'page'], true)) {
@@ -73,10 +73,10 @@ class MetaWebhookController extends Controller
         // account — so keying on it would discard every message after the first.
         // (Same trap the WhatsApp controller documents in entryEventKey().)
         $idempotency = app(WebhookIdempotencyService::class);
-        $newEntries  = [];
+        $newEntries = [];
         foreach ($request->input('entry', []) as $entry) {
             $eventKey = $this->entryEventKey($entry);
-            if ($eventKey === null || $idempotency->isNewEvent('meta_' . $object, $eventKey)) {
+            if ($eventKey === null || $idempotency->isNewEvent('meta_'.$object, $eventKey)) {
                 $newEntries[] = $entry;
             }
         }
@@ -88,7 +88,7 @@ class MetaWebhookController extends Controller
         }
 
         Log::info('meta.webhook.dispatching', [
-            'object'          => $object,
+            'object' => $object,
             'new_entry_count' => count($newEntries),
         ]);
 
@@ -136,7 +136,7 @@ class MetaWebhookController extends Controller
         // entry.id is deliberately excluded as a dedup discriminator.
         $blob = json_encode([
             'messaging' => $entry['messaging'] ?? [],
-            'changes'   => $entry['changes'] ?? [],
+            'changes' => $entry['changes'] ?? [],
         ], JSON_UNESCAPED_UNICODE);
 
         if ($blob === false || $blob === '{"messaging":[],"changes":[]}') {

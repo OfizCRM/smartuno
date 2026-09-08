@@ -177,3 +177,29 @@ export function formatUnixTz(unixSec, tz) {
     if (!unixSec) return '';
     return formatDateTz(new Date(unixSec * 1000).toISOString(), tz);
 }
+
+/**
+ * Milliseconds from `fromMs` until the next midnight in `tz`.
+ *
+ * A screen that decides "today" once, when it mounts, is wrong for the rest of
+ * the night the moment the clock rolls over — and an inbox in a small office is
+ * left open all day. Re-arming on this gives it the real boundary in the user's
+ * own timezone, which is not necessarily the browser's.
+ *
+ * Two seconds past midnight rather than exactly on it, so a timer that fires a
+ * hair early still lands on the new day.
+ */
+export function msUntilMidnightTz(tz, fromMs = Date.now()) {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz || 'UTC',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    }).formatToParts(new Date(fromMs));
+    const get = (type) => Number(parts.find(x => x.type === type)?.value ?? 0);
+    // Some engines render midnight as hour 24 under hour12:false.
+    const elapsed = ((get('hour') % 24) * 3600) + (get('minute') * 60) + get('second');
+
+    return ((86400 - elapsed) * 1000) + 2000;
+}

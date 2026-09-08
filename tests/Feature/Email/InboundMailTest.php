@@ -13,6 +13,7 @@ use App\Modules\Shared\Models\Message;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -34,6 +35,7 @@ class InboundMailTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::fake('local');
         $this->ctx = $this->createWorkspaceContext();
         $this->mailbox = ChannelAccount::create([
             'workspace_id' => $this->ctx['workspace']->id,
