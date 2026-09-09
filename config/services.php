@@ -89,4 +89,25 @@ return [
         'webhook_secret' => env('CLICKSEND_WEBHOOK_SECRET'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | ONLYOFFICE Docs
+    |--------------------------------------------------------------------------
+    |
+    | The document editor. `url` is where the browser loads the editor from;
+    | `app_url` is how the Document Server reaches this application back, which
+    | is a different address — a container's "localhost" is the container. On a
+    | developer's machine that is http://host.docker.internal:8000; on a server
+    | it is whatever the container can resolve.
+    |
+    | `secret` must match JWT_SECRET on the container. Empty means the editor is
+    | switched off, and the application says so rather than half-working.
+    |
+    */
+    'onlyoffice' => [
+        'url' => env('ONLYOFFICE_URL', ''),
+        'app_url' => env('ONLYOFFICE_APP_URL', env('APP_URL')),
+        'secret' => env('ONLYOFFICE_SECRET', ''),
+    ],
+
 ];

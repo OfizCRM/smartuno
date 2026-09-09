@@ -2,7 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import {
     LayoutDashboard, Users, Settings, Radio, Inbox, Zap, Share2,
-    LifeBuoy,
+    LifeBuoy, FolderOpen,
 } from 'lucide-react';
 
 const iconClass = 'h-4 w-4';
@@ -44,6 +44,7 @@ export default function useClientNav() {
                 { label: t('nav.dashboard'),     href: safeRoute('client.dashboard'),            icon: <LayoutDashboard className={iconClass} />, activePattern: 'client.dashboard' },
                 { label: t('nav.inbox'),         href: safeRoute('client.inbox.index'),          icon: <Inbox className={iconClass} />,          activePattern: 'client.inbox.*', badge: inboxOpenCount },
                 { label: t('nav.contacts'),      href: safeRoute('client.contacts.index'),       icon: <Users className={iconClass} />,          activePattern: 'client.contacts.*' },
+                { label: t('nav.documents'),     href: safeRoute('client.documents.index'),      icon: <FolderOpen className={iconClass} />,     activePattern: 'client.documents.*' },
             ],
         },
         {

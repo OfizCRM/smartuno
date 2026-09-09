@@ -27,9 +27,12 @@ export function previewKindFor(path) {
  * three things it can show — a page, a picture, a block of text — need three
  * different containers.
  */
-export default function AttachmentPreview({ file, url, onClose }) {
+export default function AttachmentPreview({ file, url, onClose, kind: forced = null }) {
     const { t } = useTranslation();
-    const kind = previewKindFor(file?.path);
+    // `forced` is for a file the server converts on the way out — a Word
+    // document comes back as a rendered PDF, and its own extension would say
+    // otherwise.
+    const kind = forced ?? previewKindFor(file?.path);
     const previewUrl = `${url}?preview=1`;
     const [text, setText] = useState(null);
     const [failed, setFailed] = useState(false);

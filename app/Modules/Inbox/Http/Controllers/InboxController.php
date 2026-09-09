@@ -7,6 +7,8 @@ use App\Events\MessageSent;
 use App\Events\TypingChanged;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Modules\Documents\Models\Document;
+use App\Modules\Documents\Services\DocumentImporter;
 use App\Modules\Email\Services\AttachmentStore;
 use App\Modules\Inbox\Models\InboxLabel;
 use App\Modules\Shared\Models\ChannelAccount;
@@ -20,6 +22,7 @@ use App\Notifications\ConversationHandoverNotification;
 use App\Services\StorageManager;
 use App\Support\Demo;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -239,6 +242,10 @@ class InboxController extends Controller
                 'file', 'max:20480',
                 'mimes:jpg,jpeg,png,webp,mp4,3gp,mov,mp3,aac,m4a,amr,ogg,pdf,doc,docx,xls,xlsx,ppt,pptx,txt',
             ],
+            // Files already in the library, sent without a trip through the
+            // browser: the bytes are on our disk, so they are copied server-side.
+            'document_uuids' => ['nullable', 'array', 'max:10'],
+            'document_uuids.*' => ['string', 'uuid'],
         ]);
 
         $msgType = $validated['type'] ?? 'text';
@@ -249,9 +256,24 @@ class InboxController extends Controller
             $request->file('attachments') ?? [],
         );
 
+        $documentUuids = $validated['document_uuids'] ?? [];
+        /** @var EloquentCollection<int, Document> $documents */
+        $documents = $documentUuids === []
+            ? new EloquentCollection
+            : Document::where('workspace_id', $request->user()->workspace_id)
+                ->whereIn('uuid', $documentUuids)
+                ->get();
+
+        // A document chosen from the library is copied straight across; the other
+        // channels would need it uploaded to Meta's Media API first, which is not
+        // wired up, so they say so instead of sending an empty message.
+        if ($documents->isNotEmpty() && $conversation->resolvedChannel() !== 'email') {
+            return response()->json(['error' => __('Documents can only be sent on email for now.')], 422);
+        }
+
         // Email keeps its files on our own disk; the WhatsApp path below uploads
         // to Meta's Media API first, which an email has no use for.
-        if ($files !== [] && $conversation->resolvedChannel() === 'email') {
+        if (($files !== [] || $documents->isNotEmpty()) && $conversation->resolvedChannel() === 'email') {
             $store = app(AttachmentStore::class);
             $entries = [];
             $bytes = 0;
@@ -270,6 +292,22 @@ class InboxController extends Controller
                     // Refused rather than sent without it. The person picked these
                     // files; a mail that arrives quietly missing one is worse than
                     // one that does not leave. Nothing already written stays behind.
+                    foreach ($entries as $orphan) {
+                        $store->delete($orphan['path']);
+                    }
+
+                    return response()->json(['error' => __('That file is too large to send by email.')], 422);
+                }
+
+                $bytes += $entry['size'];
+                $entries[] = $entry;
+            }
+
+            $importer = app(DocumentImporter::class);
+            foreach ($documents as $document) {
+                $entry = $importer->toAttachment($document, $bytes, AttachmentStore::MAX_MESSAGE_BYTES);
+
+                if ($entry === null) {
                     foreach ($entries as $orphan) {
                         $store->delete($orphan['path']);
                     }

@@ -1,0 +1,59 @@
+# docker-compose.yml
+#
+# Services this repository actually ships and operates. The application itself,
+# MySQL and Redis are NOT here: every environment so far runs them its own way
+# (a local `composer dev`, a managed database on the server), and inventing a
+# stack nobody uses would be a file that rots.
+#
+# Note that docker-compose.queues.yml is written as an overlay on this file and
+# expects an `app` image plus `db` and `redis` services. Those still have to be
+# added before that overlay can run.
+#
+# Usage:
+#   docker compose up -d
+#
+# No `version:` key — Compose v2 ignores it and warns about it on every command.
+# docker-compose.queues.yml still carries one; it can go when that file is next
+# touched.
+
+services:
+  # Word, Excel and PowerPoint, edited in the browser as they are on a desktop.
+  # ONLYOFFICE Docs Community Edition: AGPL v3, free, and the only free engine
+  # that edits Office files without rewriting them into something else.
+  #
+  # Two things are not optional:
+  #
+  #  * JWT. Without it anybody who can reach this container can ask it to open
+  #    any document, and ONLYOFFICE additionally refuses to fetch files from
+  #    private addresses. ONLYOFFICE_SECRET must be the same on both sides.
+  #  * The container has to reach the application back, to fetch a file and to
+  #    report a save. That address is ONLYOFFICE_APP_URL and it is NOT the one
+  #    in a browser's address bar — a container's "localhost" is itself.
+  #
+  # Bound to 127.0.0.1: it is reached by the browser on the same host and by
+  # nothing else. Needs about 2 GB of RAM and is slow on its first start.
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: onlyoffice
+    restart: unless-stopped
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: "${ONLYOFFICE_SECRET}"
+      JWT_HEADER: "Authorization"
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - onlyoffice-data:/var/www/onlyoffice/Data
+      - onlyoffice-logs:/var/log/onlyoffice
+      - onlyoffice-cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+volumes:
+  onlyoffice-data:
+  onlyoffice-logs:
+  onlyoffice-cache:

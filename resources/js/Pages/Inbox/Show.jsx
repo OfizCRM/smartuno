@@ -10,7 +10,7 @@ import {
     Paperclip, Image as ImageIcon, ChevronDown, UserCheck,
     LayoutTemplate, Plus, Loader2, Bot, Calendar, BarChart2, PhoneMissed,
     Volume2, VolumeX, ShoppingBag, History, Tag, ArrowRightLeft, UserMinus,
-    Zap, Radio, IdCard, Check, Trash2, Download,
+    Zap, Radio, IdCard, Check, Trash2, Download, FolderPlus, FolderOpen,
 } from 'lucide-react';
 import { ChannelBrandIcon, CHANNEL_LABELS } from '@/Components/BrandIcons';
 import { formatTimeTz, formatInTz, formatDateTz, msUntilMidnightTz } from '@/Utils/datetime';
@@ -786,6 +786,68 @@ function SoundPrefsMenu() {
     );
 }
 
+/**
+ * Pick a file already in the library instead of uploading one again.
+ *
+ * Nothing is downloaded here: only the uuid travels, and the server copies the
+ * bytes it already holds into the message.
+ */
+function DocumentPicker({ chosen, onPick, onClose }) {
+    const { t } = useTranslation();
+    const [query, setQuery] = useState('');
+    const [rows, setRows] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setLoading(true);
+            axios.get(route('client.documents.list'), { params: { q: query.trim() || undefined } })
+                .then(r => setRows(r.data ?? []))
+                .catch(() => setRows([]))
+                .finally(() => setLoading(false));
+        }, 250);
+
+        return () => clearTimeout(timer);
+    }, [query]);
+
+    return (
+        <div className="absolute bottom-full left-0 z-30 mb-2 w-80 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+            <div className="flex items-center gap-2 border-b border-neutral-100 px-3 py-2 dark:border-neutral-800">
+                <Search className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+                <input autoFocus value={query} onChange={e => setQuery(e.target.value)}
+                    placeholder={t('inbox.search_documents')}
+                    className="w-full border-0 bg-transparent p-0 text-sm focus:outline-none focus:ring-0" />
+                <button type="button" onClick={onClose} aria-label={t('common.close')}
+                    className="rounded p-0.5 text-neutral-400 hover:text-neutral-600">
+                    <X className="h-3.5 w-3.5" />
+                </button>
+            </div>
+            <div className="max-h-64 overflow-y-auto">
+                {loading && rows.length === 0 ? (
+                    <p className="px-3 py-6 text-center text-xs text-neutral-400">{t('common.loading')}</p>
+                ) : rows.length === 0 ? (
+                    <p className="px-3 py-6 text-center text-xs text-neutral-400">{t('inbox.no_documents')}</p>
+                ) : rows.map(doc => {
+                    const already = chosen.some(c => c.uuid === doc.uuid);
+
+                    return (
+                        <button key={doc.uuid} type="button" disabled={already}
+                            onClick={() => { onPick(doc); onClose(); }}
+                            className="flex w-full items-center gap-2.5 border-b border-neutral-50 px-3 py-2 text-left transition last:border-0 hover:bg-neutral-50 disabled:opacity-40 dark:border-neutral-800 dark:hover:bg-neutral-800">
+                            <AttachmentIcon file={doc} />
+                            <span className="min-w-0 flex-1">
+                                <span className="block truncate text-xs font-medium">{doc.name}</span>
+                                <span className="block text-[11px] tabular-nums text-neutral-400">{formatBytes(doc.size_bytes)}</span>
+                            </span>
+                            {already && <Check className="h-3.5 w-3.5 shrink-0 text-brand-600" />}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
 function MessageBubble({ msg, conversationId, contactName }) {
     const { t } = useTranslation();
     const [preview, setPreview] = useState(null);
@@ -1032,12 +1094,41 @@ function MessageBubble({ msg, conversationId, contactName }) {
                                     </>
                                 );
 
-                                return previewKindFor(file.path) ? (
-                                    <button key={i} type="button" onClick={() => setPreview({ file, url })} className={rowClass}>
-                                        {inner}
+                                const save = (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    axios.post(route('client.documents.from-message'), {
+                                        conversation: conversationId,
+                                        message_id: msg.id,
+                                        index: i,
+                                    })
+                                        .then(r => toast.success(r.data?.message ?? t('inbox.saved_to_documents')))
+                                        .catch(err => reportActionError(err, t('inbox.action_failed')));
+                                };
+
+                                // Filing it puts the supplier's invoice in the same
+                                // place as the one uploaded by hand, instead of
+                                // leaving it findable only inside this thread.
+                                const keep = (
+                                    <button type="button" onClick={save}
+                                        title={t('inbox.save_to_documents')} aria-label={t('inbox.save_to_documents')}
+                                        className="shrink-0 rounded-lg p-1 text-neutral-400 transition hover:bg-black/5 hover:text-brand-600 dark:hover:bg-white/10">
+                                        <FolderPlus className="h-3.5 w-3.5" />
                                     </button>
+                                );
+
+                                return previewKindFor(file.path) ? (
+                                    <div key={i} className="flex items-center gap-1">
+                                        <button type="button" onClick={() => setPreview({ file, url })} className={rowClass}>
+                                            {inner}
+                                        </button>
+                                        {keep}
+                                    </div>
                                 ) : (
-                                    <a key={i} href={url} className={rowClass}>{inner}</a>
+                                    <div key={i} className="flex items-center gap-1">
+                                        <a href={url} className={rowClass}>{inner}</a>
+                                        {keep}
+                                    </div>
                                 );
                             })}
                         </div>
@@ -1614,6 +1705,10 @@ export default function InboxShow({
     // before it leaves. Email only: WhatsApp has its own *bold* dialect and a
     // toolbar that emitted Markdown there would send the marks as literal text.
     const [previewingBody, setPreviewingBody] = useState(false);
+    // Files already in the library. They never travel through the browser — the
+    // server copies the bytes it already has.
+    const [pickedDocuments, setPickedDocuments] = useState([]);
+    const [showDocPicker, setShowDocPicker] = useState(false);
     const bottomRef = useRef(null);
 
     const { data, setData, reset } = useForm({ body: '', type: 'text', payload: null, subject: '' });
@@ -1807,7 +1902,7 @@ export default function InboxShow({
     const handleSend = (e) => {
         e?.preventDefault?.();
         if (sending) return;
-        if (!data.body.trim() && attachments.length === 0) return;
+        if (!data.body.trim() && attachments.length === 0 && pickedDocuments.length === 0) return;
 
         setSending(true);
         setSendError(null);
@@ -1820,6 +1915,7 @@ export default function InboxShow({
             reset();
             attachments.forEach(a => URL.revokeObjectURL(a.url));
             setAttachments([]);
+            setPickedDocuments([]);
             if (errText) setSendError(errText);
         };
 
@@ -1833,15 +1929,16 @@ export default function InboxShow({
 
         const config = { headers: { Accept: 'application/json' } };
 
-        if (attachments.length > 0) {
+        if (attachments.length > 0 || pickedDocuments.length > 0) {
             const fd = new FormData();
-            fd.append('body', data.body || attachments[0].file.name);
+            fd.append('body', data.body || attachments[0]?.file.name || pickedDocuments[0].name);
             if (isEmail) {
                 // Plain text: an email renders its body and lists its files. Typing
                 // it as a document would draw a broken media card above them.
                 fd.append('type', 'text');
                 if (data.subject) fd.append('subject', data.subject);
                 attachments.forEach(a => fd.append('attachments[]', a.file));
+                pickedDocuments.forEach(d => fd.append('document_uuids[]', d.uuid));
             } else {
                 fd.append('type', attachments[0].type === 'image' ? 'image' : 'document');
                 fd.append('attachment', attachments[0].file);
@@ -2252,8 +2349,24 @@ export default function InboxShow({
 
 
                         {/* Attachments waiting to go */}
-                        {attachments.length > 0 && (
+                        {(attachments.length > 0 || pickedDocuments.length > 0) && (
                             <div className="mb-2 space-y-1.5">
+                                {pickedDocuments.map(d => (
+                                    <div key={d.uuid} className="flex items-center gap-2.5 rounded-xl border border-brand-200 bg-brand-50 p-2 dark:border-brand-900/40 dark:bg-brand-900/20">
+                                        <AttachmentIcon file={d} />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-xs font-medium text-neutral-700 dark:text-neutral-300">{d.name}</p>
+                                            <p className="text-[11px] tabular-nums text-neutral-400">
+                                                {t('inbox.from_documents')} · {formatBytes(d.size_bytes)}
+                                            </p>
+                                        </div>
+                                        <button type="button" onClick={() => setPickedDocuments(prev => prev.filter(x => x.uuid !== d.uuid))}
+                                            aria-label={t('inbox.attachment_remove')}
+                                            className="rounded-lg p-1 text-neutral-400 transition hover:bg-white hover:text-coral-600 dark:hover:bg-neutral-700">
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ))}
                                 {attachments.map(a => (
                                     <div key={a.id} className="flex items-center gap-2.5 rounded-xl border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-700 dark:bg-neutral-800">
                                         {a.type === 'image'
@@ -2323,6 +2436,13 @@ export default function InboxShow({
                         <div className="relative">
                             {/* Emoji picker */}
                             {showEmoji && <EmojiPicker onPick={e => setData('body', (data.body ?? '') + e)} onClose={() => setShowEmoji(false)} />}
+                            {showDocPicker && (
+                                <DocumentPicker
+                                    chosen={pickedDocuments}
+                                    onPick={d => setPickedDocuments(prev => prev.some(x => x.uuid === d.uuid) ? prev : [...prev, d])}
+                                    onClose={() => setShowDocPicker(false)}
+                                />
+                            )}
                             {/* Template picker */}
                             {showTemplates && (
                                 <TemplatePicker
@@ -2439,6 +2559,16 @@ export default function InboxShow({
                                         className={`p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition ${showEmoji ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600' : ''}`}>
                                         <Smile className="h-4 w-4" />
                                     </button>
+                                    {/* From the library. Email only: the other
+                                        channels would need the file uploaded to
+                                        Meta's Media API first. */}
+                                    {isEmail && (
+                                        <button type="button" onClick={() => setShowDocPicker(true)}
+                                            title={t('inbox.attach_document')}
+                                            className="rounded-lg p-1.5 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800">
+                                            <FolderOpen className="h-4 w-4" />
+                                        </button>
+                                    )}
                                     {/* Attachment */}
                                     <button type="button" onClick={() => fileRef.current?.click()}
                                         title={t('inbox.attach_file')}

@@ -1,12 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\CronSetupController;
 use App\Modules\Broadcasting\Jobs\LaunchScheduledCampaignsJob;
 use App\Modules\Broadcasting\Models\UsageMeter;
 use App\Modules\Social\Jobs\DispatchScheduledPostsJob;
 use App\Modules\Social\Jobs\RefreshSocialTokensJob;
 use App\Modules\Whatsapp\Jobs\TemplateSyncJob;
 use App\Modules\Whatsapp\Models\WhatsappBusinessAccount;
-use App\Http\Controllers\Admin\CronSetupController;
 use App\Services\WebhookIdempotencyService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -64,6 +64,23 @@ Schedule::call(function () {
 Schedule::command('email:poll-mailboxes')
     ->everyMinute()
     ->name('email-poll-mailboxes')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Warn about documents that are about to expire. Daily and early, so a contract
+// that renews itself tacitly is noticed before the day it does.
+Schedule::command('documents:remind')
+    ->dailyAt('07:10')
+    ->name('documents-remind')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Empty the document bin. A deleted document stops counting against the storage
+// allowance immediately but its file is kept, so without this the disk grows for
+// ever while the number on the screen says otherwise.
+Schedule::command('documents:purge')
+    ->dailyAt('03:20')
+    ->name('documents-purge')
     ->withoutOverlapping()
     ->onOneServer();
 

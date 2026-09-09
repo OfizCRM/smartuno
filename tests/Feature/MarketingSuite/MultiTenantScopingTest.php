@@ -8,6 +8,8 @@ use App\Models\ClientProfile;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Modules\AI\Models\AiChatbot;
+use App\Modules\Documents\Models\Document;
+use App\Modules\Documents\Models\DocumentFolder;
 use App\Modules\Shared\Models\Contact;
 use App\Support\Romania;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -374,5 +376,41 @@ class MultiTenantScopingTest extends TestCase
         $mondaysB = ClientBusinessHour::where('client_id', $clientB->id)->where('day_of_week', 1)->get();
         $this->assertCount(1, $mondaysB);
         $this->assertSame('08:00:00', $mondaysB->first()->opens_at);
+    }
+
+    /**
+     * The document library, both of its tables. Every tenant-owned table has to
+     * appear here — this is the file that says so, and a document is the kind of
+     * thing where a leak is a contract.
+     */
+    #[Test]
+    public function workspace_a_cannot_see_or_reach_workspace_b_documents(): void
+    {
+        [$userA] = $this->createUserWithWorkspace();
+        [, $workspaceB] = $this->createUserWithWorkspace();
+
+        $folderB = DocumentFolder::create(['workspace_id' => $workspaceB->id, 'name' => 'ContracteB']);
+        $documentB = Document::create([
+            'workspace_id' => $workspaceB->id,
+            'folder_id' => $folderB->id,
+            'name' => 'contract-secret-b.pdf',
+            'path' => 'documents/'.fake()->uuid().'.pdf',
+            'mime' => 'application/pdf',
+            'extension' => 'pdf',
+            'size_bytes' => 2048,
+        ]);
+
+        $props = $this->actingAs($userA)->get('/app/documents')->viewData('page')['props'];
+
+        $this->assertSame([], $props['documents']['data']);
+        $this->assertSame([], $props['folders']);
+        $this->assertSame(0, $props['storage']['used']['documents']);
+
+        $this->actingAs($userA)->get(route('client.documents.file', $documentB->uuid))->assertForbidden();
+        $this->actingAs($userA)->delete(route('client.documents.destroy', $documentB->uuid))->assertForbidden();
+        $this->actingAs($userA)->delete(route('client.documents.folders.destroy', $folderB->id))->assertForbidden();
+
+        $this->assertNotNull($documentB->fresh());
+        $this->assertNotNull($folderB->fresh());
     }
 }

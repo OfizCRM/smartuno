@@ -1608,11 +1608,6 @@ parameters:
 			count: 1
 			path: app/Http/Middleware/SecureHeaders.php
 
-		-
-			message: '#^Parameter \#1 \$array \(array\{''default\-src \\''self\\'''', non\-falsy\-string, non\-falsy\-string, non\-falsy\-string, non\-falsy\-string, ''img\-src \\''self\\'' data…'', ''font\-src \\''self\\''…'', non\-falsy\-string, \.\.\.\}\) to function array_filter does not contain falsy values, the array will always stay the same\.$#'
-			identifier: arrayFilter.same
-			count: 1
-			path: app/Http/Middleware/SecureHeaders.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$default_locale\.$#'

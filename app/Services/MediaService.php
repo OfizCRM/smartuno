@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Media;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -43,7 +44,7 @@ class MediaService
     /**
      * Get total storage used by owner in bytes.
      */
-    public function usedBytes(Model $owner, string $collection = null): int
+    public function usedBytes(Model $owner, ?string $collection = null): int
     {
         $query = Media::where('mediable_type', get_class($owner))
             ->where('mediable_id', $owner->getKey());
@@ -56,13 +57,19 @@ class MediaService
     }
 
     /**
-     * Get storage quota in bytes from plan limits (storage_gb).
+     * Get storage quota in bytes from the plan's limits.
+     *
+     * The key is `storage`, in megabytes — that is what the admin plan form
+     * writes, labelled "Storage (MB)", and what every seeded plan carries. This
+     * used to read `storage_gb`, a key that has never existed, so the lookup
+     * always missed and every workspace silently got the 1 GB fallback no matter
+     * which plan it was on.
      */
-    public function quotaBytes(\App\Models\User $user): int
+    public function quotaBytes(User $user): int
     {
         $plan = $user->effectiveSubscription()?->plan;
-        $gb = $plan?->limitValue('storage_gb') ?? 1;
+        $mb = $plan?->limitValue('storage') ?? 1024;
 
-        return (int) ($gb * 1024 * 1024 * 1024);
+        return (int) $mb * 1024 * 1024;
     }
 }

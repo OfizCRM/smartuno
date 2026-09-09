@@ -7,6 +7,7 @@ use App\Modules\AI\Models\AiKbDocument;
 use App\Modules\AI\Services\EmbeddingStore;
 use App\Modules\AI\Services\Llm\LlmManager;
 use App\Modules\AI\Services\LlmGateway;
+use App\Modules\Shared\Services\TextExtractor;
 use App\Services\StorageManager;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -15,8 +16,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use League\HTMLToMarkdown\HtmlConverter;
-use Smalot\PdfParser\Parser;
 
 class IndexDocumentJob implements ShouldQueue
 {
@@ -156,6 +157,11 @@ class IndexDocumentJob implements ShouldQueue
      * The stored source_ref is a disk-relative key (e.g. "uploads/kb-docs/x.pdf"),
      * NOT an absolute local path, so it must be read through the Storage disk —
      * which works for both the local "public" disk and cloud disks (S3/Spaces/Wasabi).
+     *
+     * The extraction itself is shared with the document library. It used to be a
+     * PDF branch and then "return the bytes", which meant a .docx — a zip archive
+     * — was embedded as binary rubbish and the document showed as indexed while
+     * the bot answered as if it had never been added.
      */
     private function readFile(string $path, StorageManager $storage): string
     {
@@ -163,27 +169,19 @@ class IndexDocumentJob implements ShouldQueue
             return '';
         }
 
-        $disk = $storage->disk();
+        // Documents from the library live on the private disk, not the one
+        // StorageManager resolves — a contract must not sit in the web root just
+        // because the bot was asked to read it.
+        $disk = str_starts_with($path, 'documents/') ? Storage::disk('local') : $storage->disk();
+
         if (! $disk->exists($path)) {
             return '';
         }
 
-        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        if ($ext === 'pdf') {
-            // Smalot's parser needs a real local file, so stream the (possibly remote)
-            // object into a temp file before parsing, then clean it up.
-            $tmp = tempnam(sys_get_temp_dir(), 'kbpdf_');
-            try {
-                file_put_contents($tmp, $disk->get($path));
-                $parser = new Parser;
-
-                return $parser->parseFile($tmp)->getText();
-            } finally {
-                @unlink($tmp);
-            }
-        }
-
-        return (string) ($disk->get($path) ?? '');
+        return app(TextExtractor::class)->extract(
+            pathinfo($path, PATHINFO_EXTENSION),
+            (string) ($disk->get($path) ?? ''),
+        );
     }
 
     /**
