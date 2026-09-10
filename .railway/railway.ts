@@ -120,7 +120,9 @@ export default defineRailway(() => {
       //   pdo_mysql  the base list ships `pdo` but no driver. Nothing in
       //              composer.lock requires it, so composer never complains --
       //              it surfaces later as "could not find driver" at migrate.
-      RAILPACK_PHP_EXTENSIONS: "zip,pdo_mysql",
+      //   bcmath     InstallerService::REQUIRED_EXTENSIONS demands it, so the
+      //              install wizard refuses to proceed without it.
+      RAILPACK_PHP_EXTENSIONS: "zip,pdo_mysql,bcmath",
 
       // Railpack runs `migrate` AND the seeders on every boot of every replica
       // unless this is set. Seeding production would run TranslationSeeder,
