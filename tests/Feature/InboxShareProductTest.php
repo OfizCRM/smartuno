@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Modules\Catalog\Models\CatalogItem;
 use App\Modules\Ecommerce\Models\EcommerceProduct;
 use App\Modules\Ecommerce\Models\EcommerceStore;
 use App\Modules\Inbox\Services\MessengerDriver;
@@ -250,5 +251,107 @@ class InboxShareProductTest extends TestCase
         );
 
         $res->assertNotFound();
+    }
+
+    // ─── the hand-written catalogue ──────────────────────────────────────
+    //
+    // Same button, second source. A firm with no webshop has no
+    // ecommerce_products row at all, so without this branch the button is there
+    // and does nothing for most of the customers this product is sold to.
+
+    private function catalogItem(int $workspaceId, array $attrs = []): CatalogItem
+    {
+        return CatalogItem::create(array_merge([
+            'workspace_id' => $workspaceId,
+            'type' => 'product',
+            'name' => 'Cremă hidratantă 50ml',
+            'code' => 'CR-1042',
+            'unit' => 'buc',
+            'price_cents' => 24000,
+            'stock' => 24,
+            'is_active' => true,
+        ], $attrs));
+    }
+
+    public function test_a_catalogue_item_is_shared_as_text_on_whatsapp(): void
+    {
+        ['user' => $user, 'workspace' => $ws] = $this->createWorkspaceContext();
+        $item = $this->catalogItem($ws->id);
+        $conversation = $this->conversation($ws->id, 'whatsapp');
+        $this->openWindow($conversation);
+        $this->fakeDriver();
+
+        $res = $this->actingAs($user)->postJson(
+            route('client.inbox.share-product', $conversation),
+            ['product_id' => $item->id, 'source' => 'catalog'],
+        );
+
+        $res->assertOk()->assertJsonPath('error', null);
+
+        $message = Message::where('conversation_id', $conversation->id)->where('direction', 'out')->first();
+        $this->assertNotNull($message);
+        // Text, not image: Stage 1 has no photos, and the existing image path
+        // sends a public URL our private disk cannot provide.
+        $this->assertSame('text', $message->type);
+        $this->assertNull($message->payload);
+        $this->assertSame('sent', $message->status);
+        $this->assertStringContainsString('Cremă hidratantă 50ml', $message->body);
+        $this->assertStringContainsString('CR-1042', $message->body);
+        // Lei, from bani, in Romanian formatting — never "24000" and never "$".
+        $this->assertStringContainsString('240', $message->body);
+        $this->assertStringNotContainsString('24000', $message->body);
+        $this->assertStringNotContainsString('$', $message->body);
+    }
+
+    public function test_a_catalogue_item_from_another_workspace_is_not_shared(): void
+    {
+        ['user' => $user, 'workspace' => $ws] = $this->createWorkspaceContext();
+        $conversation = $this->conversation($ws->id, 'messenger');
+
+        ['workspace' => $other] = $this->createWorkspaceContext();
+        $foreign = $this->catalogItem($other->id);
+
+        $this->fakeDriver();
+
+        $this->actingAs($user)->postJson(
+            route('client.inbox.share-product', $conversation),
+            ['product_id' => $foreign->id, 'source' => 'catalog'],
+        )->assertNotFound();
+
+        $this->assertSame(0, Message::where('conversation_id', $conversation->id)->count());
+    }
+
+    public function test_an_inactive_catalogue_item_is_not_shared(): void
+    {
+        ['user' => $user, 'workspace' => $ws] = $this->createWorkspaceContext();
+        $item = $this->catalogItem($ws->id, ['is_active' => false]);
+        $conversation = $this->conversation($ws->id, 'messenger');
+        $this->fakeDriver();
+
+        $this->actingAs($user)->postJson(
+            route('client.inbox.share-product', $conversation),
+            ['product_id' => $item->id, 'source' => 'catalog'],
+        )->assertNotFound();
+    }
+
+    public function test_the_source_defaults_to_the_shop_so_an_old_client_is_unaffected(): void
+    {
+        ['user' => $user, 'workspace' => $ws] = $this->createWorkspaceContext();
+        $store = $this->store($ws->id);
+        $product = $this->product($ws->id, $store->id);
+        // A catalogue row sharing the same id would be reachable if the branch
+        // were chosen by anything other than the explicit source.
+        $this->catalogItem($ws->id, ['name' => 'NU TREBUIE TRIMIS']);
+        $conversation = $this->conversation($ws->id, 'messenger');
+        $this->fakeDriver();
+
+        $this->actingAs($user)->postJson(
+            route('client.inbox.share-product', $conversation),
+            ['product_id' => $product->id],
+        )->assertOk();
+
+        $message = Message::where('conversation_id', $conversation->id)->where('direction', 'out')->first();
+        $this->assertStringContainsString('Blue Widget', $message->body);
+        $this->assertStringNotContainsString('NU TREBUIE TRIMIS', $message->body);
     }
 }

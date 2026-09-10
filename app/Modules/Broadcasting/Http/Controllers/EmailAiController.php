@@ -16,7 +16,7 @@ class EmailAiController extends Controller
             'body' => ['nullable', 'string', 'max:8000'],
         ]);
 
-        $workspaceId = (int) ($request->user()->current_workspace_id ?? $request->user()->workspace_id);
+        $workspaceId = (int) $request->user()->workspace_id;
 
         try {
             $llm = LlmManager::forWorkspace($workspaceId);
@@ -69,7 +69,8 @@ PROMPT;
         try {
             $response = $llm->chat(
                 [['role' => 'user', 'content' => $userMessage]],
-                ['system' => $systemPrompt, 'max_tokens' => 200],
+                ['max_tokens' => 200],
+                system: $systemPrompt,
             );
 
             $content = trim($response->content);
@@ -93,7 +94,7 @@ PROMPT;
             'tone' => ['nullable', 'in:professional,friendly,urgent,informative'],
         ]);
 
-        $workspaceId = (int) ($request->user()->current_workspace_id ?? $request->user()->workspace_id);
+        $workspaceId = (int) $request->user()->workspace_id;
 
         try {
             $llm = LlmManager::forWorkspace($workspaceId);
@@ -148,7 +149,7 @@ PROMPT;
         ];
 
         try {
-            $response = $llm->chat($messages, ['system' => $systemPrompt, 'max_tokens' => 2000]);
+            $response = $llm->chat($messages, ['max_tokens' => 2000], system: $systemPrompt);
             $parsed = $this->parseEmailResponse($response->content);
 
             // If the body looks like strategy/plan content rather than an email, retry once
@@ -161,7 +162,7 @@ PROMPT;
                             .trim("{$campaignCtx} {$validated['prompt']}"),
                     ],
                 ];
-                $retryResponse = $llm->chat($retryMessages, ['system' => $systemPrompt, 'max_tokens' => 2000]);
+                $retryResponse = $llm->chat($retryMessages, ['max_tokens' => 2000], system: $systemPrompt);
                 $retryParsed = $this->parseEmailResponse($retryResponse->content);
                 if ($retryParsed && ! $this->looksLikeStrategy($retryParsed['body'])) {
                     $parsed = $retryParsed;

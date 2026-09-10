@@ -1459,8 +1459,16 @@ function TemplatePicker({ conversationId, onSent, onClose }) {
     );
 }
 
-/* ─── product picker (share a store product) ─────────── */
-function ProductPicker({ conversationId, onSent, onClose }) {
+/* ─── product picker (share a product) ────────────────── */
+
+/**
+ * Rows arrive from two endpoints that number their ids independently, so a
+ * catalogue item and a shop product can both be id 7. Key and "which row is
+ * sending" therefore have to carry the source as well.
+ */
+const productRowKey = (p) => `${p.source ?? 'ecommerce'}:${p.id}`;
+
+function ProductPicker({ conversationId, hasEcommerceStore = false, onSent, onClose }) {
     const { t } = useTranslation();
     const ref = useRef(null);
     const [query, setQuery]       = useState('');
@@ -1476,23 +1484,49 @@ function ProductPicker({ conversationId, onSent, onClose }) {
     }, [onClose]);
 
     // Debounced search so each keystroke doesn't fire a request.
+    //
+    // Two sources feed the list: the catalogue the firm typed by hand, always,
+    // and the connected shop only when there is one. Both endpoints return the
+    // same row shape on purpose, so they merge into one list rather than needing
+    // a second renderer. allSettled, not all: a firm whose shop sync is having a
+    // bad morning must still be able to share from its own catalogue.
     useEffect(() => {
         let active = true;
         setLoading(true);
-        const t = setTimeout(() => {
-            axios.get(route('client.ecommerce.products.search'), { params: { q: query } })
-                .then(r => { if (active) setProducts(r.data ?? []); })
-                .catch(() => { if (active) setProducts([]); })
-                .finally(() => { if (active) setLoading(false); });
+        const timer = setTimeout(() => {
+            const from = (name, source) => {
+                let url;
+                // A route can be missing from the build (module not installed).
+                // Resolve it here so that failure cannot take the other source down.
+                try { url = route(name); } catch { return Promise.resolve([]); }
+
+                return axios.get(url, { params: { q: query } })
+                    .then(r => (Array.isArray(r.data) ? r.data : []).map(row => ({ ...row, source })));
+            };
+
+            // Catalogue first — it is what the firm wrote itself, and for a firm
+            // with no shop it is the only thing here.
+            const sources = [from('client.catalog.search', 'catalog')];
+            if (hasEcommerceStore) sources.push(from('client.ecommerce.products.search', 'ecommerce'));
+
+            Promise.allSettled(sources).then(results => {
+                if (!active) return;
+                setProducts(results.flatMap(r => (r.status === 'fulfilled' ? r.value : [])));
+                setLoading(false);
+            });
         }, 250);
-        return () => { active = false; clearTimeout(t); };
-    }, [query]);
+        return () => { active = false; clearTimeout(timer); };
+    }, [query, hasEcommerceStore]);
 
     const share = (p) => {
         if (sendingId !== null) return;
-        setSendingId(p.id);
+        setSendingId(productRowKey(p));
         setError('');
-        axios.post(route('client.inbox.share-product', conversationId), { product_id: p.id }, { headers: { Accept: 'application/json' } })
+        // The id alone is ambiguous across the two sources, so the server is told
+        // which table to read it from.
+        axios.post(route('client.inbox.share-product', conversationId),
+            { product_id: p.id, source: p.source ?? 'ecommerce' },
+            { headers: { Accept: 'application/json' } })
             .then(r => { onSent(r.data?.message, r.data?.error); })
             .catch(err => setError(err.response?.data?.error ?? err.response?.data?.message ?? t('inbox.failed_share_product')))
             .finally(() => setSendingId(null));
@@ -1514,7 +1548,7 @@ function ProductPicker({ conversationId, onSent, onClose }) {
                 ) : products.length === 0 ? (
                     <div className="py-6"><EmptyState icon={<ShoppingBag className="h-7 w-7" />} title={t('inbox.no_products')} description={t('inbox.no_products_match')} /></div>
                 ) : products.map(p => (
-                    <button key={p.id} type="button" onClick={() => share(p)} disabled={sendingId !== null}
+                    <button key={productRowKey(p)} type="button" onClick={() => share(p)} disabled={sendingId !== null}
                         className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-brand-50 dark:hover:bg-brand-900/20 transition border-b border-neutral-100 dark:border-neutral-800 last:border-0 disabled:opacity-60">
                         {p.image_url
                             ? <img src={p.image_url} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
@@ -1526,7 +1560,7 @@ function ProductPicker({ conversationId, onSent, onClose }) {
                                 {p.inventory_quantity != null && <span className="text-neutral-400"> · {t('inbox.in_stock', { count: p.inventory_quantity })}</span>}
                             </p>
                         </div>
-                        {sendingId === p.id
+                        {sendingId === productRowKey(p)
                             ? <Loader2 className="h-4 w-4 animate-spin text-brand-500 shrink-0" />
                             : <Send className="h-4 w-4 text-neutral-300 dark:text-neutral-600 shrink-0" />}
                     </button>
@@ -1610,6 +1644,7 @@ export default function InboxShow({
     whatsappTemplates = [],
     channelAccounts = [],
     hasEcommerceStore = false,
+    hasCatalog = false,
     counts = {},
 }) {
     const { t, i18n } = useTranslation();
@@ -2454,10 +2489,11 @@ export default function InboxShow({
                                     onClose={() => setShowTemplates(false)}
                                 />
                             )}
-                            {/* Product picker (share a store product) */}
+                            {/* Product picker (catalogue items + shop products) */}
                             {showProducts && (
                                 <ProductPicker
                                     conversationId={conversation.uuid}
+                                    hasEcommerceStore={hasEcommerceStore}
                                     onSent={(msg, err) => {
                                         if (msg) setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
                                         if (err) setSendError(err);
@@ -2581,8 +2617,8 @@ export default function InboxShow({
                                         className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
                                         <ImageIcon className="h-4 w-4" />
                                     </button>
-                                    {/* Share product */}
-                                    {hasEcommerceStore && (
+                                    {/* Share product (shop product or catalogue item) */}
+                                    {hasCatalog && (
                                         <button type="button" onClick={() => setShowProducts(v => !v)}
                                             title={isWhatsApp && !isWindowOpen ? t('inbox.session_closed_reengage') : t('inbox.share_a_product')}
                                             disabled={isWhatsApp && !isWindowOpen}

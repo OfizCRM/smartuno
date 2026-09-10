@@ -2,7 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import {
     LayoutDashboard, Users, Settings, Radio, Inbox, Zap, Share2,
-    LifeBuoy, FolderOpen,
+    LifeBuoy, FolderOpen, Package, FileText,
 } from 'lucide-react';
 
 const iconClass = 'h-4 w-4';
@@ -30,20 +30,27 @@ function safeRoute(name, ...args) {
  */
 export default function useClientNav() {
     const { t } = useTranslation();
-    // Shared on every client request; 0 on admin routes and before a workspace
-    // is resolved, which the badge renders as nothing.
-    const { inboxOpenCount = 0 } = usePage().props;
+    // Both shared on every client request; 0 on admin routes and before a
+    // workspace is resolved, which the badge renders as nothing.
+    const { inboxOpenCount = 0, offerAiDraftsCount = 0 } = usePage().props;
 
     const groups = [
-        // Daily work. No heading: these four are self-evident and the space is
+        // Daily work. No heading: these six are self-evident and the space is
         // better spent on the rows themselves.
+        // Offers sits next to the inbox on purpose: it is an action queue you
+        // work through, not a screen you configure once. Its badge counts only
+        // the drafts the agent prepared and nobody has decided on — a person's
+        // own unfinished draft is not waiting on anyone, so it is not a number
+        // the rail should be nagging them with.
         {
             key: 'daily',
             label: null,
             items: [
                 { label: t('nav.dashboard'),     href: safeRoute('client.dashboard'),            icon: <LayoutDashboard className={iconClass} />, activePattern: 'client.dashboard' },
                 { label: t('nav.inbox'),         href: safeRoute('client.inbox.index'),          icon: <Inbox className={iconClass} />,          activePattern: 'client.inbox.*', badge: inboxOpenCount },
+                { label: t('nav.offers'),        href: safeRoute('client.offers.index'),         icon: <FileText className={iconClass} />,       activePattern: 'client.offers.*', badge: offerAiDraftsCount },
                 { label: t('nav.contacts'),      href: safeRoute('client.contacts.index'),       icon: <Users className={iconClass} />,          activePattern: 'client.contacts.*' },
+                { label: t('nav.products'),      href: safeRoute('client.catalog.index'),        icon: <Package className={iconClass} />,        activePattern: 'client.catalog.*' },
                 { label: t('nav.documents'),     href: safeRoute('client.documents.index'),      icon: <FolderOpen className={iconClass} />,     activePattern: 'client.documents.*' },
             ],
         },

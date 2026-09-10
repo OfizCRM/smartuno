@@ -3278,30 +3278,6 @@ parameters:
 			path: app/Modules/AI/Services/Llm/OpenAiProvider.php
 
 		-
-			message: '#^Method App\\Modules\\AI\\Services\\LlmGateway\:\:chat\(\) has parameter \$messages with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/AI/Services/LlmGateway.php
-
-		-
-			message: '#^Method App\\Modules\\AI\\Services\\LlmGateway\:\:chat\(\) has parameter \$opts with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/AI/Services/LlmGateway.php
-
-		-
-			message: '#^Method App\\Modules\\AI\\Services\\LlmGateway\:\:embed\(\) has parameter \$texts with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/AI/Services/LlmGateway.php
-
-		-
-			message: '#^Method App\\Modules\\AI\\Services\\LlmGateway\:\:embed\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Modules/AI/Services/LlmGateway.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Automation\\Models\\Automation\:\:\$trigger_token\.$#'
 			identifier: property.notFound
 			count: 1

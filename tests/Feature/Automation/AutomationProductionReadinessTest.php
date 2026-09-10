@@ -8,6 +8,7 @@ use App\Modules\Automation\Jobs\ExecuteAutomationRunJob;
 use App\Modules\Automation\Models\Automation;
 use App\Modules\Automation\Models\AutomationRun;
 use App\Modules\Automation\Services\AutomationEngine;
+use App\Modules\Offers\Listeners\DraftOfferFromMessageListener;
 use App\Modules\Shared\Models\ChannelAccount;
 use App\Modules\Shared\Models\Contact;
 use App\Modules\Shared\Models\Conversation;
@@ -140,7 +141,20 @@ class AutomationProductionReadinessTest extends TestCase
             );
         }
 
-        $this->assertCount(4, $raw[MessageReceived::class]);
+        // Five since the offer drafter joined: DraftOfferFromMessageListener,
+        // AutomationTriggerListener, AutoReplyListener,
+        // DispatchOutboundWebhookListener, SendNewMessageNotification.
+        $this->assertCount(5, $raw[MessageReceived::class]);
+
+        // And the drafter is FIRST. The dispatcher has no try/catch, so the
+        // listener whose entire body is guarded has to run before the two that
+        // are not — see the comment in AppServiceProvider.
+        $first = $raw[MessageReceived::class][0];
+        $this->assertSame(
+            [DraftOfferFromMessageListener::class, 'handle'],
+            is_array($first) ? $first : [$first],
+            'DraftOfferFromMessageListener must be the first MessageReceived listener.'
+        );
     }
 
     // ─── Builder-format graphs execute ────────────────────────────────────────

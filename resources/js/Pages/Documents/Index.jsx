@@ -1,15 +1,14 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import axios from 'axios';
 import {
     BookmarkPlus, Bot, Download, Eye, FilePlus, FolderPlus, Folder as FolderIcon,
-    History, Inbox, Pencil, Search, SquarePen, Trash2, Upload, X,
+    History, Inbox, Pencil, Search, SquarePen, Trash2, Upload,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import EmptyState from '@/Components/EmptyState';
 import AttachmentIcon from '@/Components/Inbox/AttachmentIcon';
 import AttachmentPreview, { previewKindFor } from '@/Components/Inbox/AttachmentPreview';
-import { Button, Modal } from '@/Components/ui';
+import { Button, ContactPicker, Modal } from '@/Components/ui';
 import ClientLayout from '@/Layouts/ClientLayout';
 import { relativeTime } from '@/Utils/relativeTime';
 
@@ -205,66 +204,6 @@ function DocumentRow({ document: doc, canUseOffice, onPreview, onEdit, onDelete 
                 </button>
             </div>
         </div>
-    );
-}
-
-/**
- * Find a client. Used by the details dialog and by the new-document dialog,
- * which both need the same thing — the inbox already exposes the search, and a
- * second one here would be the same query under a different name.
- */
-function ContactPicker({ contact, onPick, placeholderKey = 'documents.search_client' }) {
-    const { t } = useTranslation();
-    const [query, setQuery] = useState('');
-    const [matches, setMatches] = useState([]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            const term = query.trim();
-            if (term.length < 2) {
-                setMatches([]);
-
-                return;
-            }
-            axios.get(route('client.inbox.contacts.search'), { params: { q: term } })
-                .then(r => setMatches(r.data ?? []))
-                .catch(() => setMatches([]));
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [query]);
-
-    const label = (c) => c.company || `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() || c.email || c.phone_e164;
-
-    if (contact) {
-        return (
-            <div className="mt-1 flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 dark:border-neutral-600">
-                <span className="min-w-0 flex-1 truncate text-sm">{label(contact)}</span>
-                <button type="button" onClick={() => onPick(null)} aria-label={t('common.clear')}
-                    className="rounded p-1 text-neutral-400 hover:text-coral-600">
-                    <X className="h-3.5 w-3.5" />
-                </button>
-            </div>
-        );
-    }
-
-    return (
-        <>
-            <input value={query} onChange={e => setQuery(e.target.value)}
-                placeholder={t(placeholderKey)}
-                className="mt-1 w-full rounded-lg border-neutral-300 text-sm dark:border-neutral-600 dark:bg-neutral-800" />
-            {matches.length > 0 && (
-                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-neutral-200 dark:border-neutral-600">
-                    {matches.map(c => (
-                        <button key={c.id} type="button"
-                            onClick={() => { onPick(c); setQuery(''); setMatches([]); }}
-                            className="block w-full truncate px-3 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800">
-                            {label(c)}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </>
     );
 }
 

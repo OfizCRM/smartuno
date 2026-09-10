@@ -31,6 +31,7 @@ use App\Listeners\SendSubscriptionStartedNotification;
 use App\Listeners\SendTrialEndingNotification;
 use App\Listeners\SendWelcomeNotification;
 use App\Models\Workspace;
+use App\Modules\Offers\Listeners\DraftOfferFromMessageListener;
 use App\Modules\Shared\Services\ChannelManager;
 use App\Services\Billing\BillingGatewayRegistry;
 use App\Services\StorageManager;
@@ -75,6 +76,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+
+        // The public offer link. Keyed on the offer in the path rather than on
+        // the caller's IP: TRUSTED_PROXIES defaults to '*', so the IP is
+        // attacker-supplied and a rotating X-Forwarded-For defeated an
+        // IP-keyed limiter entirely.
+        RateLimiter::for('offer-link', fn (Request $request) => Limit::perMinute(30)
+            ->by((string) $request->route('offer')));
         $this->configureHttpClientSsl();
         $this->forceHttpsForWebhookUrls();
 
@@ -95,6 +103,17 @@ class AppServiceProvider extends ServiceProvider
         // tests/Feature/Automation/AutomationProductionReadinessTest guards that.
         Event::listen(Login::class, LogSuccessfulLogin::class);
         Event::listen(Registered::class, SendWelcomeNotification::class);
+
+        // FIRST, and the order is the whole point. The dispatcher has no
+        // try/catch around listeners — it calls them in registration order and
+        // the first one to throw stops the rest — and neither
+        // AutomationTriggerListener::handleMessageReceived nor
+        // SendNewMessageNotification has a top-level catch of its own. A listener
+        // registered last is therefore the one most likely to be silently skipped
+        // when an earlier one throws. Registered first, with its entire body in
+        // try/catch, this one can neither be skipped by an upstream failure nor
+        // cause one downstream: its catch protects the three below it.
+        Event::listen(MessageReceived::class, [DraftOfferFromMessageListener::class, 'handle']);
 
         Event::listen(MessageReceived::class, [AutomationTriggerListener::class, 'handleMessageReceived']);
         Event::listen(MessageReceived::class, [AutoReplyListener::class, 'handle']);

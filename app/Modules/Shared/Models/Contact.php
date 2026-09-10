@@ -21,6 +21,11 @@ use Illuminate\Support\Str;
  * @property string|null $email
  * @property string|null $first_name
  * @property string|null $last_name
+ * @property string|null $company
+ * @property string|null $job_title
+ * @property string|null $tax_id
+ * @property string|null $address
+ * @property string|null $city
  * @property string|null $avatar
  * @property string|null $country
  * @property string|null $language

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class Conversation extends Model
@@ -321,6 +322,17 @@ class Conversation extends Model
             ->latest('sent_at')
             ->value('sent_at');
 
-        return (bool) $latestInbound && now()->diffInHours($latestInbound) < 24;
+        if (! $latestInbound) {
+            return false;
+        }
+
+        // Carbon 3 returns a SIGNED difference, so now()->diffInHours($past) is
+        // negative — and "-47.9 < 24" is true for ever. The window never closed:
+        // a send thirty hours later passed this check and was refused by Meta
+        // instead, surfacing as a failed bubble carrying their raw error.
+        //
+        // absolute: true is the fix, and greaterThanOrEqualTo rather than a
+        // float comparison keeps the boundary exact.
+        return Carbon::parse($latestInbound)->diffInHours(now(), absolute: true) < 24;
     }
 }

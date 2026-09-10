@@ -205,6 +205,19 @@ class InboxController extends Controller
                 ->where('status', 'connected')
                 ->exists();
 
+        // Whether the composer's "share a product" button has anything to offer.
+        // Deliberately a second flag rather than a widening of the one above: that
+        // one gates the Orders tab and has to keep meaning "a shop is connected",
+        // while a firm with no shop at all can still share from a hand-written
+        // catalogue. Same direct-query reasoning as above (no cross-module import,
+        // table absent until the Catalog module's migration has run).
+        $hasCatalog = $hasEcommerceStore || (Schema::hasTable('catalog_items')
+            && DB::table('catalog_items')
+                ->where('workspace_id', $workspaceId)
+                ->whereNull('deleted_at')
+                ->where('is_active', true)
+                ->exists());
+
         return Inertia::render('Inbox/Show', [
             'conversation' => $conversation,
             'messages' => $messages,
@@ -215,6 +228,7 @@ class InboxController extends Controller
             'whatsappTemplates' => $whatsappTemplates,
             'channelAccounts' => $channelAccounts,
             'hasEcommerceStore' => $hasEcommerceStore,
+            'hasCatalog' => $hasCatalog,
             'counts' => $this->filterCounts($workspaceId, $userId, $filters['folder'] ?? null),
         ]);
     }
@@ -439,37 +453,74 @@ class InboxController extends Controller
     }
 
     /**
-     * Share a connected-store product into the conversation as a rich image card
-     * (product photo + caption) — WhatsApp sends one captioned image, Messenger /
-     * Instagram send the photo as an attachment followed by the caption. Products
-     * without a photo fall back to a plain text card. The product is looked up via
-     * the query builder rather than the Ecommerce model so the Inbox stays
-     * decoupled from that module (mirrors the hasEcommerceStore probe in show()).
+     * Share a product into the conversation as a rich image card (product photo +
+     * caption) — WhatsApp sends one captioned image, Messenger / Instagram send
+     * the photo as an attachment followed by the caption. Products without a photo
+     * fall back to a plain text card.
+     *
+     * Two sources feed it. `ecommerce` is a row mirrored from a connected shop, and
+     * is the default so that a caller predating the second source keeps its exact
+     * behaviour. `catalog` is a row the firm typed by hand in the Catalog module —
+     * always text, since Stage 1 catalogue items have no photo. Both are read
+     * through the query builder rather than either module's model, so the Inbox
+     * stays decoupled from both (mirrors the probes in show()).
      */
     public function shareProduct(Request $request, Conversation $conversation): JsonResponse
     {
         $this->authorise($request, $conversation);
 
-        $validated = $request->validate(['product_id' => ['required', 'integer']]);
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
-
-        // Join the store for its currency (external_meta) and domain (URL building),
-        // still without importing the Ecommerce model so the Inbox stays decoupled.
-        $product = Schema::hasTable('ecommerce_products')
-            ? DB::table('ecommerce_products as p')
-                ->leftJoin('ecommerce_stores as s', 's.id', '=', 'p.store_id')
-                ->where('p.workspace_id', $workspaceId)
-                ->where('p.id', $validated['product_id'])
-                ->select('p.*', 's.external_meta as store_meta', 's.domain as store_domain')
-                ->first()
-            : null;
-
-        abort_unless($product, 404, __('Product not found.'));
+        $validated = $request->validate([
+            'product_id' => ['required', 'integer'],
+            'source' => ['sometimes', 'in:ecommerce,catalog'],
+        ]);
+        $source = $validated['source'] ?? 'ecommerce';
+        $workspaceId = (int) $request->user()->workspace_id;
 
         // Product sharing builds a WhatsApp interactive payload, so it is only
         // ever meaningful there. Unknown channel is treated as not-WhatsApp and
         // falls through to the driver, which refuses honestly.
         $channel = $conversation->resolvedChannel();
+
+        // Each source resolves its own row and caption. Everything from the 24h
+        // check downwards is shared, so the two cannot drift in how they send.
+        if ($source === 'catalog') {
+            $item = Schema::hasTable('catalog_items')
+                ? DB::table('catalog_items')
+                    ->where('workspace_id', $workspaceId)
+                    ->where('id', $validated['product_id'])
+                    ->where('is_active', true)
+                    ->whereNull('deleted_at')
+                    ->first()
+                : null;
+
+            abort_unless($item !== null, 404, __('Product not found.'));
+
+            // Stage 1 catalogue items carry no photo (image_path exists as a column
+            // but is never written), so this is always the plain text card.
+            $caption = $this->formatCatalogMessage($item, bold: $channel === 'whatsapp');
+            $image = null;
+        } else {
+            // Join the store for its currency (external_meta) and domain (URL building),
+            // still without importing the Ecommerce model so the Inbox stays decoupled.
+            $product = Schema::hasTable('ecommerce_products')
+                ? DB::table('ecommerce_products as p')
+                    ->leftJoin('ecommerce_stores as s', 's.id', '=', 'p.store_id')
+                    ->where('p.workspace_id', $workspaceId)
+                    ->where('p.id', $validated['product_id'])
+                    ->select('p.*', 's.external_meta as store_meta', 's.domain as store_domain')
+                    ->first()
+                : null;
+
+            abort_unless($product !== null, 404, __('Product not found.'));
+
+            $storeMeta = json_decode($product->store_meta ?? '', true) ?: [];
+            $currency = (string) ($storeMeta['currency'] ?? '');
+            $url = $this->productShareUrl($product);
+
+            // WhatsApp renders bold (*…*); other channels show it literally, so only bold there.
+            $caption = $this->formatProductMessage($product, currency: $currency, url: $url, bold: $channel === 'whatsapp');
+            $image = $product->image_url ?: null;
+        }
 
         // Free-form messages need an open 24h session on WhatsApp.
         if ($channel === 'whatsapp' && ! $conversation->isWhatsappWindowOpen()) {
@@ -477,14 +528,6 @@ class InboxController extends Controller
                 'error' => __('WhatsApp 24-hour session is closed. Use an approved template to re-engage this contact.'),
             ], 422);
         }
-
-        $storeMeta = json_decode($product->store_meta ?? '', true) ?: [];
-        $currency = (string) ($storeMeta['currency'] ?? '');
-        $url = $this->productShareUrl($product);
-
-        // WhatsApp renders bold (*…*); other channels show it literally, so only bold there.
-        $caption = $this->formatProductMessage($product, currency: $currency, url: $url, bold: $channel === 'whatsapp');
-        $image = $product->image_url ?: null;
 
         // Send the product photo as a real image on every channel (drivers handle the
         // per-channel rendering); fall back to text only when there is no photo.
@@ -549,6 +592,39 @@ class InboxController extends Controller
         }
         if (! empty($url)) {
             $lines[] = $url;
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Format a hand-written catalogue row into a message caption. Same shape as
+     * formatProductMessage above — name first, then only the lines that carry
+     * something, bold only where the channel renders it — but with no photo and
+     * no storefront URL, because a catalogue item exists precisely for the firm
+     * that has no shop to link to.
+     *
+     * Prices are stored in bani and written with Romanian separators: the customer
+     * reads "1.250,00 lei". With the PHP defaults the same price arrives as
+     * "1,250.00", which a Romanian reader takes for one and a quarter lei.
+     *
+     * A price of 0 is "not priced yet", the same thing the catalogue counts as
+     * no_price, so it is left out rather than quoted to a customer as free.
+     */
+    private function formatCatalogMessage(object $item, bool $bold = false): string
+    {
+        $name = trim((string) $item->name);
+        $lines = [$bold ? '🛍️ *'.$name.'*' : '🛍️ '.$name];
+
+        if (! empty($item->code)) {
+            $lines[] = __('Code').': '.$item->code;
+        }
+        if ((int) $item->price_cents > 0) {
+            $lines[] = __('Price').': '.number_format((int) $item->price_cents / 100, 2, ',', '.').' lei';
+        }
+        if ($item->stock !== null) {
+            $unit = trim((string) ($item->unit ?? ''));
+            $lines[] = __('Stock').': '.(int) $item->stock.($unit !== '' ? ' '.$unit : '');
         }
 
         return implode("\n", $lines);
