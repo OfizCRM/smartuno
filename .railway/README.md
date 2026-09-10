@@ -207,12 +207,14 @@ pcre pdo session tokenizer xml` -- plus whatever the **root** `composer.json` de
 `ext-*`. This `composer.json` declares none, so anything else has to be named in
 `RAILPACK_PHP_EXTENSIONS`, which is additive to that base list.
 
-Currently `zip,pdo_mysql`:
+Currently `zip,pdo_mysql,bcmath`:
 
 - **zip** -- `webklex/php-imap` requires it. Without it `composer install` aborts and the build
   fails before it reaches the app. This is what killed the first deploy.
 - **pdo_mysql** -- the base list ships `pdo` but no driver. Nothing in `composer.lock` requires
   it, so composer never complains; it surfaces later as `could not find driver` at `migrate`.
+- **bcmath** -- listed in `InstallerService::REQUIRED_EXTENSIONS`. The install wizard shows it
+  red and refuses to continue without it.
 
 The app code itself calls nothing from `gd`, `exif`, `bcmath` or `intl`, so those are
 deliberately not installed. Add one only when something actually fails for want of it.
@@ -248,7 +250,7 @@ drivers are on `database` for now — that needs no PHP extension, which removes
 from the first deploy. To switch:
 
 1. Append `redis` to the existing `RAILPACK_PHP_EXTENSIONS` list, making it
-   `zip,pdo_mysql,redis` (predis is not in `composer.json`, so phpredis is required).
+   `zip,pdo_mysql,bcmath,redis` (predis is not in `composer.json`, so phpredis is required).
 2. Change `QUEUE_CONNECTION`, `CACHE_STORE` and `SESSION_DRIVER` to `redis` in `railway.ts`.
 3. `railway config plan`, then apply.
 
