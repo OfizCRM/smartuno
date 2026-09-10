@@ -189,6 +189,9 @@ Route::post('/integrations/{provider}/test', [IntegrationConfigController::class
 Route::post('/integrations/{provider}/toggle', [IntegrationConfigController::class, 'toggle'])->name('integrations.toggle')->middleware('permission:manage_integrations');
 Route::post('/integrations/{provider}/rotate', [IntegrationConfigController::class, 'rotate'])->name('integrations.rotate')->middleware('permission:manage_integrations');
 Route::post('/integrations/{provider}/set-default', [IntegrationConfigController::class, 'setDefault'])->name('integrations.set-default')->middleware('permission:manage_integrations');
+// Separate from set-default on purpose: that one moves the PUBLIC files, this
+// one the private ones, and they are independent answers.
+Route::post('/integrations/{provider}/set-private', [IntegrationConfigController::class, 'setPrivate'])->name('integrations.set-private')->middleware('permission:manage_integrations');
 
 // AI Dashboard
 Route::get('/ai', [AiDashboardController::class, 'index'])->name('ai.index')->middleware('permission:view_settings');

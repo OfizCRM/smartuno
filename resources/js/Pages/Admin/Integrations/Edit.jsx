@@ -42,6 +42,20 @@ const SETUP_GUIDES = {
         link: 'https://console.wasabisys.com',
         linkLabel: 'Open Wasabi Console',
     },
+    storage_r2: {
+        title: 'Cloudflare R2 Setup',
+        steps: [
+            'Log in at dash.cloudflare.com and open R2 Object Storage in the left-hand sidebar.',
+            'Copy the Account ID from the right-hand sidebar of the R2 overview page. R2 has no region setting — the endpoint is built from this Account ID.',
+            'Click Create bucket, name it, and choose the location / jurisdiction. Pick EU if customer files must stay inside the European Union — that is the answer to the GDPR question. The jurisdiction is fixed when the bucket is created and cannot be changed afterwards; moving means creating a new bucket.',
+            'Type eu (or fips) in the Jurisdiction field below so it matches the bucket. Leave it empty for the default, unrestricted jurisdiction.',
+            'Back on the R2 overview page, open Manage R2 API Tokens → Create API token.',
+            'Give the token the Object Read & Write permission and scope it to the bucket you just created.',
+            'Copy the Access Key ID and Secret Access Key from the screen shown right after creation — Cloudflare never displays the secret again. The S3 endpoint it prints can be ignored; this integration builds it from the Account ID and jurisdiction.',
+        ],
+        link: 'https://dash.cloudflare.com/?to=/:account/r2/overview',
+        linkLabel: 'Open Cloudflare R2',
+    },
     meta_app: {
         title: 'Meta App — Complete Setup Guide',
         subtitle: 'Covers WhatsApp Business API · Instagram DMs · Messenger · Facebook Social Posting · Embedded Signup',
@@ -494,6 +508,7 @@ const BRAND = {
     storage_s3:              { bg: 'bg-orange-100 dark:bg-orange-900/30', color: '#FF9900', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M10 2L4 5.8v8.4L10 18l6-3.8V5.8L10 2zm0 2.3l3.9 2.46-3.9 2.36L6.1 6.76 10 4.3zM5.5 8.1l3.9 2.36v4.7L5.5 12.8V8.1zm5.1 2.36l3.9-2.36V12.8l-3.9 2.36v-4.7z" /></svg> },
     storage_do:              { bg: 'bg-blue-100 dark:bg-blue-900/30', color: '#0080FF', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M10 2a8 8 0 110 16A8 8 0 0110 2zm0 2.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zm0 2a3.5 3.5 0 110 7 3.5 3.5 0 010-7zm0 2a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM6 15.5H4.5V14H6v1.5zm-2-2.5H2.5V11.5H4V13z" /></svg> },
     storage_wasabi:          { bg: 'bg-green-100 dark:bg-green-900/30', color: '#3CBA54', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M2.5 14.5L5 7l2.5 5 2.5-5 2.5 5 2.5-5 2.5 7.5h-2l-1-3-2 4-2-4-1 3h-2zm14-9A1.5 1.5 0 1114 7a1.5 1.5 0 012.5-1.5z" /></svg> },
+    storage_r2:              { bg: 'bg-orange-100 dark:bg-orange-900/30', color: '#F6821F', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M5.4 15h8.8a3.5 3.5 0 0 0 0-7 4.9 4.9 0 0 0-8.8 0 3.5 3.5 0 0 0 0 7z" /></svg> },
     meta_app:                { bg: 'bg-blue-100 dark:bg-blue-900/30', color: '#0866FF', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M2.5 10C2.5 7.24 4.74 5 7.5 5c1.32 0 2.52.5 3.42 1.32A5 5 0 0114.5 5C17.26 5 19.5 7.24 19.5 10v.5c0 2.76-2.24 5-5 5a5 5 0 01-3.58-1.5A5 5 0 017.5 15.5C4.74 15.5 2.5 13.26 2.5 10.5V10zm5 3.5c1.38 0 2.5-1.12 2.5-2.5v-.5c0-1.38-1.12-2.5-2.5-2.5S5 9.12 5 10.5V11c0 1.38 1.12 2.5 2.5 2.5zm7 0c1.38 0 2.5-1.12 2.5-2.5V10c0-1.38-1.12-2.5-2.5-2.5S12 8.62 12 10v.5c0 1.38 1.12 2.5 2.5 2.5z" /></svg> },
     oauth_linkedin:          { bg: 'bg-sky-100 dark:bg-sky-900/30', color: '#0A66C2', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M4.5 3C3.67 3 3 3.67 3 4.5S3.67 6 4.5 6 6 5.33 6 4.5 5.33 3 4.5 3zM3 7.5h3V17H3V7.5zm4.5 0H10v1.3c.45-.78 1.45-1.5 2.75-1.5 2.95 0 3.5 1.94 3.5 4.47V17H13v-4.73c0-1.13-.02-2.58-1.57-2.58-1.57 0-1.81 1.23-1.81 2.5V17H7.5V7.5z" /></svg> },
     oauth_twitter:           { bg: 'bg-neutral-200 dark:bg-neutral-700/60', color: '#0f0f0f', icon: <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path d="M3.5 3h3.1l2.9 4.1L12.6 3h2.3l-4 5 4.6 6h-3.1L9.2 9.7 5.9 14H3.6l4.3-5.3L3.5 3zm2.3 1.2l8 10.4h1.2L7 4.2H5.8z" /></svg> },
@@ -558,7 +573,7 @@ function PlainField({ label, fieldKey, value, onChange, required, hint }) {
     );
 }
 
-const STORAGE_PROVIDERS = ['storage_local', 'storage_s3', 'storage_do', 'storage_wasabi'];
+const STORAGE_PROVIDERS = ['storage_local', 'storage_s3', 'storage_do', 'storage_wasabi', 'storage_r2'];
 
 function StorageBanner({ provider }) {
     const { t } = useTranslation();

@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Reads a document so it can be searched by what it says.
@@ -37,9 +38,22 @@ class ExtractDocumentTextJob implements ShouldQueue
             return;
         }
 
-        $contents = $files->contents($document->path);
+        $contents = $files->contents($document->path, $document->disk);
 
         if ($contents === null) {
+            // Nobody is waiting on this one, and the document itself is fine —
+            // it still opens and still downloads; only searching by what it says
+            // will not find it. So the job ends here rather than failing and
+            // spending its retry on a file that, as far as this can tell, is not
+            // coming back. The line is what turns a document that is quietly
+            // unfindable into one somebody can go and look at.
+            Log::warning('Document file is missing from storage, text not extracted', [
+                'feature' => 'documents.extract_text',
+                'workspace_id' => (int) $document->workspace_id,
+                'document_id' => $document->id,
+                'path' => $document->path,
+            ]);
+
             return;
         }
 

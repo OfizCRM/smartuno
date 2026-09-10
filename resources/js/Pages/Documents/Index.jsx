@@ -34,10 +34,6 @@ function formatBytes(bytes) {
     return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function extensionOf(path) {
-    return String(path ?? '').split('.').pop()?.toLowerCase() ?? '';
-}
-
 /** The filter tabs above the list. Keys match Document::KINDS on the server. */
 const KINDS = [
     { key: null, labelKey: 'documents.kind_all', countKey: 'all' },
@@ -122,8 +118,14 @@ function DocumentRow({ document: doc, canUseOffice, onPreview, onEdit, onDelete 
     const url = route('client.documents.file', doc.uuid);
     // What the browser can show as it is: a PDF, an image, a text file. Word
     // and Excel are not converted for a preview — they open in the editor.
-    const canPreview = previewKindFor(doc.path);
-    const canOpenInOffice = canUseOffice && OFFICE_EDITABLE.includes(extensionOf(doc.path));
+    //
+    // From `extension`, not from a storage path: the payload no longer carries
+    // one. It is the same answer either way — the column IS the extension the
+    // server put on the stored file — and it is the half of the address that is
+    // safe to hand out. previewKindFor takes the last dot-segment, so a bare
+    // "pdf" reads exactly as "documents/<uuid>.pdf" did.
+    const canPreview = previewKindFor(doc.extension);
+    const canOpenInOffice = canUseOffice && OFFICE_EDITABLE.includes(String(doc.extension ?? '').toLowerCase());
     const client = doc.contact
         ? (doc.contact.company || `${doc.contact.first_name ?? ''} ${doc.contact.last_name ?? ''}`.trim())
         : null;
@@ -175,7 +177,7 @@ function DocumentRow({ document: doc, canUseOffice, onPreview, onEdit, onDelete 
 
             <div className="flex shrink-0 items-center gap-1">
                 {canPreview && (
-                    <button type="button" onClick={() => onPreview({ file: doc, url })}
+                    <button type="button" onClick={() => onPreview({ file: doc, url, kind: canPreview })}
                         title={t('documents.open')} aria-label={t('documents.open')}
                         className={`${ACTION} ${ACTION_TONE.preview}`}>
                         <Eye className="h-4 w-4" />
@@ -586,7 +588,7 @@ export default function DocumentsIndex({ documents, folders, counts, storage, fi
                 </div>
             </div>
 
-            {preview && <AttachmentPreview file={preview.file} url={preview.url} onClose={() => setPreview(null)} />}
+            {preview && <AttachmentPreview file={preview.file} url={preview.url} kind={preview.kind} onClose={() => setPreview(null)} />}
             {editing && <EditModal document={editing} folders={folders} knowledgeBases={knowledgeBases} onClose={() => setEditing(null)} />}
 
             <Modal show={!!creating} onClose={() => setCreating(null)} maxWidth="md">

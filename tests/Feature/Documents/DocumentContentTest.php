@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Documents;
 
+use App\Modules\AI\Jobs\IndexDocumentJob;
 use App\Modules\AI\Models\AiKbDocument;
 use App\Modules\AI\Models\AiKnowledgeBase;
 use App\Modules\Documents\Jobs\ExtractDocumentTextJob;
@@ -11,7 +12,7 @@ use App\Modules\Shared\Services\TextExtractor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -23,14 +24,14 @@ use Tests\TestCase;
  */
 class DocumentContentTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     private array $ctx;
 
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         $this->ctx = $this->createWorkspaceContext();
     }
 
@@ -151,9 +152,14 @@ class DocumentContentTest extends TestCase
 
         $this->assertNotNull($kbDocument);
         $this->assertSame('file', $kbDocument->source_type);
-        // The private path, so the bot reads the same file the office sends —
-        // rather than a second copy that drifts.
-        $this->assertSame($document->path, $kbDocument->source_ref);
+        // The document itself, not its path. A bare path carries no idea which
+        // disk it belongs to, and the indexing job used to pick the disk by
+        // string-matching the "documents/" prefix — which breaks the moment the
+        // private disk stops being the local one, silently indexing nothing.
+        $this->assertSame(
+            IndexDocumentJob::DOCUMENT_REF_PREFIX.$document->uuid,
+            $kbDocument->source_ref,
+        );
 
         $this->actingAs($this->ctx['user'])->delete(route('client.documents.kb.destroy', $document->uuid));
 
@@ -195,7 +201,12 @@ class DocumentContentTest extends TestCase
         $this->assertSame($firstPath, $version->path);
         $this->assertSame(1, $version->version);
         // The old file is still there — that is the point of the whole feature.
-        $this->assertTrue(Storage::disk('local')->exists($firstPath));
+        $this->assertTrue($this->privateDisk()->exists($firstPath));
+        // Two files now, the superseded one and the current one. Replacing a
+        // document is the moment a second copy comes into existence, so it is
+        // the moment worth checking that neither copy went somewhere public.
+        $this->assertNotOnTheWebServersDisk($firstPath, 'A superseded version');
+        $this->assertNotOnTheWebServersDisk($document->path, 'The current file');
         // And the text is re-read, so search follows the current file.
         $this->assertStringContainsString('a doua versiune', $document->content->text);
     }

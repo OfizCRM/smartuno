@@ -68,6 +68,43 @@ class KbIndexingTest extends TestCase
         ]);
     }
 
+    public function test_a_file_another_firm_uploaded_is_refused(): void
+    {
+        Storage::fake('public');
+        $this->fakeEmbeddings();
+        $kb = $this->seedKb();
+
+        $storage = app(StorageManager::class);
+        // A real file, really on the disk — just not one this workspace put
+        // there. `source_ref` is validated as ['nullable', 'string', 'max:512']
+        // and taken straight from the request on both endpoints that write this
+        // table, so naming it costs nothing.
+        $theirs = $storage->prefixedPath('kb-docs/'.($kb->workspace_id + 1).'/contracte.txt');
+        $storage->disk()->put($theirs, 'Pretul negociat cu clientul este 4200 lei.');
+
+        $doc = AiKbDocument::create([
+            'kb_id' => $kb->id,
+            'title' => 'contracte.txt',
+            'source_type' => 'file',
+            'source_ref' => $theirs,
+            'status' => 'pending',
+        ]);
+
+        try {
+            $this->runIndexer($doc->id);
+        } catch (\RuntimeException) {
+            // The job marks the row and rethrows so the queue records a failure.
+        }
+
+        $doc->refresh();
+
+        $this->assertNotSame('indexed', $doc->status);
+        $this->assertFalse(
+            $doc->chunks()->where('content', 'like', '%4200 lei%')->exists(),
+            "Another firm's file was read into this workspace's knowledge base, where the chatbot will quote it back."
+        );
+    }
+
     public function test_file_document_is_read_from_the_storage_disk(): void
     {
         Storage::fake('public');
@@ -75,7 +112,11 @@ class KbIndexingTest extends TestCase
         $kb = $this->seedKb();
 
         $storage = app(StorageManager::class);
-        $path = $storage->prefixedPath('kb-docs/warranty.txt');
+        // Under the workspace, because that is the shape addDocument() writes
+        // and the only one the indexer will now read. source_ref arrives from
+        // the request, so a bare key outside this directory is a file some
+        // other firm uploaded — see test_a_file_another_firm_uploaded_is_refused.
+        $path = $storage->prefixedPath('kb-docs/'.$kb->workspace_id.'/warranty.txt');
         $storage->disk()->put($path, 'The warranty period is 12 months from purchase.');
 
         $doc = AiKbDocument::create([

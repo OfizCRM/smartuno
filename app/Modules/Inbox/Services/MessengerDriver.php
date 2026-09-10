@@ -14,6 +14,7 @@ use App\Services\WebhookIdempotencyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 class MessengerDriver implements ChannelDriverInterface
 {
@@ -34,7 +35,29 @@ class MessengerDriver implements ChannelDriverInterface
 
         $recipient = ['id' => $conv->external_thread_id];
         $payload = $message->payload ?? [];
+        // Two shapes reach here, and they are not interchangeable.
+        //
+        // `link` is somebody else's URL — a product photo on the customer's own
+        // shop — and is passed through untouched, because that is where the
+        // picture actually lives and we have no copy of it.
+        //
+        // `media_path` is ours, and since stage 5 it is on the private disk with
+        // no address at all. Meta FETCHES the URL we send, with no session, so
+        // one is minted here: signed, valid thirty minutes, naming this message.
+        // A grant that expires, rather than a file published for ever.
+        // `link` is somebody else's URL and `preview_url` is one we minted before
+        // stage 5, when these files were public. Both already name a fetchable
+        // address, so they are used as they are — a row written last month must
+        // not start failing to send because the storage scheme changed.
         $imageUrl = $payload['link'] ?? $payload['preview_url'] ?? null;
+
+        if ($imageUrl === null && ! empty($payload['media_path'])) {
+            $imageUrl = URL::temporarySignedRoute(
+                'media.outbound',
+                now()->addMinutes(30),
+                ['message' => $message->getKey()],
+            );
+        }
 
         // Image messages (e.g. shared products): send the photo as an attachment,
         // then the caption as a follow-up — a Messenger attachment carries no text.

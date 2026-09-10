@@ -326,14 +326,75 @@ Two more that are absent from the template but real:
 
 ## Know what is public
 
-Media, avatars, logos and chat attachments go to the `public` disk, which is symlinked into the
-web root and served **directly by nginx** — the request never reaches Laravel, so there is no
-workspace check and no login. Filenames are UUIDs, so nobody can walk the directory, but anyone
-holding a URL keeps access for ever.
+Two disks, with opposite jobs. Getting a file onto the wrong one is the mistake this section
+exists to prevent.
 
-Only the document library (`storage/app/private`) is served through a controller that checks the
-workspace first. If you switch storage to DigitalOcean Spaces, objects are written `public-read`,
-which is the same trade.
+**The public disk** holds logos, favicons and avatars — things that are *meant* to be readable by
+anyone, because a browser loads them before there is a session. It is symlinked into the web root
+and served **directly by nginx**: the request never reaches Laravel, so there is no workspace
+check and no login. Names are UUIDs, so the directory cannot be walked, but anyone holding a URL
+keeps access for ever.
+
+**The private disk** holds everything belonging to one customer: the document library, offer PDFs,
+email attachments, and every photo, video, voice note and file in a conversation. None of it has a
+URL. It reaches a browser only through a controller that resolves the workspace first and streams
+the bytes.
+
+The one exception is Messenger and Instagram, which do not accept an image — they accept an
+*address*, and Meta's own servers fetch it with no session. For those, the app mints a **signed
+URL valid for thirty minutes** naming a single message. That is a grant with an expiry, not a
+published file; WhatsApp needs none of this, because there the bytes are uploaded to Meta's Media
+API and the send refers to a `media_id`.
+
+## Storage on Cloudflare R2
+
+Use this when the host has no persistent disk — a container that is rebuilt on every deploy loses
+`storage/app` and with it every document the customer uploaded.
+
+**You need TWO buckets, and this is not a preference.** R2 has no per-object permissions, and a
+key prefix grants nothing: a bucket is either published or it is not. The public bucket *must* be
+published, or logos do not load. So a private file in that same bucket is a public file with a
+longer name. The app refuses to use one bucket for both and falls back to the server disk with the
+reason shown in the admin panel — but set it up correctly and you will never see that.
+
+1. **Cloudflare dashboard → R2 → Create bucket**, twice:
+   - `smartuno-public` — logos and avatars.
+   - `smartuno-private` — documents, offers, conversation files.
+   Pick the same location for both. Name them however you like; only the split matters.
+
+2. **Publish the public one only.** Open `smartuno-public` → *Settings* → *Public access* →
+   *Custom domain* → connect a subdomain you control, e.g. `media.firma.ro`. Cloudflare adds the
+   DNS record. **Do not** enable public access or a custom domain on the private bucket, and do not
+   use the `r2.dev` development URL in production — it is rate limited and not meant for it.
+
+3. **R2 → Manage API tokens → Create API token**, with *Object Read & Write* and both buckets in
+   scope. Copy the **Access Key ID** and the **Secret Access Key** — the secret is shown once. Copy
+   the **Account ID** from the R2 overview page as well; the S3 endpoint is derived from it, so you
+   never type an endpoint.
+
+4. **In SmartUno: `/admin/integrations` → Cloudflare R2 → Edit.** Fill in Account ID, Access Key
+   ID, Secret Access Key, **Public Bucket** (`smartuno-public`), **Private Bucket**
+   (`smartuno-private`), and **Public URL** (`https://media.firma.ro` — no trailing slash). Leave
+   Jurisdiction empty unless the data must stay in the EU, in which case put `eu` and create the
+   buckets in that jurisdiction. Save, then **Enable**.
+
+5. **Press Test.** It writes, reads back and deletes a file in *each* bucket, so a green tick means
+   both really work — not just the one the panel happens to be describing.
+
+6. **Turn it on, in two places, because they are two decisions.** On the R2 card, *Set as default*
+   moves the PUBLIC files. Under *Storage* at the top of the page, the **private files** control
+   moves the private ones. A firm can serve logos from R2 while contracts stay on the server disk;
+   one control for both would make the wrong pairing a single click away.
+
+Files already on the old disk are **not** moved. On a fresh install there are none. If you switch
+after go-live, copy the objects across yourself — and copy them by reading and writing, never with
+a bucket-to-bucket `copy()`, which asks R2 for an object ACL it does not implement.
+
+**What it costs.** R2 charges no egress, which is why it suits this product, but operations are
+billed: writes and listings (Class A) and reads (Class B). Since conversation media is streamed
+through the app rather than served from a URL, each time somebody opens a photo in a thread it is
+one Class B read. At the scale of a firm under 30 people this is pennies; it is worth knowing
+before you see the first invoice.
 
 ## Inbound messages need a public address
 

@@ -5,6 +5,7 @@ namespace App\Modules\Email\Services;
 use App\Modules\Shared\Contracts\ChannelDriverInterface;
 use App\Modules\Shared\Models\Message;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\MailerInterface;
@@ -61,10 +62,40 @@ class EmailDriver implements ChannelDriverInterface
             ->html($this->htmlFor($body));
 
         foreach ((($message->getAttribute('payload') ?? [])['attachments'] ?? []) as $attachment) {
-            $contents = ! empty($attachment['path']) ? $this->attachments->contents($attachment['path']) : null;
-            if ($contents !== null) {
-                $mail->attach($contents, $attachment['name'] ?? 'atasament', $attachment['mime'] ?? null);
+            if (empty($attachment['path'])) {
+                // An inbound file that was over the per-file cap: recorded by
+                // name so the thread shows it arrived, never written. A known
+                // state, not a file that went missing.
+                continue;
             }
+
+            $contents = $this->attachments->contents(
+                $attachment['path'],
+                // Missing on everything received before the key existed, and
+                // those are all on the fallback disk the store already knows.
+                isset($attachment['disk']) ? (string) $attachment['disk'] : null,
+            );
+
+            if ($contents === null) {
+                // The whole send is refused rather than quietly stripped of its
+                // attachment. A mail cannot be recalled: a customer reading "see
+                // attached" with nothing attached costs a phone call and there is
+                // no fixing it afterwards, while a refusal costs a retry — every
+                // caller of a driver already catches this, marks the message
+                // failed and puts the reason in front of the operator. It is also
+                // the call the inbox already makes one layer up, where a file
+                // over the cap stops the reply instead of travelling without it.
+                Log::warning('Email attachment file is missing from storage', [
+                    'feature' => 'email.send',
+                    'workspace_id' => (int) $conversation->getAttribute('workspace_id'),
+                    'message_id' => $message->id,
+                    'path' => $attachment['path'],
+                ]);
+
+                throw new \RuntimeException(__('An attachment on this message is no longer stored, so the email was not sent.'));
+            }
+
+            $mail->attach($contents, $attachment['name'] ?? 'atasament', $attachment['mime'] ?? null);
         }
 
         $headers = $mail->getHeaders();

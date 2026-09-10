@@ -13,8 +13,8 @@ use App\Modules\Shared\Models\Message;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -26,7 +26,7 @@ use Tests\TestCase;
  */
 class InboundMailTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     private array $ctx;
 
@@ -35,7 +35,7 @@ class InboundMailTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         $this->ctx = $this->createWorkspaceContext();
         $this->mailbox = ChannelAccount::create([
             'workspace_id' => $this->ctx['workspace']->id,
@@ -332,6 +332,13 @@ class InboundMailTest extends TestCase
         ]));
 
         $this->assertSame('factura.pdf', $message->payload['attachments'][0]['name']);
+        // The entry says which disk the bytes are on. An attachment has no row
+        // of its own — it lives in messages.payload JSON — so this key is the
+        // only place that can be recorded.
+        $this->assertSame($this->privateDiskName(), $message->payload['attachments'][0]['disk']);
+        // A stranger's invoice arriving by mail is the exact file that must not
+        // become a public URL.
+        $this->assertNotOnTheWebServersDisk($entry['path'], 'An inbound mail attachment');
 
         // And the person the mail was addressed to can actually open it.
         $this->actingAs($this->ctx['user'])->get(route('client.email.attachment', [

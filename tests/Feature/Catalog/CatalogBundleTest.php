@@ -10,8 +10,8 @@ use App\Modules\Offers\Models\Offer;
 use App\Modules\Offers\Models\OfferItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -35,7 +35,7 @@ use Tests\TestCase;
  */
 class CatalogBundleTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     /** @var array{user: User, workspace: Workspace, client: Client} */
     private array $ctx;
@@ -43,7 +43,7 @@ class CatalogBundleTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         $this->ctx = $this->createWorkspaceContext();
     }
 

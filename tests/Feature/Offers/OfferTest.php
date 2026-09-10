@@ -3,11 +3,12 @@
 namespace Tests\Feature\Offers;
 
 use App\Modules\Catalog\Models\CatalogItem;
+use App\Modules\Documents\Models\Document;
 use App\Modules\Offers\Models\Offer;
 use App\Modules\Offers\Models\OfferItem;
 use App\Modules\Shared\Models\Contact;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -20,14 +21,14 @@ use Tests\TestCase;
  */
 class OfferTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     private array $ctx;
 
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         $this->ctx = $this->createWorkspaceContext();
     }
 
@@ -243,6 +244,13 @@ class OfferTest extends TestCase
             'workspace_id' => $this->ctx['workspace']->id,
             'source' => 'generated',
         ]);
+
+        // The rendered offer carries the seller's prices and the buyer's
+        // details, and it is filed as an ordinary document — so it gets the
+        // ordinary document's tripwire.
+        $filed = Document::where('workspace_id', $this->ctx['workspace']->id)->firstOrFail();
+        $this->assertTrue($this->privateDisk()->exists($filed->path));
+        $this->assertNotOnTheWebServersDisk($filed->path, 'A rendered offer PDF');
     }
 
     // ─── the regressions the review found ────────────────────────────────

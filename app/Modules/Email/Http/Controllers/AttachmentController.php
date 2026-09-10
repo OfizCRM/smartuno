@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Email\Services\AttachmentStore;
 use App\Modules\Shared\Models\Conversation;
 use App\Modules\Shared\Models\Message;
+use App\Services\PrivateStorageManager;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -30,7 +31,23 @@ class AttachmentController extends Controller
         $attachment = (($message->getAttribute('payload') ?? [])['attachments'] ?? [])[$index] ?? null;
         abort_unless(is_array($attachment) && ! empty($attachment['path']), 404);
 
-        $contents = $this->store->contents($attachment['path']);
+        // Belt and braces, for rows written before the caller stopped being
+        // able to set these keys. The workspace check above says this
+        // conversation is mine; it says nothing about which file the payload
+        // names, and both halves of that address were once attacker-controlled.
+        //
+        // The path must be under the directory this controller serves, and the
+        // disk must be one that holds private files. Anything else is answered
+        // 404 rather than read — a 403 would confirm the file exists.
+        abort_unless($this->addressable((string) $attachment['path'], $attachment['disk'] ?? null), 404);
+
+        // No disk key means the entry predates the column, and there is
+        // nothing anywhere that could say otherwise — null lets
+        // PrivateFileStore apply its own fallback rather than repeating it here.
+        $contents = $this->store->contents(
+            $attachment['path'],
+            isset($attachment['disk']) ? (string) $attachment['disk'] : null,
+        );
         abort_if($contents === null, 404);
 
         $name = $attachment['name'] ?? 'atasament';
@@ -91,5 +108,26 @@ class AttachmentController extends Controller
                 'atasament',
             ),
         ]);
+    }
+
+    /**
+     * Whether this entry names a file this controller is allowed to serve.
+     *
+     * Two independent conditions, both required. The directory is the one
+     * AttachmentStore writes to and nothing else; a path that walks out of it,
+     * or names the document library, or names anything on the public disk, is
+     * not an email attachment however it got into the payload. And the disk has
+     * to be one that holds private files — the map is the same one
+     * PrivateStorageManager writes into the column, so a name outside it was
+     * never written by us.
+     */
+    private function addressable(string $path, mixed $disk): bool
+    {
+        if (! str_starts_with($path, AttachmentStore::DIRECTORY.'/') || str_contains($path, '..')) {
+            return false;
+        }
+
+        return $disk === null
+            || (is_string($disk) && in_array($disk, PrivateStorageManager::PRIVATE_DISK_MAP, true));
     }
 }

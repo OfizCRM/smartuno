@@ -238,7 +238,32 @@ class PollMailboxJob implements ShouldQueue
                 }
                 $kept[] = $entry;
             } catch (\Throwable $e) {
-                Log::warning('Could not store an email attachment', ['error' => $e->getMessage()]);
+                // The name is kept even though the bytes are not. Dropping the
+                // entry entirely — which is what this did — meant the thread
+                // showed no trace that "factura.pdf" had ever arrived, and the
+                // mailbox UID advanced regardless, so nothing would fetch it
+                // again. An attachment we could not store is exactly the thing
+                // the person needs to be told about, and this is the same shape
+                // AttachmentStore already uses for a file over the size cap.
+                Log::warning('Could not store an email attachment', [
+                    'name' => (string) ($attachment->getName() ?: 'atasament'),
+                    'error' => $e->getMessage(),
+                ]);
+
+                $kept[] = [
+                    'name' => (string) ($attachment->getName() ?: 'atasament'),
+                    'mime' => (string) ($attachment->getMimeType() ?: 'application/octet-stream'),
+                    'size' => 0,
+                    'path' => null,
+                    // The same key every other entry carries, so nothing reading
+                    // messages.payload has to work out which shape it is holding
+                    // before it knows what is safe to touch. `stored` is what
+                    // says there are no bytes; this only says where they would
+                    // have gone. AttachmentStore's own over-cap branch does the
+                    // same, and this is the other way an entry gets no file.
+                    'disk' => $store->diskName(),
+                    'stored' => false,
+                ];
             }
         }
 

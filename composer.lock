@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f1757c3d3e7347b26bb12c256cb874d3",
+    "content-hash": "bec782b9b5cda66b3b029767aaa94637",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -2877,21 +2877,21 @@
         },
         {
             "name": "league/flysystem-aws-s3-v3",
-            "version": "3.0.0",
+            "version": "3.35.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/flysystem-aws-s3-v3.git",
-                "reference": "f8ba6a92a5c1fdcbdd89dede009a1e6e1b93ba8c"
+                "reference": "b03780cb97585ee7e48977f40ed599b33b751634"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/flysystem-aws-s3-v3/zipball/f8ba6a92a5c1fdcbdd89dede009a1e6e1b93ba8c",
-                "reference": "f8ba6a92a5c1fdcbdd89dede009a1e6e1b93ba8c",
+                "url": "https://api.github.com/repos/thephpleague/flysystem-aws-s3-v3/zipball/b03780cb97585ee7e48977f40ed599b33b751634",
+                "reference": "b03780cb97585ee7e48977f40ed599b33b751634",
                 "shasum": ""
             },
             "require": {
-                "aws/aws-sdk-php": "^3.132.4",
-                "league/flysystem": "^2.0.0 || ^3.0.0",
+                "aws/aws-sdk-php": "^3.371.5",
+                "league/flysystem": "^3.10.0",
                 "league/mime-type-detection": "^1.0.0",
                 "php": "^8.0.2"
             },
@@ -2926,10 +2926,9 @@
                 "storage"
             ],
             "support": {
-                "issues": "https://github.com/thephpleague/flysystem-aws-s3-v3/issues",
-                "source": "https://github.com/thephpleague/flysystem-aws-s3-v3/tree/3.0.0"
+                "source": "https://github.com/thephpleague/flysystem-aws-s3-v3/tree/3.35.3"
             },
-            "time": "2022-01-13T21:11:49+00:00"
+            "time": "2026-08-08T16:19:23+00:00"
         },
         {
             "name": "league/flysystem-local",

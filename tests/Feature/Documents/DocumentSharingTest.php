@@ -9,7 +9,7 @@ use App\Modules\Shared\Models\Contact;
 use App\Modules\Shared\Models\Conversation;
 use App\Modules\Shared\Models\Message;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -21,7 +21,7 @@ use Tests\TestCase;
  */
 class DocumentSharingTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     private array $ctx;
 
@@ -30,7 +30,7 @@ class DocumentSharingTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         $this->ctx = $this->createWorkspaceContext();
         $this->mailbox = ChannelAccount::create([
             'workspace_id' => $this->ctx['workspace']->id,
@@ -115,7 +115,11 @@ class DocumentSharingTest extends TestCase
         // Deleting the document for good leaves the mail intact.
         $document->delete();
         $this->artisan('documents:purge', ['--days' => 0]);
-        $this->assertTrue(Storage::disk('local')->exists($entry['path']));
+        $this->assertTrue($this->privateDisk()->exists($entry['path']));
+        // Filing a mail attachment into the library copies it; neither copy may
+        // land on the disk the web server publishes.
+        $this->assertNotOnTheWebServersDisk($entry['path'], "The mail's attachment");
+        $this->assertNotOnTheWebServersDisk($document->path, 'The filed document');
     }
 
     public function test_a_thread_in_another_workspace_cannot_be_filed_from(): void
@@ -180,6 +184,11 @@ class DocumentSharingTest extends TestCase
         // The copy remembers where it came from, without depending on it.
         $this->assertSame($document->id, $attachment['document_id']);
         $this->assertNotSame($document->path, $attachment['path']);
+        // And where it went. The copy is a separate write, so it can land on a
+        // different disk from the document it was made from — that is the whole
+        // reason the entry records one instead of assuming.
+        $this->assertSame($this->privateDiskName(), $attachment['disk']);
+        $this->assertNotOnTheWebServersDisk($attachment['path'], 'A document sent on a thread');
     }
 
     public function test_a_document_from_another_workspace_is_not_sent(): void

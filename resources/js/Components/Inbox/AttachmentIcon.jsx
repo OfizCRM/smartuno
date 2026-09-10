@@ -11,9 +11,14 @@ import { File, FileArchive, FileCode, FileImage, FileSpreadsheet, FileText } fro
  *
  * Read from the extension we stored the file under, falling back to the sender's
  * filename for the oversized ones, which were never kept and so have no path.
+ *
+ * `extension` sits between the two because a library document is now sent
+ * without its storage path — the column holds the same extension the path would
+ * have ended in, so the rule stays "what we stored it as" rather than quietly
+ * becoming "what the sender called it".
  */
 export function attachmentKindFor(file) {
-    const ext = String(file?.path || file?.name || '').split('.').pop()?.toLowerCase();
+    const ext = String(file?.path || file?.extension || file?.name || '').split('.').pop()?.toLowerCase();
 
     if (ext === 'pdf') return 'pdf';
     if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'heic', 'svg'].includes(ext)) return 'image';

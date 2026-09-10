@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use RuntimeException;
 
 class MediaService
 {
@@ -19,15 +19,35 @@ class MediaService
         string $collection = 'default',
         ?string $disk = null
     ): Media {
-        $ext = $file->getClientOriginalExtension();
         $filename = $file->getClientOriginalName();
 
-        // Resolve disk from StorageManager unless caller explicitly passes one
-        $resolvedDisk = $disk ?? $this->storageManager->diskName();
-        $rawPath = 'media/'.Str::uuid().'.'.$ext;
-        $path = $this->storageManager->prefixedPath($rawPath);
+        // The extension used to be getClientOriginalExtension() — the one the
+        // BROWSER sent, written verbatim into the name of a file on the disk
+        // nginx publishes from this application's own origin. Uploading
+        // anything at all as "notes.html" put a page at a URL on our domain
+        // that runs in our origin with the visitor's session attached. The uuid
+        // made it unguessable, not harmless: the uploader knows the URL.
+        //
+        // storeImageUpload() takes the extension from the file's DETECTED type
+        // instead, refuses an SVG it cannot sanitise, and applies the directory
+        // prefix once. Its name says images because that is what it was written
+        // for; what it actually does — safe extension, uuid, prefix, SVG — is
+        // what every public upload needs, so it is shared rather than copied.
+        $stored = $this->storageManager->storeImageUpload($file, 'media');
 
-        Storage::disk($resolvedDisk)->putFileAs(dirname($path), $file, basename($path));
+        if ($stored === null) {
+            throw new RuntimeException('This image could not be processed safely.');
+        }
+
+        // An explicit disk from the caller still wins, but the path is the one
+        // storeImageUpload() actually wrote to.
+        $resolvedDisk = $disk ?? $stored['disk'];
+        $path = $stored['path'];
+
+        if ($resolvedDisk !== $stored['disk']) {
+            Storage::disk($resolvedDisk)->put($path, (string) $this->storageManager->disk()->get($path));
+            $this->storageManager->disk()->delete($path);
+        }
 
         return Media::create([
             'mediable_type' => get_class($owner),

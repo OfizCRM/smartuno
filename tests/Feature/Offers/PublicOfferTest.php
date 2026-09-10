@@ -9,9 +9,9 @@ use App\Modules\Offers\Models\OfferDraftAttempt;
 use App\Modules\Offers\Models\OfferItem;
 use App\Modules\Shared\Models\Contact;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -46,7 +46,7 @@ use Tests\TestCase;
  */
 class PublicOfferTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     /** @var array<string, mixed> */
     private array $ctx;
@@ -56,7 +56,7 @@ class PublicOfferTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
 
         // Deliberately distinctive: every one of these strings is asserted
         // absent from a page a stranger is holding.

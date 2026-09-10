@@ -23,6 +23,7 @@ use Illuminate\Support\Str;
  * @property int|null $contact_id
  * @property string $name
  * @property string $path
+ * @property string $disk
  * @property string $mime
  * @property string $extension
  * @property int $size_bytes
@@ -50,8 +51,26 @@ class Document extends Model
         'image' => ['png', 'jpg', 'gif', 'webp'],
     ];
 
+    /**
+     * Never serialised.
+     *
+     * `path` is the object key and `disk` is the bucket it lives in — together
+     * they are the address of a private file, and the two halves of a URL
+     * somebody eventually builds. Nothing on a screen needs either: every link
+     * to a document goes through a named route that checks the workspace first.
+     *
+     * $hidden suppresses serialisation only. $model->path and $model->disk keep
+     * working everywhere in PHP; what stops is their arrival in an Inertia prop
+     * or a JSON response. Enforced here rather than remembered at each payload,
+     * which is what tests/Feature/ProductionHardening/PrivateStorageBoundaryTest
+     * asserts and how it caught this.
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['path', 'disk'];
+
     protected $fillable = [
-        'workspace_id', 'folder_id', 'contact_id', 'name', 'path', 'mime',
+        'workspace_id', 'folder_id', 'contact_id', 'name', 'path', 'disk', 'mime',
         'extension', 'size_bytes', 'source', 'source_message_id', 'created_by',
         'expires_at', 'remind_days', 'reminders_sent', 'kb_document_id',
     ];

@@ -91,6 +91,35 @@ return [
             'throw' => false,
         ],
 
+        // Cloudflare R2. Modelled on the 's3' entry above and deliberately NOT
+        // on 'do_spaces'. R2 does not implement S3 ACLs — it ignores x-amz-acl
+        // rather than rejecting it — so a bucket is public or private as a
+        // whole, decided in the Cloudflare dashboard, and no per-object header
+        // changes that. do_spaces carries 'visibility' => 'public' and
+        // 'options' => ['ACL' => 'public-read'], which is real on DigitalOcean
+        // and inert here: copied onto R2 it would read as if it had made the
+        // objects world-readable while the bucket setting alone decides.
+        // StorageManager sets 'visibility' => 'private' on the runtime config;
+        // see the note beside the storage_r2 arm for why it is stated rather
+        // than omitted.
+        //
+        // 'region' is the literal 'auto': R2 has no regions and rejects
+        // anything else in the SigV4 credential scope.
+        // 'endpoint' is null here and built at runtime by StorageManager from
+        // the account ID and jurisdiction — see r2Endpoint() there for why the
+        // "r2.cloudflarestorage.com" host suffix is load-bearing.
+        'r2' => [
+            'driver' => 's3',
+            'key' => null,
+            'secret' => null,
+            'region' => 'auto',
+            'bucket' => null,
+            'url' => null,
+            'endpoint' => null,
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+        ],
+
     ],
 
     /*

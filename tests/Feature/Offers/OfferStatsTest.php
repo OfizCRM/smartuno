@@ -9,7 +9,7 @@ use App\Modules\Offers\Models\OfferItem;
 use App\Modules\Offers\Services\OfferStats;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -46,7 +46,7 @@ use Tests\TestCase;
  */
 class OfferStatsTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     /** @var array<string, mixed> */
     private array $ctx;
@@ -57,7 +57,7 @@ class OfferStatsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         $this->ctx = $this->createWorkspaceContext();
     }
 

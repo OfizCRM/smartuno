@@ -16,7 +16,7 @@
         "laravel/socialite": "^5.27",
         "laravel/tinker": "^2.10.1",
         "league/csv": "^9.28",
-        "league/flysystem-aws-s3-v3": "3.0",
+        "league/flysystem-aws-s3-v3": "^3.35",
         "league/html-to-markdown": "^5.1",
         "minishlink/web-push": "^10.0",
         "pragmarx/google2fa": "^9.0",

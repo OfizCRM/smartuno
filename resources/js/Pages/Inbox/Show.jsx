@@ -860,8 +860,13 @@ function MessageBubble({ msg, conversationId, contactName }) {
     const mediaType   = msg.type ?? 'text';
     const previewUrl  = p.preview_url ?? p[mediaType]?.preview_url ?? null;
     const rawMediaId  = p[mediaType]?.id ?? p.media_id ?? null;
-    // Use proxy if no previewUrl for inbound media
-    const mediaSrc = previewUrl ?? (rawMediaId ? route('client.inbox.message-media', { conversation: conversationId, message: msg.id }) : null);
+    // Ask the authenticated route whenever the server says there is a file.
+    // `has_media` is set for anything we stored ourselves; `rawMediaId` still
+    // covers inbound WhatsApp media that has not been downloaded yet, where the
+    // route fetches it from Meta on first view.
+    const mediaSrc = previewUrl ?? ((p.has_media || rawMediaId)
+        ? route('client.inbox.message-media', { conversation: conversationId, message: msg.id })
+        : null);
 
     // Template header components — prefer `definition` (full text+params) over raw `components` (params-only)
     const templateComponents = p.template?.definition ?? p.template?.components ?? (Array.isArray(p.components) ? p.components : null);
@@ -1065,11 +1070,11 @@ function MessageBubble({ msg, conversationId, contactName }) {
                     {isEmail && p.attachments?.length > 0 && (
                         <div className="mt-2 space-y-1">
                             {p.attachments.map((file, i) => {
-                                const url = file.path
+                                const url = file.stored
                                     ? route('client.email.attachment', { conversation: conversationId, message: msg.id, index: i })
                                     : null;
                                 const rowClass = 'group/att flex w-full items-center gap-2.5 rounded-xl border border-black/5 bg-white/70 px-2.5 py-2 text-left transition hover:border-black/10 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10';
-                                const Action = previewKindFor(file.path) ? Eye : Download;
+                                const Action = previewKindFor(file.name) ? Eye : Download;
 
                                 if (!url) {
                                     return (
@@ -1117,7 +1122,7 @@ function MessageBubble({ msg, conversationId, contactName }) {
                                     </button>
                                 );
 
-                                return previewKindFor(file.path) ? (
+                                return previewKindFor(file.name) ? (
                                     <div key={i} className="flex items-center gap-1">
                                         <button type="button" onClick={() => setPreview({ file, url })} className={rowClass}>
                                             {inner}

@@ -11,6 +11,7 @@ use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\DocumentImporter;
 use App\Modules\Email\Services\AttachmentStore;
 use App\Modules\Inbox\Models\InboxLabel;
+use App\Modules\Inbox\Services\MessageMediaStore;
 use App\Modules\Shared\Models\ChannelAccount;
 use App\Modules\Shared\Models\Contact;
 use App\Modules\Shared\Models\Conversation;
@@ -26,18 +27,20 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class InboxController extends Controller
 {
     public function __construct(
         private ChannelManager $channelManager,
         private StorageManager $storageManager,
+        private MessageMediaStore $media,
     ) {}
 
     /** Filters the inbox list understands. Anything else in the query string is ignored. */
@@ -263,7 +266,17 @@ class InboxController extends Controller
         ]);
 
         $msgType = $validated['type'] ?? 'text';
-        $msgPayload = $validated['payload'] ?? null;
+
+        // The caller does not get to address a file. `payload` is validated only
+        // as "an array", and the browser never sends these keys — it sends
+        // template variables, or null. Left through, a plain-text reply to the
+        // caller's OWN conversation could carry a hand-written attachments entry
+        // naming any path on any disk, and AttachmentController would then serve
+        // those bytes: both its checks pass, because the conversation and the
+        // message really are the caller's. Only the file named is not.
+        $msgPayload = Arr::except($validated['payload'] ?? [], [
+            'attachments', 'media_id', 'preview_url', 'link', 'path', 'disk', 'media_path', 'media_disk',
+        ]) ?: null;
 
         $files = array_merge(
             $request->hasFile('attachment') ? [$request->file('attachment')] : [],
@@ -293,21 +306,41 @@ class InboxController extends Controller
             $bytes = 0;
 
             foreach ($files as $file) {
-                $entry = $store->put(
-                    (string) $file->getClientOriginalName(),
-                    (string) ($file->getMimeType() ?: 'application/octet-stream'),
-                    (string) file_get_contents($file->getRealPath()),
-                    // The cap is on the message, not the file: ten attachments of
-                    // nine megabytes each is still a mail nobody can receive.
-                    $bytes,
-                );
+                try {
+                    $entry = $store->put(
+                        (string) $file->getClientOriginalName(),
+                        (string) ($file->getMimeType() ?: 'application/octet-stream'),
+                        (string) file_get_contents($file->getRealPath()),
+                        // The cap is on the message, not the file: ten attachments of
+                        // nine megabytes each is still a mail nobody can receive.
+                        $bytes,
+                    );
+                } catch (\Throwable $e) {
+                    // A failed write throws now, and the cleanup below was wired
+                    // only to the over-cap branch — so a throw on the third of
+                    // five files stranded the first two on the tenant's disk,
+                    // counted against their quota, referenced by nothing.
+                    //
+                    // Every entry here came back from put() this request, so it
+                    // always carries a disk and there is no ?? to write: the
+                    // orphan is deleted from the disk it was actually written
+                    // to, which mid-migration is not necessarily the one a
+                    // delete would otherwise guess at.
+                    foreach ($entries as $orphan) {
+                        $store->delete($orphan['path'], $orphan['disk']);
+                    }
+
+                    Log::error('Inbox attachment write failed', ['error' => $e->getMessage()]);
+
+                    return response()->json(['error' => __('That file could not be stored. Please try again.')], 500);
+                }
 
                 if (! $entry['stored']) {
                     // Refused rather than sent without it. The person picked these
                     // files; a mail that arrives quietly missing one is worse than
                     // one that does not leave. Nothing already written stays behind.
                     foreach ($entries as $orphan) {
-                        $store->delete($orphan['path']);
+                        $store->delete($orphan['path'], $orphan['disk']);
                     }
 
                     return response()->json(['error' => __('That file is too large to send by email.')], 422);
@@ -323,7 +356,7 @@ class InboxController extends Controller
 
                 if ($entry === null) {
                     foreach ($entries as $orphan) {
-                        $store->delete($orphan['path']);
+                        $store->delete($orphan['path'], $orphan['disk']);
                     }
 
                     return response()->json(['error' => __('That file is too large to send by email.')], 422);
@@ -358,13 +391,18 @@ class InboxController extends Controller
             }
 
             $mediaId = $client->uploadMedia($file->getRealPath(), $mimeType);
-            $storedPath = $this->storageManager->prefixedPath('message-media/'.$file->hashName());
-            $this->storageManager->disk()->putFileAs(dirname($storedPath), $file, basename($storedPath));
-            $previewUrl = $this->storageManager->disk()->url($storedPath);
+
+            // The private disk, under this workspace, uuid-named, extension from
+            // the DETECTED type. WhatsApp already has the bytes — uploadMedia()
+            // above returned a media_id — so what is kept here exists only so
+            // the agent can see in the thread what they sent, which is a reason
+            // to store it privately rather than publish it.
+            $stored = $this->media->putUpload((int) $conversation->workspace_id, $file);
 
             $msgPayload = array_merge($msgPayload ?? [], [
                 'media_id' => $mediaId,
-                'preview_url' => $previewUrl,
+                'media_path' => $stored['path'],
+                'media_disk' => $stored['disk'],
                 'caption' => $validated['body'] ?? null,
                 'filename' => $file->getClientOriginalName(),
             ]);
@@ -785,8 +823,38 @@ class InboxController extends Controller
 
     /**
      * Proxy / lazy-download inbound WhatsApp media.
-     * Checks payload.preview_url first, then downloads from WhatsApp Graph API,
-     * caches to local storage, updates the message, and redirects.
+     *
+     * The cache lookup used to be a directory scan:
+     *
+     *     $files = $disk->files($this->storageManager->prefixedPath('message-media'));
+     *     $cached = collect($files)->first(fn ($f) => str_starts_with($f, $prefix.$message->id));
+     *
+     * Three separate problems in one expression, and the first is a cross-tenant
+     * read. `message-media/` is ONE FLAT DIRECTORY for the whole platform —
+     * prefixedPath() applies an admin-wide prefix, not a per-workspace one — and
+     * `messages` has no workspace_id and a single global auto-increment id. So
+     * `str_starts_with($f, 'message-media/481')` matches `message-media/4812.jpg`,
+     * which belongs to whatever firm message 4812 belongs to, and the method
+     * then REDIRECTS the caller to its public URL. The two checks above are real
+     * and both pass: the conversation is the caller's and the message is in it.
+     * Only the file is somebody else's.
+     *
+     * It is not a rare alignment either. The outbound reply path and the mobile
+     * one both store under a random hashName(), so a reply message NEVER has a
+     * file named after its id — the scan starts at a guaranteed miss and takes
+     * the first neighbour that matches.
+     *
+     * Second, it enumerated every firm's media on every image view; on R2 that
+     * is a paginated ListObjectsV2 walk, 1000 keys a page, per picture.
+     *
+     * Third, the answer was already on the row. preview_url is the URL of the
+     * very file being looked for.
+     *
+     * So: read the recorded path, check it belongs to this workspace, redirect.
+     * Rows written before media_path existed fall back to preview_url itself,
+     * which names the real object for all three legacy shapes (id-named inbound,
+     * hash-named outbound, and shareProduct's external store URL) without a
+     * listing, a scan or a backfill.
      */
     public function serveMedia(Request $request, Conversation $conversation, Message $message): \Symfony\Component\HttpFoundation\Response
     {
@@ -794,21 +862,38 @@ class InboxController extends Controller
         abort_unless((int) $message->conversation_id === (int) $conversation->id, 404);
 
         $payload = $message->payload ?? [];
+        $workspaceId = (int) $conversation->workspace_id;
 
-        // Already cached locally — verify the file still exists before redirecting
-        if (! empty($payload['preview_url'])) {
-            $storagePath = "message-media/{$message->id}";
-            $disk = $this->storageManager->disk();
-            $files = $disk->files($this->storageManager->prefixedPath('message-media'));
-            $cached = collect($files)->first(fn ($f) => str_starts_with($f, $this->storageManager->prefixedPath($storagePath)));
+        // The path this workspace's own writes produced. Checked, not trusted:
+        // the value lives in a JSON column that other code paths also write to,
+        // and one directory segment is all that stands between reading our file
+        // and reading the firm next door's.
+        $recorded = is_string($payload['media_path'] ?? null) ? $payload['media_path'] : null;
 
-            if ($cached && $disk->exists($cached)) {
-                return redirect($disk->url($cached));
+        if ($recorded !== null && $this->media->addressableBy($recorded, $workspaceId)) {
+            $contents = $this->media->isPrivate($payload['media_disk'] ?? null)
+                ? $this->media->contents($recorded, (string) $payload['media_disk'])
+                // Written before stage 5, so it is a key on the public disk.
+                // Still served through here rather than by redirecting to it:
+                // the file is world-readable either way, but the thread should
+                // not be the thing that publishes the address.
+                : $this->publicBytes($recorded);
+
+            if ($contents !== null) {
+                return $this->stream($recorded, $payload['filename'] ?? null, $contents);
             }
 
-            // File missing — clear stale preview_url and fall through to re-download
-            $payload = array_merge($payload, ['preview_url' => null]);
+            // Gone from the disk. Drop the path so the row stops naming a file
+            // that is not there, and fall through to fetching it again.
+            $payload = array_merge($payload, ['media_path' => null, 'media_disk' => null, 'preview_url' => null]);
             $message->update(['payload' => $payload]);
+        } elseif (! empty($payload['preview_url'])) {
+            // Written before media_path existed. preview_url IS the address of
+            // the file — it was minted by ->url() on the same disk at the same
+            // moment the bytes were written — so there is nothing to look up.
+            // shareProduct rows point at an external store image and are served
+            // the same way, correctly, since that is where that picture lives.
+            return redirect($payload['preview_url']);
         }
 
         // Resolve media ID from raw WhatsApp webhook payload
@@ -819,7 +904,9 @@ class InboxController extends Controller
             abort(404, __('No media available.'));
         }
 
-        $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
+        // From the conversation, not the user: authorise() has already proved the
+        // conversation is the caller's, and current_workspace_id is not a column
+        // so the old idiom always fell through to the second half anyway.
         $client = CloudApiClient::forWorkspace($workspaceId);
 
         if (! $client) {
@@ -829,21 +916,70 @@ class InboxController extends Controller
         try {
             ['url' => $downloadUrl, 'mime_type' => $mimeType] = $client->getMediaUrl($mediaId);
             $bytes = $client->downloadMedia($downloadUrl);
-            $ext = explode('/', $mimeType)[1] ?? 'bin';
-            $ext = str_replace(['jpeg'], ['jpg'], $ext);
-            $filename = "message-media/{$message->id}.{$ext}";
 
-            $filename = $this->storageManager->prefixedPath($filename);
-            $this->storageManager->disk()->put($filename, $bytes);
-            $previewUrl = $this->storageManager->disk()->url($filename);
+            // Onto the PRIVATE disk, under this workspace, under a uuid, with an
+            // extension from an allow-list rather than from the subtype string.
+            // The old name was message-media/{$message->id}.{explode('/', $mime)[1]}
+            // on the disk nginx publishes: a global sequential id anyone could
+            // count through without logging in, and an extension taken verbatim
+            // from a remote response.
+            $stored = $this->media->put($workspaceId, $payload['filename'] ?? 'media', $mimeType, $bytes);
 
-            // Cache for next request
-            $message->update(['payload' => array_merge($payload, ['preview_url' => $previewUrl, 'mime_type' => $mimeType])]);
+            // No preview_url any more. There is no address to record: the file
+            // is not reachable except through this method, which is the point.
+            $message->update(['payload' => array_merge($payload, [
+                'media_path' => $stored['path'],
+                'media_disk' => $stored['disk'],
+                'preview_url' => null,
+                'mime_type' => $mimeType,
+            ])]);
 
-            return redirect($previewUrl);
+            return $this->stream($stored['path'], $payload['filename'] ?? null, $bytes);
         } catch (\Throwable $e) {
             abort(502, __('Could not fetch media: :error', ['error' => $e->getMessage()]));
         }
+    }
+
+    /**
+     * Bytes of a pre-stage-5 file, which is a key on the public disk.
+     *
+     * Deliberately not ->url(): see the note at the call site. Returns null the
+     * same way the private store does, so one branch handles both.
+     */
+    private function publicBytes(string $path): ?string
+    {
+        $disk = $this->storageManager->disk();
+
+        return $disk->exists($path) ? $disk->get($path) : null;
+    }
+
+    /**
+     * Hand a stored file to the browser.
+     *
+     * Inline for the things a thread has to render in place — a photo, a video,
+     * a voice note — and a download for everything else, which is the same rule
+     * AttachmentController applies and for the same reason: a type we have no
+     * safe content type for is a type we do not let the browser interpret.
+     *
+     * nosniff and the sandboxed CSP are on both branches. The file arrived from
+     * outside and the response comes from our own origin.
+     */
+    private function stream(string $path, ?string $name, string $contents): \Symfony\Component\HttpFoundation\Response
+    {
+        $mime = $this->media->mimeFor($path);
+        $name = $name !== null && $name !== '' ? $name : basename($path);
+
+        return response($contents, 200, [
+            'Content-Type' => $mime ?? 'application/octet-stream',
+            'Content-Length' => (string) strlen($contents),
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            'Content-Disposition' => (new ResponseHeaderBag)->makeDisposition(
+                $mime === null ? ResponseHeaderBag::DISPOSITION_ATTACHMENT : ResponseHeaderBag::DISPOSITION_INLINE,
+                $name,
+                'fisier',
+            ),
+        ]);
     }
 
     /** Upload a media file to WhatsApp and return the media_id */

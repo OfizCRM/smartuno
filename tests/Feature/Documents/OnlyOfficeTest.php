@@ -8,9 +8,9 @@ use App\Modules\Documents\Models\DocumentVersion;
 use App\Modules\Documents\Services\OnlyOfficeSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -22,14 +22,14 @@ use Tests\TestCase;
  */
 class OnlyOfficeTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     private array $ctx;
 
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         config([
             'services.onlyoffice.url' => 'http://localhost:8080',
             'services.onlyoffice.app_url' => 'http://host.docker.internal:8000',
@@ -41,7 +41,7 @@ class OnlyOfficeTest extends TestCase
     private function document(?int $workspaceId = null, string $extension = 'docx'): Document
     {
         $workspaceId ??= $this->ctx['workspace']->id;
-        Storage::disk('local')->put("documents/proba.{$extension}", 'CONTINUT');
+        $this->privateDisk()->put("documents/proba.{$extension}", 'CONTINUT');
 
         return Document::create([
             'workspace_id' => $workspaceId,
@@ -268,11 +268,17 @@ class OnlyOfficeTest extends TestCase
         $document->refresh();
 
         $this->assertNotSame($originalPath, $document->path);
-        $this->assertSame('CONTINUT-NOU', Storage::disk('local')->get($document->path));
+        $this->assertSame('CONTINUT-NOU', $this->privateDisk()->get($document->path));
         // Nothing overwrites without leaving what was there behind.
         $version = DocumentVersion::where('document_id', $document->id)->first();
         $this->assertSame($originalPath, $version->path);
         $this->assertSame(1, $version->version);
+        // The editor writes back over an unauthenticated container callback, so
+        // this is the one write in the module that no logged-in user is standing
+        // behind. Both the new file and the preserved one stay off the public
+        // disk.
+        $this->assertNotOnTheWebServersDisk($document->path, 'An edited document');
+        $this->assertNotOnTheWebServersDisk($version->path, 'The preserved version');
     }
 
     public function test_the_saved_text_is_reindexed_so_search_follows_the_edit(): void
@@ -369,7 +375,8 @@ class OnlyOfficeTest extends TestCase
         $this->assertSame($extension, $document->extension);
         $this->assertStringContainsString($mimePart, $document->mime);
         $this->assertSame('generated', $document->source);
-        $this->assertTrue(Storage::disk('local')->exists($document->path));
+        $this->assertTrue($this->privateDisk()->exists($document->path));
+        $this->assertNotOnTheWebServersDisk($document->path, 'A document created in the editor');
     }
 
     public function test_the_blank_files_shipped_with_the_module_are_real_office_files(): void

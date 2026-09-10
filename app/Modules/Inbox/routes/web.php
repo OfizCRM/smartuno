@@ -6,7 +6,30 @@ use App\Modules\Inbox\Http\Controllers\InboxController;
 use App\Modules\Inbox\Http\Controllers\InboxSetupController;
 use App\Modules\Inbox\Http\Controllers\InternalNoteController;
 use App\Modules\Inbox\Http\Controllers\LabelController;
+use App\Modules\Inbox\Http\Controllers\OutboundMediaController;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
+
+/**
+ * The signed door, outside the session.
+ *
+ * Deliberately not inside the group below: that one carries 'web' and
+ * 'client-app', which is a session and a workspace, and the whole reason this
+ * route exists is that Meta's servers have neither. Its authorisation is the
+ * signature, enforced by the 'signed' middleware before the controller runs.
+ *
+ * 'web' is still absent rather than merely unused — a session cookie sent to a
+ * route that ignores it is a route somebody will later "fix" by trusting it.
+ */
+Route::get('/media/outbound/{message}', [OutboundMediaController::class, 'show'])
+    // SubstituteBindings is named because it lives in the 'web' GROUP, and this
+    // route is deliberately not in it. Without it {message} never resolves:
+    // Laravel cannot inject a model it was not asked to look up, so it builds an
+    // empty one from the container instead of failing, the controller reads an
+    // empty payload, and every send returns 404 with nothing in the log to say
+    // why. Meta would simply stop attaching pictures.
+    ->middleware(['signed', SubstituteBindings::class])
+    ->name('media.outbound');
 
 Route::middleware(['web', 'client-app'])->prefix('app/inbox')->name('client.inbox.')->group(function () {
     Route::get('/', [InboxController::class, 'index'])->name('index');

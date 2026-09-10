@@ -24,17 +24,26 @@ class IntegrationConfig extends Model
         'storage_s3',
         'storage_do',
         'storage_wasabi',
+        'storage_r2',
     ];
 
     /** The single provider slug that is the active storage backend. */
-    public const STORAGE_PROVIDERS = ['storage_local', 'storage_s3', 'storage_do', 'storage_wasabi'];
+    public const STORAGE_PROVIDERS = ['storage_local', 'storage_s3', 'storage_do', 'storage_wasabi', 'storage_r2'];
 
-    /** Maps provider slug → Laravel disk name. */
+    /**
+     * Maps provider slug → Laravel disk name.
+     *
+     * A provider missing from this map makes StorageManager::diskName() fall
+     * back to 'public', so uploads land on the local disk while the admin panel
+     * still shows the cloud provider as active. Every entry in
+     * STORAGE_PROVIDERS except 'storage_local' must have a disk here.
+     */
     public const STORAGE_DISK_MAP = [
         'storage_local' => 'public',
         'storage_s3' => 's3',
         'storage_do' => 'do_spaces',
         'storage_wasabi' => 'wasabi',
+        'storage_r2' => 'r2',
     ];
 
     // Human-readable labels per provider
@@ -55,6 +64,7 @@ class IntegrationConfig extends Model
         'storage_s3' => 'Amazon S3',
         'storage_do' => 'DigitalOcean Spaces',
         'storage_wasabi' => 'Wasabi Cloud Storage',
+        'storage_r2' => 'Cloudflare R2',
     ];
 
     // Which category each provider belongs to (for UI grouping)
@@ -75,6 +85,7 @@ class IntegrationConfig extends Model
         'storage_s3' => 'Storage',
         'storage_do' => 'Storage',
         'storage_wasabi' => 'Storage',
+        'storage_r2' => 'Storage',
     ];
 
     // Field definitions per provider (used to build dynamic forms)
@@ -161,6 +172,24 @@ class IntegrationConfig extends Model
             ['key' => 'bucket',                 'label' => 'Bucket Name',            'type' => 'text',     'required' => true],
             ['key' => 'endpoint',               'label' => 'Endpoint URL',           'type' => 'text',     'required' => true],
             ['key' => 'url',                    'label' => 'Custom URL (optional)',   'type' => 'text',     'required' => false],
+            ['key' => 'directory_prefix',       'label' => 'Directory Prefix',       'type' => 'text',     'required' => false],
+        ],
+
+        // Cloudflare R2 deliberately has NO region and NO endpoint field.
+        // R2 has no regions — the S3 API is always addressed with the literal
+        // region 'auto', pinned in StorageManager. The endpoint is derived from
+        // the account ID and jurisdiction, also in StorageManager: letting an
+        // admin type it by hand invites a host that no longer contains
+        // "r2.cloudflarestorage.com", which is the string Laravel's
+        // FilesystemManager matches on to disable ACL round-trips for R2.
+        'storage_r2' => [
+            ['key' => 'account_id',             'label' => 'Cloudflare Account ID',  'type' => 'text',     'required' => true],
+            ['key' => 'key',                    'label' => 'Access Key ID',          'type' => 'text',     'required' => true],
+            ['key' => 'secret',                 'label' => 'Secret Access Key',      'type' => 'password', 'required' => true],
+            ['key' => 'bucket',                 'label' => 'Public Bucket Name',     'type' => 'text',     'required' => true,  'hint' => 'Holds logos, avatars and anything served straight to a browser. This is the bucket the custom domain below points at.'],
+            ['key' => 'private_bucket',         'label' => 'Private Bucket Name',    'type' => 'text',     'required' => false, 'hint' => 'A SEPARATE bucket, with no custom domain and no public access, for documents, offers and conversation files. It must not be the public bucket: on R2 a folder is not a permission boundary, so one bucket means either everything is public or nothing is. Leave empty to keep private files on the server disk.'],
+            ['key' => 'jurisdiction',           'label' => 'Jurisdiction (default, eu, fips)', 'type' => 'text', 'required' => false],
+            ['key' => 'url',                    'label' => 'Public URL (custom domain)', 'type' => 'text', 'required' => false, 'hint' => 'Required if this bucket serves logos, avatars or chat media — e.g. https://media.firma.ro. Connect a custom domain to the bucket in Cloudflare first. R2 has no public address of its own: the S3 endpoint authenticates every request. Leave empty for a bucket that only holds private files.'],
             ['key' => 'directory_prefix',       'label' => 'Directory Prefix',       'type' => 'text',     'required' => false],
         ],
     ];

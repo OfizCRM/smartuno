@@ -9,8 +9,8 @@ use App\Modules\Shared\Models\Conversation;
 use App\Modules\Shared\Models\Message;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -21,7 +21,7 @@ use Tests\TestCase;
  */
 class EmailAttachmentTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     private array $ctx;
 
@@ -32,7 +32,7 @@ class EmailAttachmentTest extends TestCase
         parent::setUp();
         // Attachments are written for real by this class; keep them out of the
         // developer's storage directory.
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         $this->ctx = $this->createWorkspaceContext();
         $this->mailbox = ChannelAccount::create([
             'workspace_id' => $this->ctx['workspace']->id,
@@ -133,8 +133,11 @@ class EmailAttachmentTest extends TestCase
 
         // storage/app/public is symlinked into the web root and served with no
         // authentication whatsoever. An emailed invoice does not belong there.
-        $this->assertFalse(Storage::disk('public')->exists($entry['path']));
-        $this->assertTrue(Storage::disk('local')->exists($entry['path']));
+        $this->assertNotOnTheWebServersDisk($entry['path'], 'An emailed invoice');
+        $this->assertTrue($this->privateDisk()->exists($entry['path']));
+        // And the entry says which disk it went to, so a reader never has to
+        // guess. Before this key existed there was nothing to guess FROM.
+        $this->assertSame($this->privateDiskName(), $entry['disk']);
     }
 
     public function test_the_stored_file_is_not_reachable_around_the_controller(): void
@@ -387,7 +390,7 @@ class EmailAttachmentTest extends TestCase
         $response->assertStatus(422);
         $this->assertNotNull($response->json('error'));
         // And the two that did fit are not left behind on the disk.
-        $this->assertSame([], Storage::disk('local')->allFiles('email-attachments'));
+        $this->assertSame([], $this->privateDisk()->allFiles('email-attachments'));
         $this->assertSame(0, Message::where('conversation_id', $conversation->id)->count());
     }
 

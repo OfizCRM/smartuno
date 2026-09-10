@@ -139,70 +139,10 @@ parameters:
 			path: app/Events/ContactCreated.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/ConversationAssigned.php
-
-		-
 			message: '#^Method App\\Events\\ConversationAssigned\:\:broadcastWith\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Events/ConversationAssigned.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$body\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageReceived.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageReceived.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$conversation_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Events/MessageReceived.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageReceived.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$direction\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageReceived.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$payload\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageReceived.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$sent_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageReceived.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageReceived.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageReceived.php
 
 		-
 			message: '#^Method App\\Events\\MessageReceived\:\:broadcastWith\(\) return type has no value type specified in iterable type array\.$#'
@@ -211,82 +151,10 @@ parameters:
 			path: app/Events/MessageReceived.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$body\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageSent.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageSent.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$conversation_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Events/MessageSent.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageSent.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$direction\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageSent.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$payload\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageSent.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$sent_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageSent.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageSent.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageSent.php
-
-		-
 			message: '#^Method App\\Events\\MessageSent\:\:broadcastWith\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Events/MessageSent.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$conversation_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Events/MessageStatusUpdated.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$provider_message_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageStatusUpdated.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Events/MessageStatusUpdated.php
 
 		-
 			message: '#^Method App\\Events\\MessageStatusUpdated\:\:broadcastWith\(\) return type has no value type specified in iterable type array\.$#'
@@ -393,7 +261,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$plan\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Http/Controllers/Admin/ClientController.php
 
 		-
@@ -764,36 +632,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiKbDocument\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/AiKnowledgeBaseApiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiKnowledgeBase\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/AiKnowledgeBaseApiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiKnowledgeBase\:\:\$embedding_model\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/AiKnowledgeBaseApiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiKnowledgeBase\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/AiKnowledgeBaseApiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiKnowledgeBase\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/AiKnowledgeBaseApiController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiKnowledgeBase\:\:\$workspace_id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Api/V1/AiKnowledgeBaseApiController.php
@@ -1244,36 +1082,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Contact\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Client/Reports/ExportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$assigned_user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Client/Reports/ExportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$contact_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Client/Reports/ExportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Client/Reports/ExportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$last_message_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Client/Reports/ExportController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Client/Reports/ExportController.php
@@ -2090,24 +1898,6 @@ parameters:
 			path: app/Listeners/AutoReplyListener.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/AutoReplyListener.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 7
-			path: app/Listeners/AutoReplyListener.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$direction\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Listeners/AutoReplyListener.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Whatsapp\\Models\\WhatsappAutoReply\:\:\$response_kind\.$#'
 			identifier: property.notFound
 			count: 1
@@ -2126,24 +1916,6 @@ parameters:
 			path: app/Listeners/AutoReplyListener.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$channelAccount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/AutoReplyListener.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/AutoReplyListener.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Listeners/AutoReplyListener.php
-
-		-
 			message: '#^Method App\\Listeners\\AutoReplyListener\:\:isOutsideSchedule\(\) has parameter \$schedule with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -2154,42 +1926,6 @@ parameters:
 			identifier: nullCoalesce.offset
 			count: 2
 			path: app/Listeners/AutoReplyListener.php
-
-		-
-			message: '#^Parameter \#1 \$conversation of method App\\Listeners\\AutoReplyListener\:\:triggerHandover\(\) expects App\\Modules\\Shared\\Models\\Conversation, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Listeners/AutoReplyListener.php
-
-		-
-			message: '#^Parameter \#3 \$conversation of method App\\Listeners\\AutoReplyListener\:\:dispatchAutoReply\(\) expects App\\Modules\\Shared\\Models\\Conversation, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Listeners/AutoReplyListener.php
-
-		-
-			message: '#^Parameter \#4 \$conversation of method App\\Listeners\\AutoReplyListener\:\:findMatchingAutoReply\(\) expects App\\Modules\\Shared\\Models\\Conversation, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Listeners/AutoReplyListener.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/AutomationTriggerListener.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$contact_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/AutomationTriggerListener.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/AutomationTriggerListener.php
 
 		-
 			message: '#^Method App\\Listeners\\AutomationTriggerListener\:\:fire\(\) has parameter \$context with no value type specified in iterable type array\.$#'
@@ -2210,64 +1946,10 @@ parameters:
 			path: app/Listeners/AutomationTriggerListener.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$body\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/DispatchOutboundWebhookListener.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/DispatchOutboundWebhookListener.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$conversation_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/DispatchOutboundWebhookListener.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$direction\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/DispatchOutboundWebhookListener.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$sent_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/DispatchOutboundWebhookListener.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/DispatchOutboundWebhookListener.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Listeners/LogSuccessfulLogin.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$assigned_user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/SendNewMessageNotification.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/SendNewMessageNotification.php
-
-		-
-			message: '#^Parameter \#2 \$conversation of class App\\Notifications\\NewMessageNotification constructor expects App\\Modules\\Shared\\Models\\Conversation, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Listeners/SendNewMessageNotification.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$email\.$#'
@@ -2828,40 +2510,10 @@ parameters:
 			path: app/Modules/AI/Http/Controllers/AiChatbotController.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/AI/Http/Controllers/AiChatbotController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$body\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/AI/Http/Controllers/AiChatbotController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$channel\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/AI/Http/Controllers/AiChatbotController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$direction\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/AI/Http/Controllers/AiChatbotController.php
-
-		-
 			message: '#^Relation ''knowledgeBase'' is not found in App\\Modules\\AI\\Models\\AiChatbot model\.$#'
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Modules/AI/Http/Controllers/AiChatbotController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiKnowledgeBase\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/AI/Http/Controllers/AiKnowledgeBaseController.php
 
 		-
 			message: '#^Parameter \#2 \$kb of method App\\Modules\\AI\\Http\\Controllers\\AiKnowledgeBaseController\:\:authorise\(\) expects App\\Modules\\AI\\Models\\AiKnowledgeBase, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
@@ -3032,12 +2684,6 @@ parameters:
 			path: app/Modules/AI/Models/AiKbDocument.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiKnowledgeBase\:\:\$uuid\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/AI/Models/AiKnowledgeBase.php
-
-		-
 			message: '#^Class App\\Modules\\AI\\Models\\AiKnowledgeBase uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1
@@ -3070,24 +2716,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiChatbot\:\:\$enabled\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Modules/AI/Services/ChatbotRunner.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/AI/Services/ChatbotRunner.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/AI/Services/ChatbotRunner.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:messages\(\)\.$#'
-			identifier: method.notFound
 			count: 1
 			path: app/Modules/AI/Services/ChatbotRunner.php
 
@@ -3818,12 +3446,6 @@ parameters:
 			path: app/Modules/Broadcasting/Http/Controllers/SmsStatusWebhookController.php
 
 		-
-			message: '#^Match arm comparison between ''mimsms'' and ''mimsms'' is always true\.$#'
-			identifier: match.alwaysTrue
-			count: 1
-			path: app/Modules/Broadcasting/Http/Controllers/SmsStatusWebhookController.php
-
-		-
 			message: '#^Offset ''delivered''\|''failed''\|''queued''\|''read''\|''sent'' on array\{queued\: 0, sent\: 1, delivered\: 2, read\: 3, failed\: 4\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
 			count: 1
@@ -3998,42 +3620,6 @@ parameters:
 			path: app/Modules/Inbox/Http/Controllers/CannedReplyController.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$first_response_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$handover_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$last_inbound_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$resolved_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$conversation_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Http/Controllers/InboxController.php
-
-		-
 			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\|null given\.$#'
 			identifier: argument.type
 			count: 1
@@ -4058,12 +3644,6 @@ parameters:
 			path: app/Modules/Inbox/Http/Controllers/InboxSetupController.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Inbox/Http/Controllers/InternalNoteController.php
-
-		-
 			message: '#^Offset 1 on array\{list\<string\>, list\<non\-empty\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
 			count: 1
@@ -4073,12 +3653,6 @@ parameters:
 			message: '#^Access to an undefined property App\\Modules\\Inbox\\Models\\InboxLabel\:\:\$workspace_id\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Modules/Inbox/Http/Controllers/LabelController.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 3
 			path: app/Modules/Inbox/Http/Controllers/LabelController.php
 
 		-
@@ -4104,30 +3678,6 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: app/Modules/Inbox/Models/InboxLabel.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$unread_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Services/InstagramDriver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$body\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Services/InstagramDriver.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$channelAccount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Services/InstagramDriver.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$external_thread_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Services/InstagramDriver.php
 
 		-
 			message: '#^Method App\\Modules\\Inbox\\Services\\InstagramDriver\:\:processInboundMessage\(\) has parameter \$event with no value type specified in iterable type array\.$#'
@@ -4158,30 +3708,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Modules/Inbox/Services/InstagramDriver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$unread_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Services/MessengerDriver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$body\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Services/MessengerDriver.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$channelAccount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Services/MessengerDriver.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$external_thread_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inbox/Services/MessengerDriver.php
 
 		-
 			message: '#^Method App\\Modules\\Inbox\\Services\\MessengerDriver\:\:processInboundMessage\(\) has parameter \$event with no value type specified in iterable type array\.$#'
@@ -4334,24 +3860,6 @@ parameters:
 			path: app/Modules/Shared/Models/ContactTag.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$contact_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Shared/Models/Conversation.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$uuid\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Shared/Models/Conversation.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Shared/Models/Conversation.php
-
-		-
 			message: '#^Method App\\Modules\\Shared\\Models\\Conversation\:\:contact\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
 			identifier: missingType.generics
 			count: 1
@@ -4374,12 +3882,6 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: app/Modules/Shared/Models/Conversation.php
-
-		-
-			message: '#^Method App\\Modules\\Shared\\Models\\Message\:\:conversation\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Modules/Shared/Models/Message.php
 
 		-
 			message: '#^Method App\\Modules\\Shared\\Models\\Segment\:\:contacts\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany does not specify its types\: TRelatedModel, TDeclaringModel, TPivotModel, TAccessor \(2\-4 required\)$#'
@@ -4978,19 +4480,19 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Modules\\Whatsapp\\Models\\WhatsappBusinessAccount\:\:\$waba_id\.$#'
 			identifier: property.notFound
-			count: 6
+			count: 5
 			path: app/Modules/Whatsapp/Http/Controllers/WhatsappSetupController.php
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Whatsapp\\Models\\WhatsappBusinessAccount\:\:\$workspace_id\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 2
 			path: app/Modules/Whatsapp/Http/Controllers/WhatsappSetupController.php
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Whatsapp\\Models\\WhatsappBusinessAccount\:\:\$waba_id\.$#'
 			identifier: property.notFound
-			count: 4
+			count: 2
 			path: app/Modules/Whatsapp/Http/Controllers/WhatsappTemplateController.php
 
 		-
@@ -5216,54 +4718,6 @@ parameters:
 			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$first_response_at\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$last_inbound_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$unread_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$sent_at\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$contact\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Whatsapp/Services/WhatsappDriver.php
-
-		-
 			message: '#^Method App\\Modules\\Whatsapp\\Services\\WhatsappDriver\:\:processInboundMessage\(\) has parameter \$msg with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -5474,12 +4928,6 @@ parameters:
 			path: app/Notifications/MentionedInNoteNotification.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$body\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Notifications/NewMessageNotification.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$first_name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -5684,12 +5132,6 @@ parameters:
 			path: app/Providers/AppServiceProvider.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$workspace_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Providers/BroadcastChannelsServiceProvider.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\AI\\Models\\AiRun\:\:\$avg_latency_ms\.$#'
 			identifier: property.notFound
 			count: 1
@@ -5828,12 +5270,6 @@ parameters:
 			path: app/Services/AnalyticsService.php
 
 		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$assigned_user_id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/AnalyticsService.php
-
-		-
 			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$date\.$#'
 			identifier: property.notFound
 			count: 1
@@ -5847,12 +5283,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Conversation\:\:\$seconds\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/AnalyticsService.php
-
-		-
-			message: '#^Access to an undefined property App\\Modules\\Shared\\Models\\Message\:\:\$channel\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/AnalyticsService.php
@@ -6074,12 +5504,6 @@ parameters:
 			path: app/Services/AnalyticsService.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),App\\Modules\\Shared\\Models\\Conversation\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Services/AnalyticsService.php
-
-		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Subscription\>\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
 			count: 1
@@ -6112,12 +5536,6 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Modules\\Social\\Models\\SocialPost\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
-			count: 1
-			path: app/Services/AnalyticsService.php
-
-		-
-			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),App\\Modules\\Shared\\Models\\Conversation\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: method.unresolvableReturnType
 			count: 1
 			path: app/Services/AnalyticsService.php
 
@@ -6715,23 +6133,8 @@ parameters:
 			count: 1
 			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
 
-		-
-			message: '#^Offset ''google_workspace''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_bigcommerce''\|''oauth_linkedin''\|''oauth_shopify''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: ''Meta App \(WhatsApp …'', oauth_linkedin\: ''LinkedIn OAuth'', oauth_twitter\: ''Twitter / X OAuth'', oauth_youtube\: ''YouTube / Google…'', oauth_tiktok\: ''TikTok OAuth'', oauth_shopify\: ''Shopify App \(OAuth\)'', oauth_bigcommerce\: ''BigCommerce App …'', llm_openai_default\: ''OpenAI \(Default\)'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 4
-			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
 
-		-
-			message: '#^Offset ''google_workspace''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_bigcommerce''\|''oauth_linkedin''\|''oauth_shopify''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: ''Meta'', oauth_linkedin\: ''Social OAuth'', oauth_twitter\: ''Social OAuth'', oauth_youtube\: ''Social OAuth'', oauth_tiktok\: ''Social OAuth'', oauth_shopify\: ''E\-Commerce OAuth'', oauth_bigcommerce\: ''E\-Commerce OAuth'', llm_openai_default\: ''AI / LLM'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 2
-			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
 
-		-
-			message: '#^Offset ''google_workspace''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_bigcommerce''\|''oauth_linkedin''\|''oauth_shopify''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: array\{array\{key\: ''app_id'', label\: ''App ID'', type\: ''text'', required\: true\}, array\{key\: ''app_secret'', label\: ''App Secret'', type\: ''password'', required\: true\}, array\{key\: ''system_user_token'', label\: ''System User Access…'', type\: ''password'', required\: false\}, array\{key\: ''verify_token'', label\: ''Webhook Verify Token'', type\: ''text'', required\: false\}, array\{key\: ''config_id_whatsapp'', label\: ''Embedded Signup…'', type\: ''text'', required\: false, hint\: ''From Meta App…''\}, array\{key\: ''config_id_social'', label\: ''Embedded Signup…'', type\: ''text'', required\: false, hint\: ''From Meta App…''\}\}, oauth_linkedin\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_twitter\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_youtube\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_tiktok\: array\{array\{key\: ''client_key'', label\: ''Client Key'', type\: ''text'', required\: true\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, oauth_shopify\: array\{array\{key\: ''client_id'', label\: ''API Key \(Client ID\)'', type\: ''text'', required\: true, hint\: ''From your Shopify…''\}, array\{key\: ''client_secret'', label\: ''API Secret Key …'', type\: ''password'', required\: true\}\}, oauth_bigcommerce\: array\{array\{key\: ''client_id'', label\: ''Client ID'', type\: ''text'', required\: true, hint\: ''From your…''\}, array\{key\: ''client_secret'', label\: ''Client Secret'', type\: ''password'', required\: true\}\}, llm_openai_default\: array\{array\{key\: ''api_key'', label\: ''API Key'', type\: ''password'', required\: true\}, array\{key\: ''organization_id'', label\: ''Organization ID'', type\: ''text'', required\: false\}\}, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 2
-			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Http/Controllers/IntegrationConfigController.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>enabled" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -6883,8 +6286,3 @@ parameters:
 			count: 2
 			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/Services/CredentialResolver.php
 
-		-
-			message: '#^Offset ''google_workspace''\|''llm_anthropic…''\|''llm_gemini_default''\|''llm_openai_default''\|''meta_app''\|''oauth_bigcommerce''\|''oauth_linkedin''\|''oauth_shopify''\|''oauth_tiktok''\|''oauth_twitter''\|''oauth_youtube''\|''qdrant''\|''storage_do''\|''storage_local''\|''storage_s3''\|''storage_wasabi'' on array\{meta_app\: ''Meta App \(WhatsApp …'', oauth_linkedin\: ''LinkedIn OAuth'', oauth_twitter\: ''Twitter / X OAuth'', oauth_youtube\: ''YouTube / Google…'', oauth_tiktok\: ''TikTok OAuth'', oauth_shopify\: ''Shopify App \(OAuth\)'', oauth_bigcommerce\: ''BigCommerce App …'', llm_openai_default\: ''OpenAI \(Default\)'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: /Users/vladcrisan/Sites/smartuno/app/Modules/Integrations/database/seeders/IntegrationConfigSeeder.php

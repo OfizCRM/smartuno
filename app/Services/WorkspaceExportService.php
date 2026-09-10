@@ -179,9 +179,11 @@ class WorkspaceExportService
         // Stream the archive: file_get_contents() would hold the whole ZIP in memory.
         // The local disk sets 'throw' => false, so a failed write returns false rather
         // than raising — check it, or the job mails a link to a file that isn't there.
+        // Pinned to 'local' rather than the framework default so that changing
+        // FILESYSTEM_DISK cannot silently relocate a ZIP full of personal data.
         $storagePath = "exports/{$workspaceId}/export_".now()->format('Ymd_His').'.zip';
         $stream = fopen($zipPath, 'r');
-        $stored = Storage::put($storagePath, $stream);
+        $stored = Storage::disk('local')->put($storagePath, $stream);
         if (is_resource($stream)) {
             fclose($stream);
         }

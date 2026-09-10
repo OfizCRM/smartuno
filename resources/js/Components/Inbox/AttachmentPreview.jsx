@@ -9,8 +9,15 @@ import { useTranslation } from 'react-i18next';
  * on purpose: anything the browser executes is absent from both lists and stays
  * a download.
  */
-export function previewKindFor(path) {
-    const ext = String(path ?? '').split('.').pop()?.toLowerCase();
+/**
+ * Which of the three preview containers a file belongs in, from its extension.
+ *
+ * Takes anything ending in one — a file name, a bare extension, once a stored
+ * path. Never a path any more: where an attachment sits on disk is not
+ * something the browser is told, and the name carries the same extension.
+ */
+export function previewKindFor(nameOrExtension) {
+    const ext = String(nameOrExtension ?? '').split('.').pop()?.toLowerCase();
 
     if (ext === 'pdf') return 'pdf';
     if (['png', 'jpg', 'gif', 'webp'].includes(ext)) return 'image';
@@ -32,7 +39,7 @@ export default function AttachmentPreview({ file, url, onClose, kind: forced = n
     // `forced` is for a file the server converts on the way out — a Word
     // document comes back as a rendered PDF, and its own extension would say
     // otherwise.
-    const kind = forced ?? previewKindFor(file?.path);
+    const kind = forced ?? previewKindFor(file?.name);
     const previewUrl = `${url}?preview=1`;
     const [text, setText] = useState(null);
     const [failed, setFailed] = useState(false);

@@ -72,11 +72,32 @@ class DocumentController extends Controller
         ];
 
         $documents = Document::where('workspace_id', $workspaceId)
-            ->with(['folder:id,name', 'contact:id,first_name,last_name,company', 'creator:id,name', 'versions'])
+            ->with([
+                'folder:id,name',
+                'contact:id,first_name,last_name,company',
+                'creator:id,name',
+                // Only what a version line renders: its number, its name, and
+                // the id its download link needs. The bare 'versions' that used
+                // to be here loaded whole rows, so every previous file's storage
+                // path — and now its disk — travelled into the page too, which
+                // is the same thing the map below stops on the document itself.
+                'versions:id,document_id,version,name',
+            ])
             ->narrowed($filters)
             ->latest('created_at')
             ->paginate(30)
-            ->withQueryString();
+            ->withQueryString()
+            // The storage address stays on the server. `path` and `disk`
+            // together are exactly what a URL would be built from, and the page
+            // needs neither: every file is fetched through file() below, which
+            // checks the workspace first, and the only thing a row asks about
+            // the file itself — what type it is — is the `extension` column.
+            //
+            // makeHidden rather than the ->through(fn () => [explicit array])
+            // shape the admin lists use: this page reads a dozen fields and
+            // three relations, so restating them here would be a list to keep in
+            // step with the JSX forever, to remove two keys.
+            ->through(fn (Document $document) => $document->makeHidden(['path', 'disk']));
 
         return Inertia::render('Documents/Index', [
             'documents' => $documents,
@@ -143,6 +164,10 @@ class DocumentController extends Controller
                 'contact_id' => $contactId,
                 'name' => $entry['name'],
                 'path' => $entry['path'],
+                // The disk put() reports, never the one configured now: the two
+                // are the same today and stop being the same the moment a move
+                // starts, and the row has to say where its own bytes went.
+                'disk' => $entry['disk'],
                 'mime' => $entry['mime'],
                 'extension' => pathinfo($entry['path'], PATHINFO_EXTENSION),
                 'size_bytes' => $entry['size'],
@@ -171,7 +196,11 @@ class DocumentController extends Controller
             ->narrowed(['search' => trim($request->string('q')->toString()) ?: null])
             ->latest('created_at')
             ->limit(30)
-            ->get(['uuid', 'name', 'path', 'size_bytes', 'created_at']);
+            // No `path` and no `disk`: the composer sends a document by its
+            // uuid, and the picker only draws a name, a size and an icon it
+            // reads off the name. A storage address in a dropdown payload is a
+            // URL waiting to be built out of it.
+            ->get(['uuid', 'name', 'extension', 'size_bytes', 'created_at']);
 
         return response()->json($documents);
     }
@@ -232,7 +261,7 @@ class DocumentController extends Controller
     {
         $this->authorise($request, $document);
 
-        $contents = $this->files->contents($document->path);
+        $contents = $this->files->contents($document->path, $document->disk);
         abort_if($contents === null, 404);
 
         if (! $request->boolean('preview')) {

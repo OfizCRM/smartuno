@@ -3,6 +3,7 @@
 namespace App\Modules\Integrations\Services;
 
 use App\Modules\Integrations\Models\IntegrationConfig;
+use App\Services\PrivateStorageManager;
 use App\Services\StorageManager;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http as HttpFacade;
@@ -201,6 +202,64 @@ class ConnectionTester
             : ['ok' => false, 'message' => 'Qdrant error: '.$resp->status()];
     }
 
+    /**
+     * The second bucket, the one private files go to.
+     *
+     * Not a failure when there is no private bucket configured: that is a valid
+     * arrangement — logos on R2, contracts on the server disk — and the panel
+     * says so separately. What IS a failure is a private bucket that is the
+     * public one, because on R2 that means every contract is served by the
+     * custom domain, and a bucket that cannot be written to.
+     *
+     * @param  array<string, mixed>  $creds
+     * @return array{ok: bool, message: string}
+     */
+    private function testPrivateBucket(string $provider, array $creds): array
+    {
+        $diskName = PrivateStorageManager::PRIVATE_DISK_MAP[$provider] ?? null;
+        $privateBucket = trim((string) ($creds['private_bucket'] ?? ''));
+
+        if ($diskName === null || $diskName === PrivateStorageManager::LOCAL_DISK) {
+            return ['ok' => true, 'message' => 'This provider does not hold private files.'];
+        }
+
+        if ($privateBucket === '') {
+            return ['ok' => true, 'message' => 'No private bucket set, so private files stay on the server disk.'];
+        }
+
+        if ($privateBucket === trim((string) ($creds['bucket'] ?? ''))) {
+            return ['ok' => false, 'message' => 'The private bucket is the same as the public one — on R2 a bucket is either published or it is not, so private files would be public.'];
+        }
+
+        $cfg = app(StorageManager::class)->buildDiskConfig($provider, $creds);
+
+        if ($cfg === []) {
+            return ['ok' => false, 'message' => 'Unknown storage provider.'];
+        }
+
+        $cfg['bucket'] = $privateBucket;
+        $cfg['visibility'] = 'private';
+        $cfg['throw'] = true;
+        unset($cfg['url']);
+
+        Config::set("filesystems.disks.{$diskName}", $cfg);
+        Storage::forgetDisk($diskName);
+
+        try {
+            $disk = Storage::disk($diskName);
+            $path = '.storage-test/private-ping.txt';
+            $disk->put($path, 'ok');
+            $exists = $disk->exists($path);
+            $disk->delete($path);
+
+            return $exists
+                ? ['ok' => true, 'message' => 'Private bucket "'.$privateBucket.'" is writable.']
+                : ['ok' => false, 'message' => 'Could not write to private bucket "'.$privateBucket.'".'];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'message' => 'Private bucket error: '.$e->getMessage()];
+        }
+    }
+
     private function testStorage(IntegrationConfig $config): array
     {
         if ($config->provider === 'storage_local') {
@@ -224,6 +283,13 @@ class ConnectionTester
             return ['ok' => false, 'message' => 'Access key, secret, and bucket are required.'];
         }
 
+        // R2's endpoint host is derived from the account ID, so a blank one
+        // cannot produce a reachable host. Name the missing field rather than
+        // letting the write fail with an opaque DNS error.
+        if ($config->provider === 'storage_r2' && empty($creds['account_id'] ?? '')) {
+            return ['ok' => false, 'message' => 'Cloudflare Account ID is required.'];
+        }
+
         // Temporarily wire credentials into the disk config
         $manager = app(StorageManager::class);
         $manager->clearCache();
@@ -233,19 +299,20 @@ class ConnectionTester
             return ['ok' => false, 'message' => 'Unknown storage provider.'];
         }
 
-        $diskCfg = [
-            'driver' => 's3',
-            'key' => $key,
-            'secret' => $secret,
-            'region' => $creds['region'] ?? 'us-east-1',
-            'bucket' => $bucket,
-            'url' => $creds['url'] ?? null,
-            'endpoint' => $creds['endpoint'] ?? null,
-            'use_path_style_endpoint' => false,
-            'throw' => true,
-            'visibility' => 'private',
-            'options' => [],
-        ];
+        // Build the disk the same way runtime does. This method used to
+        // assemble its own array — private visibility, empty options, no
+        // provider-specific endpoint — so the tick it produced described a disk
+        // that no upload ever used. Anything the tester and StorageManager can
+        // disagree about is a green test over a broken bucket.
+        $diskCfg = $manager->buildDiskConfig($config->provider, $creds);
+        if ($diskCfg === []) {
+            return ['ok' => false, 'message' => 'Unknown storage provider.'];
+        }
+
+        // The single deliberate override. Every runtime disk is built with
+        // 'throw' => false, which is exactly why a failed write is invisible in
+        // production; for a test we want the failure raised so it can be shown.
+        $diskCfg['throw'] = true;
 
         Config::set("filesystems.disks.{$diskName}", $diskCfg);
         Storage::forgetDisk($diskName);
@@ -259,9 +326,20 @@ class ConnectionTester
 
             $prefix = trim($creds['directory_prefix'] ?? '', '/');
 
-            return $exists
-                ? ['ok' => true,  'message' => 'Connected to bucket "'.$bucket.'"'.($prefix ? " (prefix: {$prefix})" : '').'.']
-                : ['ok' => false, 'message' => 'Write test failed — check bucket permissions.'];
+            if (! $exists) {
+                return ['ok' => false, 'message' => 'Write test failed — check bucket permissions.'];
+            }
+
+            // The private bucket is a second bucket with its own permissions,
+            // and it is the one holding contracts and invoices. A tick that
+            // described only the public one would be exactly the kind of green
+            // this method was already rewritten once to stop producing.
+            $privateResult = $this->testPrivateBucket($config->provider, $creds);
+
+            return [
+                'ok' => $privateResult['ok'],
+                'message' => 'Connected to bucket "'.$bucket.'"'.($prefix ? " (prefix: {$prefix})" : '').'. '.$privateResult['message'],
+            ];
         } catch (\Throwable $e) {
             $cause = $e->getPrevious();
             $detail = $cause ? ' ('.$cause->getMessage().')' : '';

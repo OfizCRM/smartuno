@@ -1,7 +1,7 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useState } from 'react';
-import { CheckCircle, XCircle, Clock, ChevronRight, ToggleLeft, ToggleRight, FlaskConical, Star, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, ChevronRight, ToggleLeft, ToggleRight, FlaskConical, Star, BookOpen, ChevronDown, ChevronUp, Globe, Lock } from 'lucide-react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
@@ -51,6 +51,21 @@ const SETUP_GUIDES = {
         ],
         link: 'https://console.wasabisys.com',
         linkLabel: 'Open Wasabi Console',
+    },
+    storage_r2: {
+        title: 'Cloudflare R2 Setup',
+        steps: [
+            'Log in at dash.cloudflare.com and open R2 Object Storage in the left-hand sidebar.',
+            'Copy the Account ID from the right-hand sidebar of the R2 overview page. R2 has no region setting — the endpoint is built from this Account ID.',
+            'Click Create bucket, name it, and choose the location / jurisdiction. Pick EU if customer files must stay inside the European Union — that is the answer to the GDPR question. The jurisdiction is fixed when the bucket is created and cannot be changed afterwards; moving means creating a new bucket.',
+            'Type eu (or fips) in the Jurisdiction field below so it matches the bucket. Leave it empty for the default, unrestricted jurisdiction.',
+            'Back on the R2 overview page, open Manage R2 API Tokens → Create API token.',
+            'Give the token the Object Read & Write permission and scope it to the bucket you just created.',
+            'Copy the Access Key ID and Secret Access Key from the screen shown right after creation — Cloudflare never displays the secret again. The S3 endpoint it prints can be ignored; this integration builds it from the Account ID and jurisdiction.',
+            'Paste the Account ID, bucket name and both keys below, then press Test. Directory Prefix is optional — set it only to keep SmartUno inside one folder of a shared bucket.',
+        ],
+        link: 'https://dash.cloudflare.com/?to=/:account/r2/overview',
+        linkLabel: 'Open Cloudflare R2',
     },
     meta_app: {
         title: 'Meta App — Complete Setup Guide',
@@ -399,7 +414,7 @@ function SetupGuide({ provider }) {
     );
 }
 
-const STORAGE_PROVIDERS = ['storage_local', 'storage_s3', 'storage_do', 'storage_wasabi'];
+const STORAGE_PROVIDERS = ['storage_local', 'storage_s3', 'storage_do', 'storage_wasabi', 'storage_r2'];
 
 const CATEGORY_LABEL_KEYS = {
     'Storage': 'integrations.cat_storage',
@@ -431,6 +446,7 @@ const BRAND = {
     storage_s3:      { bg: null, color: '#FF9900', logo: 'amazons3' },
     storage_do:      { bg: null, color: '#0080FF', logo: 'digitalocean' },
     storage_wasabi:  { bg: null, color: '#3CBA54', logo: 'wasabi' },
+    storage_r2:      { bg: null, color: '#F6821F', logo: 'cloudflare' },
     meta_app:        { bg: null, color: '#0866FF', logo: 'meta' },
     oauth_linkedin:  { bg: null, color: '#0A66C2', logo: 'linkedin' },
     oauth_twitter:   { bg: null, color: '#000000', logo: 'x' },
@@ -479,11 +495,111 @@ function BrandBadge({ provider }) {
     );
 }
 
-function ProviderCard({ item, onTest, onSetDefault, testing, settingDefault }) {
+/**
+ * Which backend holds what, resolved server-side the way an upload resolves it.
+ *
+ * The cards below this strip describe intent — enabled, default, configured.
+ * This describes outcome, and the two are allowed to disagree: is_default
+ * survives an admin unticking Enabled on the edit form, two enabled providers
+ * with no default both used to read "Active" while array order silently picked
+ * the winner, and private files have never lived on any of them.
+ */
+function StorageReality({ storage, onSetPrivate, switching }) {
+    const { t } = useTranslation();
+    if (!storage) return null;
+
+    const { public: pub, private: priv } = storage;
+    const reasonKey = priv.fallback_reason ? `integrations.private_fallback_${priv.fallback_reason}` : null;
+
+    return (
+        <div className="mb-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 shadow-sm">
+            <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex gap-3">
+                    <Globe className="h-4 w-4 mt-0.5 shrink-0 text-sky-500" />
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                            {t('integrations.public_files')}
+                        </p>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 break-words">{pub.label}</p>
+                        <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                            {t('integrations.public_files_hint')}
+                        </p>
+                        <p className="mt-1 text-[10px] text-neutral-400 dark:text-neutral-500">
+                            {t('integrations.storage_disk')}: <code className="font-mono">{pub.disk}</code>
+                        </p>
+                        {pub.implicit && (
+                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t('integrations.public_implicit')}</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex gap-3">
+                    <Lock className="h-4 w-4 mt-0.5 shrink-0 text-violet-500" />
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                            {t('integrations.private_files')}
+                        </p>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 break-words">{priv.label}</p>
+                        <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                            {t('integrations.private_files_hint')}
+                        </p>
+                        <p className="mt-1 text-[10px] text-neutral-400 dark:text-neutral-500">
+                            {t('integrations.storage_disk')}: <code className="font-mono">{priv.disk}</code>
+                        </p>
+                        {reasonKey && (
+                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                                {t(reasonKey, { provider: priv.configured_provider })}
+                            </p>
+                        )}
+                        {/* The switch itself. Separate from the "Default" star,
+                            which moves the PUBLIC files: a firm can serve logos
+                            from R2 while contracts stay on the server disk, and
+                            one control for both answers would make the wrong
+                            pairing a single click away. */}
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                            {Object.entries(priv.options ?? {}).map(([slug, label]) => {
+                                const current = slug === priv.configured_provider;
+
+                                return (
+                                    <button key={slug} type="button" disabled={current || switching}
+                                        onClick={() => onSetPrivate(slug)}
+                                        title={current ? t('integrations.private_in_use') : t('integrations.private_use')}
+                                        className={`rounded-lg border px-2 py-1 text-[11px] font-medium transition ${
+                                            current
+                                                ? 'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950 dark:text-violet-300'
+                                                : 'border-neutral-300 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800'
+                                        }`}>
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p className="mt-3 border-t border-neutral-100 dark:border-neutral-800 pt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                {t('integrations.storage_split_note')}
+            </p>
+        </div>
+    );
+}
+
+function ProviderCard({ item, onTest, onSetDefault, testing, settingDefault, storage }) {
     const { t } = useTranslation();
     const isStorage = STORAGE_PROVIDERS.includes(item.provider);
     const brand = BRAND[item.provider] ?? DEFAULT_BRAND;
     const isDefault = isStorage && item.is_default;
+    // What the server actually resolved, not what the row claims. With nothing
+    // enabled the public path still lands on the local disk, so storage_local
+    // is the honest target and `implicit` says nobody chose it.
+    const pub = storage?.public ?? {};
+    const publicTarget = pub.provider ?? 'storage_local';
+    const isPublicTarget = isStorage && !!storage && publicTarget === item.provider;
+    const isPrivateTarget = isStorage && storage?.private?.provider === item.provider;
+    // Only when the server told us what it resolved. Without that fact, saying
+    // "not in use" would be the same guess the old "Active" badge was making.
+    const isIdle = isStorage && !!storage && item.enabled && !isPublicTarget && !isPrivateTarget;
 
     return (
         <div className={`rounded-xl border p-5 flex flex-col gap-3 transition ${
@@ -503,8 +619,31 @@ function ProviderCard({ item, onTest, onSetDefault, testing, settingDefault }) {
                                 <Star className="h-3 w-3 fill-white" /> {t('integrations.default_badge')}
                             </span>
                         )}
-                        {isStorage && item.enabled && !isDefault && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 font-medium">{t('integrations.active_badge')}</span>
+                        {isPublicTarget && (
+                            <span
+                                title={pub.implicit ? t('integrations.public_implicit') : undefined}
+                                className={`text-xs px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5 ${
+                                    pub.implicit
+                                        ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
+                                        : 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300'
+                                }`}
+                            >
+                                <Globe className="h-3 w-3" /> {t('integrations.public_files')}
+                                {pub.implicit ? ` · ${t('integrations.fallback')}` : ''}
+                            </span>
+                        )}
+                        {isPrivateTarget && (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 font-medium flex items-center gap-0.5">
+                                <Lock className="h-3 w-3" /> {t('integrations.private_files')}
+                            </span>
+                        )}
+                        {isIdle && (
+                            <span
+                                title={t('integrations.enabled_not_in_use_title')}
+                                className="text-xs px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 font-medium"
+                            >
+                                {t('integrations.enabled_not_in_use')}
+                            </span>
                         )}
                     </div>
                 </div>
@@ -563,13 +702,14 @@ function ProviderCard({ item, onTest, onSetDefault, testing, settingDefault }) {
     );
 }
 
-export default function IntegrationsIndex({ grouped }) {
+export default function IntegrationsIndex({ grouped, storage = null }) {
     const { t } = useTranslation();
     const { props } = usePage();
     const flash = props.flash ?? {};
     const [testing, setTesting] = useState(null);
     const [testResults, setTestResults] = useState({});
     const [settingDefault, setSettingDefault] = useState(null);
+    const [settingPrivate, setSettingPrivate] = useState(null);
 
     const handleTest = async (provider) => {
         setTesting(provider);
@@ -588,6 +728,15 @@ export default function IntegrationsIndex({ grouped }) {
         setSettingDefault(provider);
         router.post(route('admin.integrations.set-default', provider), {}, {
             onFinish: () => setSettingDefault(null),
+        });
+    };
+
+    // The private switch. Its own state, because it is its own answer: setting
+    // one must not look like it is doing the other.
+    const handleSetPrivate = (provider) => {
+        setSettingPrivate(provider);
+        router.post(route('admin.integrations.set-private', provider), {}, {
+            onFinish: () => setSettingPrivate(null),
         });
     };
 
@@ -633,6 +782,7 @@ export default function IntegrationsIndex({ grouped }) {
                         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                             {CATEGORY_LABEL_KEYS[category] ? t(CATEGORY_LABEL_KEYS[category]) : category}
                         </h3>
+                        {category === 'Storage' && <StorageReality storage={storage} onSetPrivate={handleSetPrivate} switching={settingPrivate !== null} />}
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {grouped[category].map(item => (
                                 <ProviderCard
@@ -642,6 +792,7 @@ export default function IntegrationsIndex({ grouped }) {
                                     onSetDefault={handleSetDefault}
                                     testing={testing}
                                     settingDefault={settingDefault}
+                                    storage={storage}
                                 />
                             ))}
                         </div>

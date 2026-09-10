@@ -13,7 +13,7 @@ class IntegrationConfigSeeder extends Seeder
             IntegrationConfig::firstOrCreate(
                 ['provider' => $provider, 'mode' => 'live'],
                 [
-                    'label' => IntegrationConfig::LABELS[$provider] ?? $provider,
+                    'label' => IntegrationConfig::LABELS[$provider],
                     // Enable local storage by default so the app has a working disk
                     'enabled' => $provider === 'storage_local',
                     'credentials' => [],

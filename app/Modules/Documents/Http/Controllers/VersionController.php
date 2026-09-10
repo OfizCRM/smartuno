@@ -65,6 +65,12 @@ class VersionController extends Controller
             'version' => (int) DocumentVersion::where('document_id', $document->id)->max('version') + 1,
             'name' => $document->name,
             'path' => $document->path,
+            // The disk the row is on right now, read before the update below
+            // moves it on — a version records where the PREVIOUS bytes are, and
+            // during a migration that is not where the new ones just went. The
+            // configured default would be right only while both disks agree,
+            // which is exactly the window this column exists for.
+            'disk' => $document->disk,
             'mime' => $document->mime,
             'size_bytes' => $document->size_bytes,
             'created_by' => $document->created_by,
@@ -75,6 +81,7 @@ class VersionController extends Controller
             // newer state, and renaming it on every upload would break the link
             // people have in their heads.
             'path' => $entry['path'],
+            'disk' => $entry['disk'],
             'mime' => $entry['mime'],
             'extension' => pathinfo($entry['path'], PATHINFO_EXTENSION),
             'size_bytes' => $entry['size'],
@@ -98,7 +105,7 @@ class VersionController extends Controller
         $this->authorise($request, $document);
         abort_unless((int) $version->document_id === (int) $document->id, 404);
 
-        $contents = $this->files->contents($version->path);
+        $contents = $this->files->contents($version->path, $version->disk);
         abort_if($contents === null, 404);
 
         return response($contents, 200, [

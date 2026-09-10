@@ -385,10 +385,29 @@ class ContactController extends Controller
             $this->storageManager->disk()->delete($contact->avatar);
         }
 
-        $file = $request->file('avatar');
-        $path = $this->storageManager->prefixedPath('contact-avatars/'.$file->hashName());
-        $this->storageManager->disk()->putFileAs('contact-avatars', $file, basename($path));
-        $contact->update(['avatar' => $path]);
+        // The three lines this replaces disagreed with each other about where
+        // the file was:
+        //
+        //     $path = $this->storageManager->prefixedPath('contact-avatars/'.$file->hashName());
+        //     $this->storageManager->disk()->putFileAs('contact-avatars', $file, basename($path));
+        //     $contact->update(['avatar' => $path]);
+        //
+        // The write went to `contact-avatars/…`, the column recorded
+        // `<prefix>/contact-avatars/…`. With no directory prefix configured the
+        // two strings are identical and nothing is visibly wrong, which is why
+        // it has survived — an admin setting a prefix, or moving to a bucket
+        // that has one, breaks every avatar uploaded after that point and
+        // leaves the files themselves orphaned outside the prefix.
+        //
+        // storeImageUpload() prefixes once, on the path it both writes to and
+        // returns, so the two cannot drift again.
+        $stored = $this->storageManager->storeImageUpload($request->file('avatar'), 'contact-avatars');
+
+        if ($stored === null) {
+            return back()->withErrors(['avatar' => __('This image could not be processed safely.')]);
+        }
+
+        $contact->update(['avatar' => $stored['path']]);
 
         return back()->with('success', __('Avatar updated.'));
     }

@@ -81,9 +81,16 @@ class AiKnowledgeBaseApiController extends WorkspaceScopedController
 
         if ($request->hasFile('file')) {
             $file = $request->file('file');
-            $path = $this->storage->prefixedPath('kb-docs/'.$file->hashName());
-            $this->storage->disk()->putFileAs(dirname($path), $file, basename($path));
-            $validated['source_ref'] = $path;
+            // Same layout as the web screen writes — see the note there. Two
+            // endpoints reach this table, so a scheme only one of them follows
+            // is not a scheme.
+            $stored = $this->storage->storeImageUpload($file, 'kb-docs/'.$this->workspaceId($request));
+
+            if ($stored === null) {
+                return response()->json(['error' => 'This file could not be stored.'], 422);
+            }
+
+            $validated['source_ref'] = $stored['path'];
             $validated['title'] = $validated['title'] ?? $file->getClientOriginalName();
         }
 

@@ -151,10 +151,29 @@ class OfferSender
      */
     private function uploadPdf(int $workspaceId, Document $pdf): ?string
     {
-        $contents = $this->files->contents($pdf->path);
+        $contents = $this->files->contents($pdf->path, $pdf->disk);
+
+        if ($contents === null) {
+            // The operator is not left in the dark: the offer still goes and the
+            // controller tells them the PDF did not travel with it. What that
+            // sentence says, though, is that the channel cannot carry a file,
+            // and on WhatsApp that is untrue — so the reason goes in the log,
+            // where it is the only trace that the PDF existed and then did not.
+            // The message itself still leaves: an offer the customer can read
+            // beats one held back by its own attachment.
+            Log::warning('Offer PDF file is missing from storage', [
+                'feature' => 'offers.send.whatsapp',
+                'workspace_id' => $workspaceId,
+                'document_id' => $pdf->id,
+                'path' => $pdf->path,
+            ]);
+
+            return null;
+        }
+
         $client = CloudApiClient::forWorkspace($workspaceId);
 
-        if ($contents === null || $client === null) {
+        if ($client === null) {
             return null;
         }
 

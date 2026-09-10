@@ -8,7 +8,7 @@ use App\Modules\Shared\Models\Contact;
 use App\Modules\Shared\Services\OfficeTemplateFiller;
 use App\Modules\Shared\Services\TextExtractor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -21,14 +21,14 @@ use Tests\TestCase;
  */
 class DocumentTemplateTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     private array $ctx;
 
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         config([
             'services.onlyoffice.url' => 'http://localhost:8080',
             'services.onlyoffice.secret' => 'un-secret-suficient-de-lung-pentru-test',
@@ -77,7 +77,7 @@ class DocumentTemplateTest extends TestCase
     private function template(?int $workspaceId = null): DocumentTemplate
     {
         $workspaceId ??= $this->ctx['workspace']->id;
-        Storage::disk('local')->put('document-templates/contract.docx', $this->splitTemplate());
+        $this->privateDisk()->put('document-templates/contract.docx', $this->splitTemplate());
 
         return DocumentTemplate::create([
             'workspace_id' => $workspaceId,
@@ -158,7 +158,7 @@ class DocumentTemplateTest extends TestCase
 
     public function test_a_document_can_be_kept_as_a_template(): void
     {
-        Storage::disk('local')->put('documents/sursa.docx', $this->splitTemplate());
+        $this->privateDisk()->put('documents/sursa.docx', $this->splitTemplate());
         $document = Document::create([
             'workspace_id' => $this->ctx['workspace']->id,
             'name' => 'contract.docx',
@@ -178,7 +178,11 @@ class DocumentTemplateTest extends TestCase
         // A copy: editing the document later must not change every template
         // made from it.
         $this->assertNotSame($document->path, $template->path);
-        $this->assertTrue(Storage::disk('local')->exists($template->path));
+        $this->assertTrue($this->privateDisk()->exists($template->path));
+        // A template is a contract with the client's terms already in it. The
+        // copy is a third file on the disk and gets the same tripwire as the
+        // document it was made from.
+        $this->assertNotOnTheWebServersDisk($template->path, 'A document template');
     }
 
     public function test_a_new_document_from_a_template_arrives_with_the_client_filled_in(): void
@@ -193,7 +197,7 @@ class DocumentTemplateTest extends TestCase
         ])->assertRedirect();
 
         $document = Document::first();
-        $text = app(TextExtractor::class)->extract('docx', Storage::disk('local')->get($document->path));
+        $text = app(TextExtractor::class)->extract('docx', $this->privateDisk()->get($document->path));
 
         $this->assertSame($contact->id, $document->contact_id);
         $this->assertStringContainsString('Clinica Nord SRL', $text);
@@ -213,8 +217,8 @@ class DocumentTemplateTest extends TestCase
         // touching the file could only make it worse. Asserting on the extracted
         // text would not do — the placeholder is split across runs there.
         $this->assertSame(
-            Storage::disk('local')->get($template->path),
-            Storage::disk('local')->get(Document::first()->path),
+            $this->privateDisk()->get($template->path),
+            $this->privateDisk()->get(Document::first()->path),
         );
     }
 
@@ -228,7 +232,7 @@ class DocumentTemplateTest extends TestCase
         ])->assertRedirect();
 
         // Falls back to a blank page rather than reaching into another tenant.
-        $text = app(TextExtractor::class)->extract('docx', Storage::disk('local')->get(Document::first()->path));
+        $text = app(TextExtractor::class)->extract('docx', $this->privateDisk()->get(Document::first()->path));
         $this->assertStringNotContainsString('Contract cu', $text);
     }
 

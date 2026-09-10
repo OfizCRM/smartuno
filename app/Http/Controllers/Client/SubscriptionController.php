@@ -10,9 +10,11 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\Billing\BillingGatewayRegistry;
 use App\Services\Billing\InvoiceService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -139,7 +141,7 @@ class SubscriptionController extends Controller
             ->with('success', __('Your plan has been updated.'));
     }
 
-    public function couponCheck(Request $request): \Illuminate\Http\JsonResponse
+    public function couponCheck(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:64'],
@@ -172,10 +174,15 @@ class SubscriptionController extends Controller
         $user = $request->user();
         $transaction = PaymentTransaction::where('user_id', $user->id)->findOrFail($transactionId);
 
-        if ($transaction->invoice_path && file_exists(storage_path('app/' . $transaction->invoice_path))) {
-            return response()->file(storage_path('app/' . $transaction->invoice_path), [
+        // InvoiceService writes to the local disk, whose root is storage/app/private —
+        // not storage/app. Building the path by hand meant this never matched, the cache
+        // never hit, and every download silently re-rendered the PDF. Ask the disk.
+        $disk = Storage::disk('local');
+
+        if ($transaction->invoice_path && $disk->exists($transaction->invoice_path)) {
+            return response()->file($disk->path($transaction->invoice_path), [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="invoice-' . $transaction->id . '.pdf"',
+                'Content-Disposition' => 'inline; filename="invoice-'.$transaction->id.'.pdf"',
             ]);
         }
 
@@ -187,7 +194,7 @@ class SubscriptionController extends Controller
 
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="invoice-' . $transaction->id . '.pdf"',
+            'Content-Disposition' => 'inline; filename="invoice-'.$transaction->id.'.pdf"',
         ]);
     }
 

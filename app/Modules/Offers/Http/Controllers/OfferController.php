@@ -365,7 +365,7 @@ class OfferController extends Controller
         // workspace; nothing is served before that has been confirmed.
         abort_unless((int) $document->workspace_id === $workspaceId, 403);
 
-        $contents = $this->files->contents((string) $document->path);
+        $contents = $this->files->contents((string) $document->path, $document->disk);
         abort_if($contents === null, 404);
 
         return response($contents, 200, [

@@ -16,6 +16,35 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
+/**
+ * A thread with one contact on one channel.
+ *
+ * The properties are declared because they are real columns and static analysis
+ * cannot see them otherwise. Without this every `$conversation->workspace_id`
+ * in the application is an "undefined property" error, which is how dozens of
+ * them ended up suppressed — and a suppressed tenancy expression is the one you
+ * least want invisible, since workspace_id is the only thing separating one
+ * firm's inbox from another's.
+ *
+ * @property int $id
+ * @property string $uuid
+ * @property int $workspace_id
+ * @property int|null $channel_account_id
+ * @property int $contact_id
+ * @property string|null $external_thread_id
+ * @property string $status
+ * @property int|null $assigned_user_id
+ * @property string $assigned_to
+ * @property Carbon|null $handover_at
+ * @property Carbon|null $last_message_at
+ * @property Carbon|null $first_response_at
+ * @property Carbon|null $resolved_at
+ * @property Carbon|null $last_inbound_at
+ * @property int $unread_count
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class Conversation extends Model
 {
     /**

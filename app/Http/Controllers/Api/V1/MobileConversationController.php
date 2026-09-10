@@ -7,22 +7,23 @@ use App\Events\MessageSent;
 use App\Events\TypingChanged;
 use App\Models\User;
 use App\Modules\Inbox\Models\InboxLabel;
+use App\Modules\Inbox\Services\MessageMediaStore;
 use App\Modules\Shared\Models\ChannelAccount;
 use App\Modules\Shared\Models\Conversation;
 use App\Modules\Shared\Models\Message;
 use App\Modules\Shared\Services\ChannelManager;
 use App\Modules\Whatsapp\Services\CloudApiClient;
-use App\Services\StorageManager;
 use App\Support\Demo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 
 class MobileConversationController extends WorkspaceScopedController
 {
     public function __construct(
         private ChannelManager $channelManager,
-        private StorageManager $storageManager,
+        private MessageMediaStore $media,
     ) {}
 
     /**
@@ -138,7 +139,18 @@ class MobileConversationController extends WorkspaceScopedController
         ]);
 
         $msgType = $validated['type'] ?? 'text';
-        $msgPayload = $validated['payload'] ?? null;
+        $workspaceId = $this->workspaceId($request);
+
+        // The same allow-list the web reply() applies, and for the same reason.
+        // `payload` is validated only as "an array" and was stored verbatim, so
+        // a caller could hand-write the keys the SERVER is supposed to own: an
+        // attachments entry naming any file, or a link/preview_url that the
+        // Messenger and Instagram drivers then fetch and send onward as an
+        // image. Two endpoints reached the same JSON column; closing one of
+        // them is closing neither.
+        $msgPayload = Arr::except($validated['payload'] ?? [], [
+            'attachments', 'media_id', 'preview_url', 'link', 'path', 'disk', 'media_path', 'media_disk',
+        ]) ?: null;
 
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
@@ -156,22 +168,29 @@ class MobileConversationController extends WorkspaceScopedController
                     return response()->json(['error' => 'No active WhatsApp account.'], 422);
                 }
                 $mediaId = $client->uploadMedia($file->getRealPath(), $mimeType);
-                $storedPath = $this->storageManager->prefixedPath('message-media/'.$file->hashName());
-                $this->storageManager->disk()->putFileAs(dirname($storedPath), $file, basename($storedPath));
-                $previewUrl = $this->storageManager->disk()->url($storedPath);
+                // Private disk, same store as the web composer. WhatsApp is
+                // sending from the media_id above, so nothing outside this
+                // application ever needs to fetch this copy.
+                $stored = $this->media->putUpload($workspaceId, $file);
 
                 $msgPayload = array_merge($msgPayload ?? [], [
                     'media_id' => $mediaId,
-                    'preview_url' => $previewUrl,
+                    'media_path' => $stored['path'],
+                    'media_disk' => $stored['disk'],
                     'caption' => $validated['body'] ?? null,
                     'filename' => $file->getClientOriginalName(),
                 ]);
             } else {
-                $storedPath = $this->storageManager->prefixedPath('message-media/'.$file->hashName());
-                $this->storageManager->disk()->putFileAs(dirname($storedPath), $file, basename($storedPath));
-                $previewUrl = $this->storageManager->disk()->url($storedPath);
+                // Messenger and Instagram, where Meta FETCHES the picture from a
+                // URL rather than being handed the bytes. It still goes on the
+                // private disk; MessengerDriver mints a short-lived signed URL
+                // at send time, which is a grant with an expiry rather than a
+                // file left permanently readable by anyone with the link.
+                $stored = $this->media->putUpload($workspaceId, $file);
+
                 $msgPayload = array_merge($msgPayload ?? [], [
-                    'preview_url' => $previewUrl,
+                    'media_path' => $stored['path'],
+                    'media_disk' => $stored['disk'],
                     'caption' => $validated['body'] ?? null,
                     'filename' => $file->getClientOriginalName(),
                 ]);

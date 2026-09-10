@@ -37,9 +37,19 @@ class KnowledgeLinkController extends Controller
         $kbDocument = AiKbDocument::create([
             'kb_id' => $kb->id,
             'source_type' => 'file',
-            // The private path. IndexDocumentJob knows to read `documents/` from
-            // the private disk rather than the public one.
-            'source_ref' => $document->path,
+            // The document, not the file. This used to store $document->path,
+            // and a bare path says nothing about which disk it is a path on —
+            // so IndexDocumentJob guessed, by testing whether it began with
+            // "documents/". That guess was wrong as soon as the private disk
+            // stopped being the local one, and wrong again if a directory
+            // prefix were configured; both times it read the wrong disk, found
+            // nothing, and marked the row indexed with no text in it.
+            //
+            // A uuid identifies the row instead, and the row is what knows
+            // where its file lives. Which also makes the read checkable: the
+            // job can confirm the document and the knowledge base belong to the
+            // same workspace, which a loose path never allowed.
+            'source_ref' => IndexDocumentJob::DOCUMENT_REF_PREFIX.$document->uuid,
             'title' => $document->name,
             'status' => 'pending',
         ]);

@@ -29,7 +29,7 @@ class TemplateController extends Controller
 
         $data = $request->validate(['name' => ['required', 'string', 'max:160']]);
 
-        $contents = $this->files->contents($document->path);
+        $contents = $this->files->contents($document->path, $document->disk);
         abort_if($contents === null, 404);
 
         // A copy, so editing the document later does not quietly change every
@@ -40,6 +40,9 @@ class TemplateController extends Controller
             'workspace_id' => $document->workspace_id,
             'name' => $data['name'],
             'path' => $entry['path'],
+            // The copy's own disk, not the source document's: put() may have
+            // written it somewhere else entirely.
+            'disk' => $entry['disk'],
             'mime' => $document->mime,
             'extension' => $document->extension,
             'size_bytes' => $entry['size'],
@@ -53,7 +56,7 @@ class TemplateController extends Controller
     {
         abort_unless((int) $template->workspace_id === (int) $request->user()->workspace_id, 403);
 
-        $this->files->delete($template->path);
+        $this->files->delete($template->path, $template->disk);
         $template->delete();
 
         return back()->with('success', __('Template deleted.'));

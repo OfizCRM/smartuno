@@ -8,8 +8,8 @@ use App\Modules\Documents\Models\DocumentFolder;
 use App\Modules\Shared\Models\Contact;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -22,14 +22,14 @@ use Tests\TestCase;
  */
 class DocumentLibraryTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     private array $ctx;
 
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         $this->ctx = $this->createWorkspaceContext();
     }
 
@@ -73,8 +73,8 @@ class DocumentLibraryTest extends TestCase
         $this->assertSame($this->ctx['user']->id, $document->created_by);
         // Private disk, and a stored name that is a uuid rather than the one it
         // arrived under.
-        $this->assertTrue(Storage::disk('local')->exists($document->path));
-        $this->assertFalse(Storage::disk('public')->exists($document->path));
+        $this->assertTrue($this->privateDisk()->exists($document->path));
+        $this->assertNotOnTheWebServersDisk($document->path, 'An uploaded document');
         $this->assertStringNotContainsString('contract', $document->path);
     }
 
@@ -114,6 +114,28 @@ class DocumentLibraryTest extends TestCase
 
         $this->assertCount(1, $props['documents']['data']);
         $this->assertSame($mine->uuid, $props['documents']['data'][0]['uuid']);
+    }
+
+    public function test_the_list_does_not_hand_the_browser_a_storage_path(): void
+    {
+        $this->upload();
+
+        $props = $this->actingAs($this->ctx['user'])
+            ->get(route('client.documents.index'))
+            ->viewData('page')['props'];
+
+        // The screen addresses a document by uuid, through a route that resolves
+        // the workspace before it reads a byte. It has never needed the path.
+        //
+        // A path is not a secret the way a password is, which is exactly what
+        // makes it easy to wave through — and it stops being harmless the moment
+        // the private disk gains any way to be addressed: a 'url' key on the
+        // disk, a bucket flipped to public, a signed storage.local link minted
+        // somewhere else in the app. Every path already sitting in a page source,
+        // a screenshot or a support ticket becomes a live link at that point,
+        // retroactively, for every file the product has ever listed.
+        $this->assertArrayNotHasKey('path', $props['documents']['data'][0]);
+        $this->assertArrayNotHasKey('disk', $props['documents']['data'][0]);
     }
 
     // ─── who may reach a file ────────────────────────────────────────────
@@ -279,7 +301,7 @@ class DocumentLibraryTest extends TestCase
         $this->assertSame(0, (int) Document::where('workspace_id', $this->ctx['workspace']->id)->sum('size_bytes'));
         // ...but recoverable, because a contract deleted by mistake is a real one.
         $this->assertNotNull($document->fresh()?->deleted_at);
-        $this->assertTrue(Storage::disk('local')->exists($document->path));
+        $this->assertTrue($this->privateDisk()->exists($document->path));
     }
 
     public function test_the_purge_removes_the_file_once_the_bin_is_old_enough(): void
@@ -290,12 +312,12 @@ class DocumentLibraryTest extends TestCase
         $document->delete();
 
         $this->artisan('documents:purge')->assertSuccessful();
-        $this->assertTrue(Storage::disk('local')->exists($path), 'still inside the thirty days');
+        $this->assertTrue($this->privateDisk()->exists($path), 'still inside the thirty days');
 
         Document::withTrashed()->whereKey($document->id)->update(['deleted_at' => now()->subDays(31)]);
         $this->artisan('documents:purge')->assertSuccessful();
 
-        $this->assertFalse(Storage::disk('local')->exists($path));
+        $this->assertFalse($this->privateDisk()->exists($path));
         $this->assertNull(Document::withTrashed()->find($document->id));
     }
 }

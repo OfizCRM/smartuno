@@ -456,5 +456,9 @@
     "offers.ai_skip_gone": "Conversația din care pornea oferta nu mai există.",
     "offers.ai_skip_handover": "Cineva a preluat conversația, așa că agentul s-a oprit.",
     "offers.ai_skip_readonly": "Abonamentul tău nu mai acoperă pregătirea automată a ofertelor.",
-    "Nothing in that correction could be saved.": "Nu s-a putut salva nimic din corectura aceea."
+    "Nothing in that correction could be saved.": "Nu s-a putut salva nimic din corectura aceea.",
+    "This template is missing its file. Upload the template again.": "Acestui șablon îi lipsește fișierul. Încarcă din nou șablonul.",
+    "This attachment is no longer stored, so it could not be saved to documents.": "Atașamentul nu mai este stocat, așa că nu a putut fi salvat în Documente.",
+    "An attachment on this message is no longer stored, so the email was not sent.": "Un atașament al acestui mesaj nu mai este stocat, așa că emailul nu a fost trimis.",
+    "That file could not be stored. Please try again.": "Fișierul nu a putut fi stocat. Încearcă din nou."
 }

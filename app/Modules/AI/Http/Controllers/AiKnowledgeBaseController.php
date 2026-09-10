@@ -63,9 +63,17 @@ class AiKnowledgeBaseController extends Controller
                 ],
             ]);
             $file = $request->file('file');
-            $diskName = $this->storage->diskName();
-            $path = $this->storage->prefixedPath('kb-docs/'.$file->hashName());
-            $this->storage->disk()->putFileAs(dirname($path), $file, basename($path));
+            // Under the workspace, so the read side has something to check. A
+            // flat kb-docs/ directory gave IndexDocumentJob no way to tell one
+            // firm's uploaded file from another's, and source_ref arrives from
+            // the request.
+            $stored = $this->storage->storeImageUpload($file, 'kb-docs/'.$kb->workspace_id);
+
+            if ($stored === null) {
+                return back()->withErrors(['file' => __('This file could not be stored.')]);
+            }
+
+            $path = $stored['path'];
             $validated['source_ref'] = $path;
             $validated['title'] = $validated['title'] ?? $file->getClientOriginalName();
         }

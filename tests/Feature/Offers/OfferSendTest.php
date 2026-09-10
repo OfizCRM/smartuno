@@ -11,8 +11,8 @@ use App\Modules\Shared\Models\Conversation;
 use App\Modules\Shared\Models\Message;
 use App\Modules\Shared\Services\ChannelManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
 use Mockery;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -25,14 +25,14 @@ use Tests\TestCase;
  */
 class OfferSendTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     private array $ctx;
 
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('local');
+        $this->fakePrivateDisk();
         $this->ctx = $this->createWorkspaceContext();
     }
 

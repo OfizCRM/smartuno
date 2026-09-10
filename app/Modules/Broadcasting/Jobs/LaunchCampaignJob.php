@@ -203,8 +203,13 @@ class LaunchCampaignJob implements ShouldQueue
     }
 
     /**
-     * Read the CSV at `audience_ref` from the default storage disk and upsert contacts.
+     * Read the CSV at `audience_ref` from the local disk and upsert contacts.
      * Expects a header row with at least `phone_e164` or `email`.
+     *
+     * Pinned to 'local' rather than the framework default disk on purpose. This method
+     * hands Storage::path() to fopen(), which only means anything on a local driver: on
+     * any S3-backed disk that call returns an object key, fopen() fails, and a campaign
+     * launches to nobody behind a single log line.
      *
      * @return array<int, int>
      */
@@ -221,13 +226,13 @@ class LaunchCampaignJob implements ShouldQueue
         ) {
             Log::channel('json')->warning('campaign.csv.invalid_path', [
                 'campaign_id' => $campaign->id,
-                'path'        => $path,
+                'path' => $path,
             ]);
 
             return [];
         }
 
-        if (! $path || ! Storage::exists($path)) {
+        if (! $path || ! Storage::disk('local')->exists($path)) {
             Log::channel('json')->warning('campaign.csv.missing', [
                 'campaign_id' => $campaign->id,
                 'path' => $path,
@@ -237,8 +242,16 @@ class LaunchCampaignJob implements ShouldQueue
         }
 
         $rows = [];
-        $handle = fopen(Storage::path($path), 'r');
+        $handle = @fopen(Storage::disk('local')->path($path), 'r');
         if (! $handle) {
+            // exists() said yes and the open still failed — permissions, or a disk that
+            // does not hand out real filesystem paths. Say so; the campaign is about to
+            // be marked failed with no audience and this is the only clue why.
+            Log::channel('json')->error('campaign.csv.unreadable', [
+                'campaign_id' => $campaign->id,
+                'path' => $path,
+            ]);
+
             return [];
         }
 

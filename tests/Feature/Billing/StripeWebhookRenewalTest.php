@@ -12,7 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\FakesPrivateDisk;
 use Tests\TestCase;
 
 /**
@@ -23,7 +23,7 @@ use Tests\TestCase;
  */
 class StripeWebhookRenewalTest extends TestCase
 {
-    use RefreshDatabase;
+    use FakesPrivateDisk, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -41,7 +41,7 @@ class StripeWebhookRenewalTest extends TestCase
             ],
         ]);
 
-        Storage::fake('local');
+        $this->fakePrivateDisk();
     }
 
     private function makeSubscription(array $overrides = []): Subscription

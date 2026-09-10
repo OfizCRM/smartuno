@@ -124,6 +124,7 @@ class OfferPdfRenderer
             'contact_id' => $offer->contact_id,
             'name' => $entry['name'],
             'path' => $entry['path'],
+            'disk' => $entry['disk'],
             'mime' => self::MIME,
             'extension' => 'pdf',
             'size_bytes' => $entry['size'],
@@ -142,21 +143,31 @@ class OfferPdfRenderer
      */
     private function replace(Document $document, string $name, string $contents): Document
     {
+        // Written first, then the history — see the same note in
+        // OfficeController::store(). pdf() re-renders on every view of an offer
+        // PDF, so with the version row first a failing disk added one orphan
+        // version per page view, each pointing at a file that never changed.
+        $entry = $this->files->put(self::DIRECTORY, $name, self::MIME, $contents);
+
         DocumentVersion::create([
             'document_id' => $document->id,
             'version' => (int) DocumentVersion::where('document_id', $document->id)->max('version') + 1,
             'name' => $document->name,
             'path' => $document->path,
+            // Still the row's own disk — the update below has not run yet. The
+            // old file is deliberately left where it is, so this is the only
+            // record of which disk to go and find it on, and mid-migration that
+            // is not the disk the render above just wrote to.
+            'disk' => $document->disk,
             'mime' => $document->mime,
             'size_bytes' => $document->size_bytes,
             'created_by' => $document->created_by,
         ]);
 
-        $entry = $this->files->put(self::DIRECTORY, $name, self::MIME, $contents);
-
         $document->update([
             'name' => $entry['name'],
             'path' => $entry['path'],
+            'disk' => $entry['disk'],
             'size_bytes' => $entry['size'],
         ]);
 

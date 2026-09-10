@@ -26,14 +26,29 @@ class InvoiceService
                 'app_name' => config('app.name'),
                 'support_email' => config('saas.support_email'),
                 'issued_at' => $transaction->created_at->format('F j, Y'),
-                'invoice_number' => 'INV-' . str_pad($transaction->id, 6, '0', STR_PAD_LEFT),
+                'invoice_number' => 'INV-'.str_pad($transaction->id, 6, '0', STR_PAD_LEFT),
             ];
 
             $pdf = Pdf::loadView('pdf.invoice', $data);
             $content = $pdf->output();
 
-            $path = 'invoices/' . $transaction->id . '.pdf';
-            Storage::put($path, $content);
+            $path = 'invoices/'.$transaction->id.'.pdf';
+
+            // Pinned to 'local', not the framework default: SubscriptionController reads
+            // this same path back off the local disk, so FILESYSTEM_DISK must not move it.
+            $stored = Storage::disk('local')->put($path, $content);
+
+            // The local disk is configured 'throw' => false, so a failed write returns false
+            // rather than raising. Recording invoice_path anyway would have the row claim a
+            // cached PDF that was never written.
+            if ($stored === false) {
+                Log::error('InvoiceService::generate could not store the invoice', [
+                    'transaction_id' => $transaction->id,
+                    'path' => $path,
+                ]);
+
+                return $content;
+            }
 
             $transaction->update(['invoice_path' => $path]);
 

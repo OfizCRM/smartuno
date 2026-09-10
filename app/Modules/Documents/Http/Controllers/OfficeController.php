@@ -78,7 +78,24 @@ class OfficeController extends Controller
 
         if ($template) {
             $extension = $template->extension;
-            $contents = (string) $this->files->contents($template->path);
+            $contents = $this->files->contents($template->path, $template->disk);
+
+            // The cast that used to be on the line above turned a template whose
+            // bytes are gone into an empty string, which then passed the quota
+            // check below and produced a real, named, zero-byte document in
+            // someone's library. Somebody is waiting on this request, so they are
+            // told instead; the log names the file, because an abort is not
+            // reported anywhere and a disk across a network will fail this way.
+            if ($contents === null) {
+                Log::warning('Document template file is missing from storage', [
+                    'feature' => 'documents.office.create',
+                    'workspace_id' => $workspaceId,
+                    'template_id' => $template->id,
+                    'path' => $template->path,
+                ]);
+
+                abort(404, __('This template is missing its file. Upload the template again.'));
+            }
 
             // The client's own details, filled in where the template asked for
             // them. Same tokens as the campaigns, filled by the same service.
@@ -114,6 +131,7 @@ class OfficeController extends Controller
             'contact_id' => $contactId,
             'name' => $entry['name'],
             'path' => $entry['path'],
+            'disk' => $entry['disk'],
             'mime' => $mime,
             'extension' => $extension,
             'size_bytes' => $entry['size'],
@@ -178,7 +196,7 @@ class OfficeController extends Controller
         abort_unless($request->hasValidRelativeSignature(), 403);
 
         $row = Document::where('uuid', $document)->firstOrFail();
-        $contents = $this->files->contents($row->path);
+        $contents = $this->files->contents($row->path, $row->disk);
         abort_if($contents === null, 404);
 
         return response($contents, 200, [
@@ -261,6 +279,15 @@ class OfficeController extends Controller
             return;
         }
 
+        // The new bytes go down FIRST, and only then is the previous state
+        // recorded as a version. The other order looks equivalent and is not:
+        // put() now throws when the write fails, and with the version row
+        // written first a failed save left a version pointing at the unchanged
+        // current path — a duplicate of a file that never moved. The Document
+        // Server retries any callback that does not answer {"error": 0}, so
+        // that row multiplied once per retry.
+        $entry = $this->files->put(self::DIRECTORY, $row->name, $row->mime, $contents);
+
         // What was there becomes a version. This is the whole reason editing in
         // place is safe: nothing overwrites without leaving the previous state
         // behind, and it is the same history an uploaded replacement writes.
@@ -269,13 +296,20 @@ class OfficeController extends Controller
             'version' => (int) DocumentVersion::where('document_id', $row->id)->max('version') + 1,
             'name' => $row->name,
             'path' => $row->path,
+            // $row has not been updated yet, so this is still the disk the
+            // PREVIOUS bytes are on — which is the whole point of recording it.
+            // This method is the reason the column had to exist before anything
+            // moved: put() above has just written to whatever disk is current,
+            // and if a migration is in flight that is not the disk the file
+            // being superseded sits on. One row per disk, both readable, is a
+            // state the schema could not describe until now.
+            'disk' => $row->disk,
             'mime' => $row->mime,
             'size_bytes' => $row->size_bytes,
             'created_by' => $row->created_by,
         ]);
 
-        $entry = $this->files->put(self::DIRECTORY, $row->name, $row->mime, $contents);
-        $row->update(['path' => $entry['path'], 'size_bytes' => $entry['size']]);
+        $row->update(['path' => $entry['path'], 'disk' => $entry['disk'], 'size_bytes' => $entry['size']]);
 
         if ($this->extractor->supports($row->extension)) {
             ExtractDocumentTextJob::store($row->fresh(), $this->extractor->extract($row->extension, $contents));
