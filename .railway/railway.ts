@@ -110,6 +110,18 @@ export default defineRailway(() => {
       APP_FALLBACK_LOCALE: "en",
       APP_DEMO_MODE: "false",
 
+      // Railpack installs a fixed base list -- ctype curl dom fileinfo filter
+      // hash mbstring openssl pcre pdo session tokenizer xml -- plus whatever
+      // the root composer.json declares as ext-*. This composer.json declares
+      // none, so anything else has to be named here. Additive, comma-separated.
+      //
+      //   zip        webklex/php-imap requires it. Without it `composer install`
+      //              aborts and the build never reaches the app at all.
+      //   pdo_mysql  the base list ships `pdo` but no driver. Nothing in
+      //              composer.lock requires it, so composer never complains --
+      //              it surfaces later as "could not find driver" at migrate.
+      RAILPACK_PHP_EXTENSIONS: "zip,pdo_mysql",
+
       // Railpack runs `migrate` AND the seeders on every boot of every replica
       // unless this is set. Seeding production would run TranslationSeeder,
       // which rewrites the hand-authored resources/js/locales/*.json that
@@ -129,7 +141,8 @@ export default defineRailway(() => {
       // stay on `database`, which needs no PHP extension and so removes a
       // failure mode from the first deploy. Switching them to redis is a
       // one-line change once the worker exists — it also needs
-      // RAILPACK_PHP_EXTENSIONS=redis, because predis is not in composer.json.
+      // `redis` appended to RAILPACK_PHP_EXTENSIONS, because predis is not
+      // in composer.json and phpredis is therefore the only client available.
       REDIS_CLIENT: "phpredis",
       REDIS_HOST: cache.env.REDISHOST,
       REDIS_PORT: cache.env.REDISPORT,
