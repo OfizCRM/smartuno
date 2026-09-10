@@ -130,6 +130,25 @@ deliberately not installed. Add one only when something actually fails for want 
 > replaces Railpack's whole pipeline rather than adjusting it -- not worth doing while the
 > pipeline is the thing that works.
 
+## Do not put a `classmap` in composer.json
+
+Railpack copies only `composer.json`, `composer.lock` and `artisan` into the layer where it runs
+`composer install`, so that dependency installs cache independently of app code. The rest of the
+application is not there yet.
+
+Composer treats that difference asymmetrically: a **missing PSR-4 directory is skipped silently**,
+a **missing classmap path is a fatal error**. That is why `"App\\": "app/"` survives even though
+`app/` does not exist at that point, while a single classmap entry failed the whole build.
+
+The entry that broke it pointed at `app/Modules/Integrations/database/seeders/`. It existed to
+paper over a casing mismatch -- the class is namespaced `App\Modules\Integrations\Database\Seeders`
+(capitals) but the directory is `database/seeders` (lowercase), which resolves on a
+case-insensitive Windows filesystem and never on Linux. It is now an explicit PSR-4 prefix
+mapping instead, which fixes the casing properly and builds cleanly.
+
+Changing `autoload` does not invalidate `composer.lock`: its content hash covers only
+dependency-relevant keys, not autoload configuration.
+
 ## Switching to Redis
 
 Redis is provisioned and its connection variables are wired, but the queue, cache and session

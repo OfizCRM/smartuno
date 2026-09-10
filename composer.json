@@ -41,11 +41,9 @@
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
-        },
-        "classmap": [
-            "app/Modules/Integrations/database/seeders/"
-        ]
+            "Database\\Seeders\\": "database/seeders/",
+            "App\\Modules\\Integrations\\Database\\Seeders\\": "app/Modules/Integrations/database/seeders/"
+        }
     },
     "autoload-dev": {
         "psr-4": {
