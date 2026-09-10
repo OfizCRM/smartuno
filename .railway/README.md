@@ -82,6 +82,98 @@ process, not a Railway cron.
    storage credentials only from the encrypted `integration_configs` table and has, in its own
    words, "zero fallback to the environment".
 
+## Production environment variables
+
+Three groups: what the IaC sets for you, what you must set by hand, and what is optional per
+feature. Anything not listed here can stay unset -- the config defaults are correct.
+
+### Set by `railway config apply` -- do not set these by hand
+
+`APP_NAME` `APP_ENV` `APP_DEBUG` `APP_LOCALE` `APP_FALLBACK_LOCALE` `APP_DEMO_MODE`
+`RAILPACK_PHP_EXTENSIONS` `RAILPACK_SKIP_MIGRATIONS` `DB_CONNECTION` `DB_HOST` `DB_PORT`
+`DB_DATABASE` `DB_USERNAME` `DB_PASSWORD` `REDIS_CLIENT` `REDIS_HOST` `REDIS_PORT`
+`REDIS_PASSWORD` `QUEUE_CONNECTION` `CACHE_STORE` `SESSION_DRIVER` `SESSION_SECURE_COOKIE`
+`SESSION_LIFETIME` `SESSION_SAME_SITE` `LOG_CHANNEL` `LOG_LEVEL` `BROADCAST_CONNECTION`
+`FILESYSTEM_DISK`
+
+Setting one of these by hand as well means two sources of truth for the same value. If you are
+not running the IaC, copy them out of `railway.ts`, and use Railway's reference syntax for the
+database ones: `${{MySQL.MYSQLHOST}}`, `${{MySQL.MYSQLPORT}}`, `${{MySQL.MYSQLDATABASE}}`,
+`${{MySQL.MYSQLUSER}}`, `${{MySQL.MYSQLPASSWORD}}`.
+
+### Required, by hand
+
+| Variable | Value | Why |
+|---|---|---|
+| `APP_KEY` | `php artisan key:generate --show` | Encryption key. Sessions, encrypted columns and integration credentials are unreadable without a stable one. Never rotate it after go-live. |
+| `APP_URL` | the Railway domain, **with `https://`** | `AppServiceProvider` only forces the https scheme when this starts with `https`. It also seeds Sanctum's stateful domains and every callback URL. |
+| `HEALTHZ_TOKEN` | any long random string | Guards `/healthz/db`, `/healthz/redis`, `/healthz/queue`. Unset means those endpoints answer to anyone. |
+| `APP_INSTALLED` | `true`, **after** running `/install` once | The wizard writes this to `.env`, which does not survive a deploy. Only a real Railway variable closes the wizard for good. |
+
+### Required for anything that sends e-mail
+
+Password resets, user invitations, trial-ending notices and the weekly digest all go through
+this. Left unset, mail is written to the log and silently never arrives.
+
+| Variable | Value |
+|---|---|
+| `MAIL_MAILER` | `smtp` |
+| `MAIL_HOST` | your provider's SMTP host |
+| `MAIL_PORT` | `587` (or `465` with `MAIL_SCHEME=smtps`) |
+| `MAIL_USERNAME` | provider username |
+| `MAIL_PASSWORD` | provider password |
+| `MAIL_FROM_ADDRESS` | an address on a domain you own and have SPF/DKIM for |
+| `MAIL_FROM_NAME` | `Smartuno` |
+
+### Optional, per feature
+
+Each block is inert until you set it. Nothing breaks by leaving them out.
+
+**Real-time updates** (live inbox, typing indicators). Without it the UI still works, it just
+does not update on its own.
+`BROADCAST_CONNECTION=pusher` plus `PUSHER_APP_ID` `PUSHER_APP_KEY` `PUSHER_APP_SECRET`
+`PUSHER_APP_CLUSTER`, and `VITE_PUSHER_APP_KEY` / `VITE_PUSHER_APP_CLUSTER` -- see the build-time
+note below. Reverb is the self-hosted alternative and needs its own always-on service.
+
+**AI features**: `OPENAI_API_KEY`, optionally `OPENAI_MODEL` (default `gpt-4o-mini`),
+`AI_CREDITS_PER_GENERATION`. For the knowledge base: `QDRANT_URL`, `QDRANT_API_KEY`.
+
+**Billing**: `BILLING_STRIPE_ENABLED=true` with `STRIPE_SECRET` and `STRIPE_WEBHOOK_SECRET`;
+`BILLING_PAYPAL_ENABLED=true` with `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`
+and `PAYPAL_SANDBOX=false`. Publishable keys are configured in the admin panel, not here.
+
+**Web push**: `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` from `php artisan webpush:vapid`, plus
+`VITE_VAPID_PUBLIC_KEY`.
+
+**Social login**: `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_ID` /
+`MICROSOFT_CLIENT_SECRET`. The redirect URIs derive from `APP_URL`.
+
+**Error monitoring**: `SENTRY_LARAVEL_DSN`, and `SENTRY_TRACES_SAMPLE_RATE` (keep it low).
+
+**Document editing**: `ONLYOFFICE_URL`, `ONLYOFFICE_APP_URL`, `ONLYOFFICE_SECRET`. Needs a
+separate ONLYOFFICE container with roughly 2 GB of RAM; leave blank and the feature is absent.
+
+### Four things that will bite you
+
+**`VITE_*` variables are compiled into the JavaScript bundle at build time.** They are not read
+at runtime. Set them *before* the build that should contain them, and redeploy after changing
+one. They are also shipped to every browser -- a `VITE_` variable is public by definition, so
+never put a secret in one.
+
+**Do not set `AWS_*`.** They look like they configure the bucket and they configure nothing.
+`StorageManager` reads storage credentials only from the encrypted `integration_configs` table
+and states it has "zero fallback to the environment". The bucket is connected in
+Admin > Integrations > Storage.
+
+**Do not set `ADMIN_SEED_*` or `CLIENT_SEED_*`.** They exist for seeders, which production never
+runs, and `.env.example` ships them with the password `12345678`.
+
+**Do not set `HTTP_CLIENT_VERIFY_SSL=false`.** It defaults to true and disabling it turns off
+certificate verification on every outbound call -- Meta, Stripe, every webhook.
+
+`LICENSE_*` is not needed: `config/license.php` has `'verify' => false`, so licensing is off and
+the install wizard will not ask for a code.
+
 ## File storage: two mechanisms, not one
 
 The bucket does not cover everything, and cannot.
