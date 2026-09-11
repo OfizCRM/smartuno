@@ -311,6 +311,7 @@ function AddOrEditSmtpModal({ show, edit, encryptionOptions, onClose, onSaved })
     const { t } = useTranslation();
     const isEdit = !!edit?.id;
     const { data, setData, post, put, processing } = useForm({
+        transport: edit?.transport ?? 'smtp',
         host: edit?.host ?? 'smtp.gmail.com',
         port: edit?.port ?? 587,
         username: edit?.username ?? '',
@@ -329,6 +330,7 @@ function AddOrEditSmtpModal({ show, edit, encryptionOptions, onClose, onSaved })
     useEffect(() => {
         if (!show) return;
         setData({
+            transport: edit?.transport ?? 'smtp',
             host: edit?.host ?? 'smtp.gmail.com',
             port: edit?.port ?? 587,
             username: edit?.username ?? '',
@@ -340,6 +342,10 @@ function AddOrEditSmtpModal({ show, edit, encryptionOptions, onClose, onSaved })
             activate: edit?.is_active ?? false,
         });
     }, [show, edit?.id]);
+
+    const isSmtp = data.transport !== 'brevo_api';
+    // One encrypted column holds either secret, so the label has to say which.
+    const secretLabel = isSmtp ? t('email_server.password') : t('email_server.api_key');
 
     const submit = (e) => {
         e.preventDefault();
@@ -355,29 +361,45 @@ function AddOrEditSmtpModal({ show, edit, encryptionOptions, onClose, onSaved })
             <Modal.Header title={isEdit ? t('email_server.update_smtp') : t('email_server.add_smtp')} onClose={onClose} />
             <form onSubmit={submit}>
                 <Modal.Body className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* How it sends, chosen before where it points — the fields
+                        below depend on it. An HTTP API needs no host, port or
+                        encryption; a host that blocks outbound SMTP needs no
+                        SMTP. */}
+                    <FormField label={`${t('email_server.transport')} *`}>
+                        <select value={data.transport} onChange={(e) => setData('transport', e.target.value)} required className={inputCls}>
+                            <option value="smtp">{t('email_server.transport_smtp')}</option>
+                            <option value="brevo_api">{t('email_server.transport_brevo_api')}</option>
+                        </select>
+                        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                            {data.transport === 'brevo_api'
+                                ? t('email_server.transport_brevo_api_hint')
+                                : t('email_server.transport_smtp_hint')}
+                        </p>
+                    </FormField>
+
+                    {isSmtp && <div className="grid grid-cols-2 gap-4">
                         <FormField label={`${t('email_server.smtp_host')} *`}>
                             <input type="text" value={data.host} onChange={(e) => setData('host', e.target.value)} required className={inputCls} placeholder={t('email_system.smtp_host_placeholder')} />
                         </FormField>
                         <FormField label={`${t('email_server.port')} *`}>
                             <input type="number" value={data.port} onChange={(e) => setData('port', parseInt(e.target.value, 10) || 587)} required min={1} max={65535} className={inputCls} />
                         </FormField>
-                    </div>
+                    </div>}
                     <div className="grid grid-cols-2 gap-4">
-                        <FormField label={`${t('email_server.username')} *`}>
+                        {isSmtp && <FormField label={`${t('email_server.username')} *`}>
                             <input type="text" value={data.username} onChange={(e) => setData('username', e.target.value)} required className={inputCls} placeholder={t('email_system.from_email_placeholder')} />
-                        </FormField>
-                        <FormField label={isEdit ? t('email_server.password') : `${t('email_server.password')} *`}>
+                        </FormField>}
+                        <FormField label={isEdit ? secretLabel : `${secretLabel} *`}>
                             <input type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} placeholder={isEdit ? t('email_system.password_unchanged') : ''} required={!isEdit} className={inputCls} />
                         </FormField>
                     </div>
-                    <FormField label={`${t('email_server.encryption')} *`}>
+                    {isSmtp && <FormField label={`${t('email_server.encryption')} *`}>
                         <select value={data.encryption} onChange={(e) => setData('encryption', e.target.value)} required className={inputCls}>
                             {encryptionOptions.map((o) => (
                                 <option key={o.value} value={o.value}>{o.label}</option>
                             ))}
                         </select>
-                    </FormField>
+                    </FormField>}
                     <div className="grid grid-cols-2 gap-4">
                         <FormField label={`${t('email_server.from_email')} *`}>
                             <input type="email" value={data.from_email} onChange={(e) => setData('from_email', e.target.value)} required className={inputCls} placeholder={t('email_system.from_email_placeholder')} />

@@ -2471,7 +2471,13 @@
         "enc_none": "Niciunul",
         "setup_guide": "Ghid configurare SMTP",
         "setup_guide_desc": "Pas cu pas pentru furnizori de email populari",
-        "password_unchanged": "(neschimbat)"
+        "password_unchanged": "(neschimbat)",
+        "transport": "Mod de trimitere",
+        "transport_smtp": "SMTP",
+        "transport_brevo_api": "Brevo API (HTTPS)",
+        "transport_smtp_hint": "Conexiune SMTP clasică. Nu funcționează pe găzduiri care blochează porturile de ieșire — trimiterea nu dă eroare, ci atârnă un minut și expiră.",
+        "transport_brevo_api_hint": "Trimite prin API-ul Brevo, pe portul 443. Funcționează oriunde. Ai nevoie de o cheie API v3 din Brevo → SMTP & API → API keys — nu cheia SMTP, e alt lucru.",
+        "api_key": "Cheie API"
     },
     "landing": {
         "signin_label": "Etichetă autentificare",

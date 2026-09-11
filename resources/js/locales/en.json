@@ -2439,7 +2439,13 @@
         "enc_none": "None",
         "setup_guide": "SMTP Setup Guide",
         "setup_guide_desc": "Step-by-step for popular email providers",
-        "password_unchanged": "(unchanged)"
+        "password_unchanged": "(unchanged)",
+        "transport": "Sending method",
+        "transport_smtp": "SMTP",
+        "transport_brevo_api": "Brevo API (HTTPS)",
+        "transport_smtp_hint": "A plain SMTP connection. Does not work on hosts that block outbound SMTP ports — a send does not fail, it hangs for a minute and times out.",
+        "transport_brevo_api_hint": "Sends through Brevo's API on port 443, which works anywhere. Needs a v3 API key from Brevo → SMTP & API → API keys — not the SMTP key, which is a different credential.",
+        "api_key": "API key"
     },
     "landing": {
         "signin_label": "Signin Label",

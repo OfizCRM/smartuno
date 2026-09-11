@@ -25,6 +25,7 @@ class EmailSystemController extends Controller
     {
         $smtpConfigurations = SmtpConfiguration::orderBy('is_active', 'desc')->orderBy('id')->get()->map(fn (SmtpConfiguration $c) => [
             'id' => $c->id,
+            'transport' => $c->transport,
             'host' => $c->host,
             'port' => $c->port,
             'username' => $c->username,
@@ -56,11 +57,16 @@ class EmailSystemController extends Controller
     public function storeSmtp(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'host' => ['required', 'string', 'max:255'],
-            'port' => ['required', 'integer', 'min:1', 'max:65535'],
-            'username' => ['required', 'string', 'max:255'],
+            'transport' => ['required', 'string', 'in:'.implode(',', SmtpConfiguration::TRANSPORTS)],
+            // host/port/encryption describe an SMTP connection and mean nothing
+            // to an HTTP API, so they are required only for the transport that
+            // reads them. `password` carries the SMTP password OR the API key —
+            // one encrypted column, because it is one secret either way.
+            'host' => ['required_if:transport,'.SmtpConfiguration::TRANSPORT_SMTP, 'nullable', 'string', 'max:255'],
+            'port' => ['required_if:transport,'.SmtpConfiguration::TRANSPORT_SMTP, 'nullable', 'integer', 'min:1', 'max:65535'],
+            'username' => ['required_if:transport,'.SmtpConfiguration::TRANSPORT_SMTP, 'nullable', 'string', 'max:255'],
             'password' => ['required', 'string', 'max:255'],
-            'encryption' => ['required', 'string', 'in:tls,ssl,none'],
+            'encryption' => ['required_if:transport,'.SmtpConfiguration::TRANSPORT_SMTP, 'nullable', 'string', 'in:tls,ssl,none'],
             'from_email' => ['required', 'email'],
             'from_name' => ['required', 'string', 'max:255'],
             'activate' => ['boolean'],
@@ -71,7 +77,8 @@ class EmailSystemController extends Controller
         }
 
         SmtpConfiguration::create([
-            'host' => $validated['host'],
+            'transport' => $validated['transport'],
+            'host' => $validated['host'] ?? null,
             'port' => $validated['port'],
             'username' => $validated['username'],
             'password' => $validated['password'],
@@ -87,11 +94,15 @@ class EmailSystemController extends Controller
     public function updateSmtp(Request $request, SmtpConfiguration $smtpConfiguration): RedirectResponse
     {
         $validated = $request->validate([
-            'host' => ['required', 'string', 'max:255'],
-            'port' => ['required', 'integer', 'min:1', 'max:65535'],
-            'username' => ['required', 'string', 'max:255'],
+            'transport' => ['required', 'string', 'in:'.implode(',', SmtpConfiguration::TRANSPORTS)],
+            // Same shape as storeSmtp, except `password` stays nullable: blank
+            // means "keep the stored secret", which is why the update below only
+            // writes it when something was typed.
+            'host' => ['required_if:transport,'.SmtpConfiguration::TRANSPORT_SMTP, 'nullable', 'string', 'max:255'],
+            'port' => ['required_if:transport,'.SmtpConfiguration::TRANSPORT_SMTP, 'nullable', 'integer', 'min:1', 'max:65535'],
+            'username' => ['required_if:transport,'.SmtpConfiguration::TRANSPORT_SMTP, 'nullable', 'string', 'max:255'],
             'password' => ['nullable', 'string', 'max:255'],
-            'encryption' => ['required', 'string', 'in:tls,ssl,none'],
+            'encryption' => ['required_if:transport,'.SmtpConfiguration::TRANSPORT_SMTP, 'nullable', 'string', 'in:tls,ssl,none'],
             'from_email' => ['required', 'email'],
             'from_name' => ['required', 'string', 'max:255'],
             'activate' => ['boolean'],
@@ -102,10 +113,11 @@ class EmailSystemController extends Controller
         }
 
         $data = [
-            'host' => $validated['host'],
-            'port' => $validated['port'],
-            'username' => $validated['username'],
-            'encryption' => $validated['encryption'],
+            'transport' => $validated['transport'],
+            'host' => $validated['host'] ?? null,
+            'port' => $validated['port'] ?? null,
+            'username' => $validated['username'] ?? null,
+            'encryption' => $validated['encryption'] ?? null,
             'from_email' => $validated['from_email'],
             'from_name' => $validated['from_name'],
             'is_active' => $validated['activate'] ?? $smtpConfiguration->is_active,

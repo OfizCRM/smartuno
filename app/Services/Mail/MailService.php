@@ -181,6 +181,27 @@ class MailService
             $manager->purge('dynamic_smtp');
         }
 
+        // Same mailer name either way, so every caller and every queued job that
+        // already names 'dynamic_smtp' keeps working; only what it is made of
+        // changes. WorkspaceSmtpConfig has no transport column and never answers
+        // true here, which is correct — a client's own mail server is on their
+        // infrastructure, not on the host that blocks port 587.
+        if (method_exists($smtp, 'usesApi') && $smtp->usesApi()) {
+            Config::set('mail.mailers.dynamic_smtp', [
+                'transport' => 'brevo_api',
+                // The v3 API key, kept in the same encrypted column the SMTP
+                // password uses. AppServiceProvider registers the transport that
+                // reads this.
+                'key' => $smtp->getDecryptedPassword(),
+                'from' => [
+                    'address' => $smtp->from_email,
+                    'name' => $smtp->from_name,
+                ],
+            ]);
+
+            return;
+        }
+
         Config::set('mail.mailers.dynamic_smtp', [
             'transport' => 'smtp',
             'host' => $smtp->host,

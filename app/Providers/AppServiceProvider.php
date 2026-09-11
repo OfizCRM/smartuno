@@ -47,11 +47,13 @@ use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\Mailer\Bridge\Brevo\Transport\BrevoApiTransport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -76,6 +78,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerBrevoApiTransport();
 
         // The public offer link. Keyed on the offer in the path rather than on
         // the caller's IP: TRUSTED_PROXIES defaults to '*', so the IP is
@@ -181,6 +184,36 @@ class AppServiceProvider extends ServiceProvider
      * Point Guzzle at a valid CA bundle when php.ini references a missing file
      * (Windows cURL error 77), or optionally disable verify for local dev only.
      */
+    /**
+     * Teach Laravel to send through Brevo's HTTPS API.
+     *
+     * Laravel ships transports for SES, Postmark and Resend, and none for Brevo,
+     * so the Symfony bridge is registered by hand. The bridge itself is the
+     * official one — writing an HTTP client for this would be a second
+     * implementation of somebody else's API contract, and the first one to drift
+     * when Brevo changes it.
+     *
+     * Why an API transport exists here at all: most container hosts block
+     * outbound SMTP to stop their platform being used for spam, and Railway —
+     * where this runs — is one of them. The block does not refuse the
+     * connection, it swallows it, so a send hangs for a minute and then times
+     * out. Port 443 is never blocked.
+     *
+     * The key comes from the mailer config rather than from env(), because it is
+     * stored per-installation in the database and set from the admin screen.
+     * MailService::configureMailer() is what puts it there.
+     */
+    private function registerBrevoApiTransport(): void
+    {
+        Mail::extend('brevo_api', function (array $config) {
+            // Only the key. The optional HTTP client, event dispatcher and
+            // logger are Symfony's own contracts — Laravel's Dispatcher is a
+            // different interface and passing it throws a TypeError the moment
+            // a mail is sent, which is a long way from here.
+            return new BrevoApiTransport((string) ($config['key'] ?? ''));
+        });
+    }
+
     /** Meta webhook callbacks must use HTTPS in production. */
     private function forceHttpsForWebhookUrls(): void
     {
