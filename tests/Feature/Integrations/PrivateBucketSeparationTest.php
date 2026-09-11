@@ -4,6 +4,7 @@ namespace Tests\Feature\Integrations;
 
 use App\Models\SystemSetting;
 use App\Modules\Integrations\Models\IntegrationConfig;
+use App\Modules\Shared\Services\PrivateFileStore;
 use App\Services\PrivateStorageManager;
 use App\Services\StorageManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -140,6 +141,47 @@ class PrivateBucketSeparationTest extends TestCase
         // a firm serving logos locally can still keep contracts on R2, and the
         // reverse pairing must not follow from one tick.
         $this->assertSame('storage_r2', $this->chooseR2()->provider());
+    }
+
+    /**
+     * The switch moves where files are WRITTEN, not just what the panel says.
+     *
+     * This is the test that was missing, and its absence cost a real afternoon.
+     * Stage 6 built the admin control, the separate private bucket, the
+     * refusal to share one, and a connection test that proved both buckets were
+     * writable — while PrivateFileStore::diskName() still returned a hardcoded
+     * 'local'. Every assertion passed, the panel reported "Cloudflare R2", and
+     * every document went to the container disk, which on this host is erased
+     * on the next deploy.
+     *
+     * Everything around the decision was tested. The decision itself was not.
+     */
+    public function test_choosing_r2_changes_the_disk_files_are_written_to(): void
+    {
+        $store = app(PrivateFileStore::class);
+
+        $this->assertSame('local', $store->diskName(), 'Before choosing anything, private files stay on the server disk.');
+
+        $this->r2(['private_bucket' => 'smartuno-private']);
+        $this->chooseR2();
+
+        $this->assertSame(
+            'r2_private',
+            app(PrivateFileStore::class)->diskName(),
+            'The admin chose R2 and the store still names the server disk, so every write goes there '.
+            'while the panel reports R2.'
+        );
+    }
+
+    public function test_a_refused_switch_does_not_move_the_writes_either(): void
+    {
+        // The mirror of the above: when the switch cannot be honoured, writes
+        // must stay where they are rather than going somewhere half-resolved.
+        $this->r2(['private_bucket' => 'smartuno-public']);
+        $this->chooseR2();
+
+        $this->assertSame('shared_bucket', $this->manager()->fallbackReason());
+        $this->assertSame('local', app(PrivateFileStore::class)->diskName());
     }
 
     public function test_a_provider_that_cannot_hold_private_files_is_rejected_outright(): void

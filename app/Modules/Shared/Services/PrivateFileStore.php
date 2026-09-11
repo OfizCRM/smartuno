@@ -69,30 +69,34 @@ class PrivateFileStore
      * one. They answer different questions, and the day they stop being equal is
      * the day this class earns its keep.
      *
-     * DEFAULT_DISK is where a file written from now on goes. diskName() is its
-     * only reader, and that method body is the whole of the change when the
-     * private disk moves to R2 — `return app(PrivateStorageManager::class)->
-     * diskName();`, that class being the one that reads the admin's setting and
-     * resolves it against PRIVATE_DISK_MAP. Named here so that day is an edit
-     * and not a search.
+     * FALLBACK_DISK below is the only one left, and it answers a different
+     * question from "where do new files go". That one is now answered by
+     * PrivateStorageManager, which reads the admin's setting.
      *
-     * It stays a constant until then rather than becoming a config key: nothing
-     * outside this class may decide where a private file lands, and a config()
-     * read copied to a second call site is how one of them ends up on another
-     * key.
+     * There WAS a second constant here, DEFAULT_DISK, holding the same literal
+     * and meaning "where a file written from now on goes". Its docblock said
+     * diskName() should come to return
+     * app(PrivateStorageManager::class)->diskName() when the private disk moved
+     * to R2 — and then the switch, the separate private bucket and the
+     * connection test were all built while that one line was never changed.
+     * Every private write kept going to the server disk with the panel happily
+     * reporting R2, which on a host with no persistent storage means the files
+     * are gone at the next deploy.
+     *
+     * So it is not a constant any more. A value that must change in step with a
+     * runtime setting is not a constant; it is the setting, copied.
      */
-    private const DEFAULT_DISK = 'local';
 
     /**
      * The disk a file lives on when the caller has nothing to say about it.
      *
      * This one MUST stay the literal string 'local' forever, and it is separate
-     * from DEFAULT_DISK precisely so that moving the write target cannot drag it
-     * along. Every row and every payload entry written before the disk column
-     * existed is on `local`, there is no record of it anywhere, and there is
-     * nothing to backfill from — so "no disk recorded" can only ever mean
-     * `local`. Point this at R2 with DEFAULT_DISK and every file the product has
-     * ever stored becomes unreadable in one deploy.
+     * from whatever diskName() answers precisely so that moving the write target
+     * cannot drag it along. Every row and every payload entry written before the
+     * disk column existed is on `local`, there is no record of it anywhere, and
+     * there is nothing to backfill from — so "no disk recorded" can only ever
+     * mean `local`. Point this at R2 as well and every file the product has ever
+     * stored becomes unreadable in one deploy.
      *
      * The name is load-bearing beyond production, too. Storage::fake() swaps a
      * disk BY NAME, and the suite fakes this one by name in a dozen files; a new
@@ -120,7 +124,7 @@ class PrivateFileStore
      */
     public function diskName(): string
     {
-        return self::DEFAULT_DISK;
+        return app(PrivateStorageManager::class)->diskName();
     }
 
     /**
