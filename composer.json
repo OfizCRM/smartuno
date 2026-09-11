@@ -2,8 +2,14 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "whatsmine/whatsmine",
     "type": "project",
-    "description": "WhatsMine — multi-channel customer messaging, AI chatbots, broadcasting and automation platform.",
-    "keywords": ["whatsapp", "messaging", "saas", "inbox", "automation"],
+    "description": "WhatsMine \u2014 multi-channel customer messaging, AI chatbots, broadcasting and automation platform.",
+    "keywords": [
+        "whatsapp",
+        "messaging",
+        "saas",
+        "inbox",
+        "automation"
+    ],
     "license": "proprietary",
     "require": {
         "php": "^8.2",
@@ -24,7 +30,7 @@
         "smalot/pdfparser": "^2.12",
         "stripe/stripe-php": "^19.3",
         "symfony/brevo-mailer": "^7.4",
-        "symfony/http-client": "^8.1",
+        "symfony/http-client": "^7.4",
         "tightenco/ziggy": "^2.0",
         "webklex/php-imap": "^6.2"
     },
@@ -96,6 +102,9 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
+        "platform": {
+            "php": "8.2.0"
+        },
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
